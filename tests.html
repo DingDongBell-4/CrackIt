@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Tests | SSC Portal</title>
+    <style>
+        /* CSS Variables to match index.html */
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f9; }
+        
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
+
+        /* Navbar Styles from index.html */
+        nav {
+            background: white; padding: 1rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .logo { cursor: pointer; color: #333; }
+        .user-controls a {
+            text-decoration: none; color: var(--primary);
+            margin-left: 15px; font-weight: 600; font-size: 0.9rem;
+        }
+        .logout-btn { color: #dc3545 !important; cursor: pointer; }
+
+        /* Container & Layout */
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        
+        .card { 
+            background: white; padding: 30px; border-radius: 12px; text-align: center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); cursor: pointer; 
+            border-bottom: 5px solid var(--primary); transition: 0.3s; 
+        }
+        .card:hover { transform: translateY(-5px); }
+
+        .test-item { 
+            background: white; padding: 20px; border-radius: 10px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+        }
+        
+        .start-btn { 
+            background: var(--success); color: white; padding: 10px 20px; 
+            border-radius: 6px; text-decoration: none; font-weight: bold; 
+        }
+        
+        .hidden { display: none; }
+        #loader { text-align: center; padding: 50px; font-size: 1.2rem; color: #666; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo" onclick="window.location.href='index.html'"><strong>SSC Portal</strong></div>
+        <div class="user-controls">
+            <span id="displayPhone">Checking...</span>
+            <a href="index.html">Dashboard</a>
+            <a onclick="logout()" class="logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1 id="page-title">Categories</h1>
+            <button id="back-btn" class="hidden" onclick="showCategories()" style="border:none; background:none; color:var(--primary); cursor:pointer; font-weight:bold; font-size: 1.1rem;">← Back</button>
+        </div>
+
+        <div id="loader">⏳ Fetching tests from Google Sheets...</div>
+        <div id="category-view" class="grid"></div>
+        <div id="test-list-view" class="hidden"></div>
+    </div>
+
+<script>
+    // 1. SECURITY & INITIALIZATION
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFBULUle62aq2fAYmy0tlhYZ81JkzN38V_idbluc28h7TSwZ0Mw4_I_-0aKSQt66dR/exec";
+    let allTests = [];
+
+    window.onload = function() {
+        const user = localStorage.getItem('currentUser');
+        if (!user) {
+            // Redirect to login if not authenticated
+            window.location.href = 'login.html'; 
+        } else {
+            document.getElementById('displayPhone').innerText = "👤 " + user;
+            init(); // Only fetch data if logged in
+        }
+    };
+
+    function logout() {
+        if(confirm("Are you sure you want to logout?")) {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        }
+    }
+
+    // 2. DATA FETCHING
+    async function init() {
+        try {
+            const response = await fetch(`${SCRIPT_URL}?action=getMasterTests`);
+            allTests = await response.json();
+            
+            if (allTests.error) throw new Error(allTests.error);
+            
+            document.getElementById('loader').classList.add('hidden');
+            showCategories();
+        } catch (err) {
+            document.getElementById('loader').innerHTML = "❌ Error: " + err.message;
+        }
+    }
+
+    // 3. UI RENDERING
+    function showCategories() {
+        document.getElementById('page-title').innerText = "Categories";
+        document.getElementById('back-btn').classList.add('hidden');
+        document.getElementById('test-list-view').classList.add('hidden');
+        const catView = document.getElementById('category-view');
+        catView.classList.remove('hidden');
+
+        const categories = [...new Set(allTests.map(t => t.category))];
+        catView.innerHTML = categories.map(cat => `
+            <div class="card" onclick="showTests('${cat}')">
+                <h3>${cat}</h3>
+                <p>${allTests.filter(t => t.category === cat).length} Tests Available</p>
+            </div>
+        `).join('');
+    }
+
+    function showTests(cat) {
+        document.getElementById('page-title').innerText = cat + " Tests";
+        document.getElementById('back-btn').classList.remove('hidden');
+        document.getElementById('category-view').classList.add('hidden');
+        const testView = document.getElementById('test-list-view');
+        testView.classList.remove('hidden');
+
+        const filtered = allTests.filter(t => t.category === cat);
+        testView.innerHTML = filtered.map(t => {
+            const params = new URLSearchParams({
+                sheet: t.link,
+                name: t.name,
+                time: t.duration,
+                pos: t.pos,
+                neg: t.neg
+            }).toString();
+
+            return `
+                <div class="test-item">
+                    <div>
+                        <h4 style="margin:0">${t.name}</h4>
+                        <small style="color:#666">⏱ ${t.duration} min | Marks: +${t.pos}, -${t.neg}</small>
+                    </div>
+                    <a href="exam-portal.html?${params}" class="start-btn">Start Test</a>
+                </div>
+            `;
+        }).join('');
+    }
+</script>
+</body>
+</html>

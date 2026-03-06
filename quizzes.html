@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Quiz App</title>
+    
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root { 
+            --primary: #4a90e2; 
+            --success: #2ecc71; 
+            --error: #e74c3c; 
+            --bg: #f4f7f6; 
+            --text: #2d3436;
+        }
+        
+        body { 
+            background: var(--bg); 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 15px; 
+            color: var(--text);
+        }
+        
+        .quiz-container { 
+            background: white; 
+            width: 100%; 
+            max-width: 550px; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            position: relative;
+        }
+
+        .content { padding: 25px; }
+        
+        h2 { 
+            white-space: pre-line; 
+            line-height: 1.6; 
+            margin: 0 0 20px 0; 
+            font-size: 1.2rem; 
+        }
+        
+        .options-grid { display: grid; gap: 12px; }
+        
+        .option-item { 
+            padding: 15px; 
+            border: 2px solid #edf2f7; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            background: #fff;
+            font-weight: 500;
+        }
+
+        .option-item:hover:not(.disabled) {
+            border-color: var(--primary);
+            background: #f0f7ff;
+        }
+
+        .option-item.correct { 
+            background: #d4edda !important; 
+            border-color: var(--success) !important; 
+            color: #155724; 
+        }
+
+        .option-item.wrong { 
+            background: #f8d7da !important; 
+            border-color: var(--error) !important; 
+            color: #721c24; 
+        }
+
+        .option-item.disabled { pointer-events: none; }
+
+        #next-btn { 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            width: 100%; 
+            padding: 20px; 
+            font-size: 1.1rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: opacity 0.2s;
+        }
+
+        #next-btn:hover { opacity: 0.9; }
+        
+        #explanation-box {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+            border-left: 6px solid var(--primary);
+            line-height: 1.6;
+            white-space: pre-line;
+            font-size: 0.95rem;
+        }
+
+        .exp-label { 
+            color: var(--primary); 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            font-size: 0.75rem; 
+            display: block; 
+            margin-bottom: 5px; 
+        }
+
+        .hidden { display: none !important; }
+
+        /* AD MODAL STYLES */
+        #ad-modal { 
+            position: absolute; 
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center; 
+            z-index: 100; 
+            color: white;
+            text-align: center; 
+        }
+
+        #ad-image { 
+            max-width: 80%; 
+            max-height: 50%; 
+            border-radius: 10px; 
+            margin-bottom: 20px; 
+        }
+
+        .timer-box { position: relative; width: 60px; height: 60px; }
+        .timer-box svg { transform: rotate(-90deg); width: 60px; height: 60px; }
+        circle { fill: none; stroke-width: 4; stroke-dasharray: 176; stroke-dashoffset: 0; stroke-linecap: round; }
+        .bg-circle { stroke: #333; }
+        .progress-circle { stroke: var(--primary); transition: stroke-dashoffset 1s linear; }
+        .timer-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <div id="loading" style="text-align:center; padding:3rem;">
+        <p>Loading Questions...</p>
+    </div>
+
+    <div id="ad-modal" class="hidden">
+        <p style="margin-bottom: 10px; color: #aaa;">ADVERTISEMENT</p>
+        <img id="ad-image" src="https://firststatemontessori.org/wp-content/uploads/2023/11/FSMA_break_blog.cover_.png" alt="Break Time">
+        <div class="timer-box">
+            <svg>
+                <circle class="bg-circle" cx="30" cy="30" r="28"></circle>
+                <circle id="timer-progress" class="progress-circle" cx="30" cy="30" r="28"></circle>
+            </svg>
+            <div id="ad-countdown" class="timer-text">7</div>
+        </div>
+        <p style="margin-top: 15px;">Quiz will resume shortly...</p>
+    </div>
+
+    <div id="quiz-box" class="content hidden">
+        <h2 id="question"></h2>
+        <div class="options-grid" id="options-container"></div>
+    </div>
+    
+    <button id="next-btn" class="hidden">Next Question →</button>
+    
+    <div id="explanation-box" class="hidden">
+        <span class="exp-label">Explanation & Solution</span>
+        <div id="explanation-text"></div>
+    </div>
+</div>
+
+<script>
+    /** * CONFIGURATION
+     * Replace API_URL with your Google Apps Script Web App URL
+     */
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxU2n1UiBH5_EgKdHIMMIx69ClT9ASIeDL9e2kHjI2bnhqCX3SdIIUb9TERWAsEsIts/exec';
+    
+    let questions = [];
+    let currentIndex = 0;
+    let questionsSinceAd = 0;
+
+    /**
+     * INITIAL DATA LOAD
+     */
+    async function loadData() {
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            // Filter out any empty rows from the spreadsheet
+            questions = data.filter(q => q.question);
+            
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('quiz-box').classList.remove('hidden');
+            
+            startNewCycle();
+        } catch (e) { 
+            document.getElementById('loading').innerHTML = "<b>Error:</b> Could not load quiz data.<br>Check your API URL and permissions."; 
+            console.error(e);
+        }
+    }
+
+    function startNewCycle() {
+        shuffle(questions); // Randomize question order
+        currentIndex = 0;
+        showQuestion();
+    }
+
+    /**
+     * RENDERING THE QUESTION & SHUFFLED OPTIONS
+     */
+    function showQuestion() {
+        const data = questions[currentIndex];
+        
+        // Setup UI
+        document.getElementById('question').innerHTML = data.question;
+        document.getElementById('next-btn').classList.add('hidden');
+        document.getElementById('explanation-box').classList.add('hidden');
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = ''; 
+
+        // 1. Identify the correct answer key (a, b, c, or d)
+        const correctLetter = String(data.correct).toLowerCase().trim();
+        
+        // 2. Build an array of option objects
+        let optionsArray = [];
+        ['a', 'b', 'c', 'd'].forEach(letter => {
+            if (data[letter]) {
+                optionsArray.push({
+                    text: data[letter],
+                    isCorrect: (letter === correctLetter)
+                });
+            }
+        });
+
+        // 3. Shuffle the options for this question
+        shuffle(optionsArray);
+
+        // 4. Create and append the option elements
+        optionsArray.forEach(opt => {
+            const div = document.createElement('div');
+            div.className = 'option-item';
+            div.innerHTML = opt.text;
+            
+            // Set data attribute to track correctness without relying on index
+            div.dataset.isCorrect = opt.isCorrect;
+            
+            div.onclick = () => checkAnswer(div);
+            container.appendChild(div);
+        });
+
+        // Trigger MathJax to process the new content
+        if (window.MathJax) MathJax.typesetPromise();
+    }
+
+    /**
+     * LOGIC FOR CHECKING ANSWERS
+     */
+    function checkAnswer(selectedDiv) {
+        const data = questions[currentIndex];
+        const isUserCorrect = (selectedDiv.dataset.isCorrect === "true");
+        const allOptions = document.querySelectorAll('.option-item');
+        
+        // Disable all buttons and reveal the correct one
+        allOptions.forEach(opt => {
+            opt.classList.add('disabled');
+            if (opt.dataset.isCorrect === "true") {
+                opt.classList.add('correct');
+            }
+        });
+
+        // If user was wrong, highlight their choice in red
+        if (!isUserCorrect) {
+            selectedDiv.classList.add('wrong');
+        }
+
+        // Show Next button
+        document.getElementById('next-btn').classList.remove('hidden');
+
+        // Show Explanation
+        const expBox = document.getElementById('explanation-box');
+        const expText = document.getElementById('explanation-text');
+        
+        if (data.explanation) {
+            expText.innerHTML = data.explanation;
+            expBox.classList.remove('hidden');
+            
+            if (window.MathJax) {
+                MathJax.typesetPromise([expText]).then(() => {
+                    // Scroll to the explanation if it's off-screen
+                    expBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            }
+        }
+    }
+
+    /**
+     * NAVIGATION & AD LOGIC
+     */
+    document.getElementById('next-btn').onclick = () => {
+        currentIndex++;
+        questionsSinceAd++;
+        
+        if (questionsSinceAd >= 30) {
+            questionsSinceAd = 0;
+            showAd();
+        } else {
+            proceed();
+        }
+    };
+
+    function showAd() {
+        const modal = document.getElementById('ad-modal');
+        const progress = document.getElementById('timer-progress');
+        const text = document.getElementById('ad-countdown');
+        modal.classList.remove('hidden');
+        
+        let time = 7;
+        text.innerText = time;
+        progress.style.strokeDashoffset = 0;
+
+        const timer = setInterval(() => {
+            time--;
+            text.innerText = time;
+            // Update the circular progress bar
+            progress.style.strokeDashoffset = 176 - (time / 7) * 176;
+            
+            if (time <= 0) {
+                clearInterval(timer);
+                modal.classList.add('hidden');
+                proceed();
+            }
+        }, 1000);
+    }
+
+    function proceed() {
+        if (currentIndex < questions.length) {
+            showQuestion();
+        } else {
+            // If all questions are done, restart and re-shuffle
+            startNewCycle();
+        }
+    }
+
+    /**
+     * FISHER-YATES SHUFFLE ALGORITHM
+     */
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[array.length - 1 - (array.length - 1 - i)]] = [array[j], array[i]];
+            // Simplified standard swap:
+            const temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+        }
+    }
+
+    // Start the app
+    loadData();
+</script>
+
+</body>
+</html>

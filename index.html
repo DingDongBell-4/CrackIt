@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSC Portal - Dashboard</title>
+    <style>
+        :root { --primary: #28a745; --accent: #007bff; --bg: #f4f7f9; --danger: #dc3545; --locked: #6c757d; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; color: #333; }
+        
+        nav {
+            background: white; padding: 1rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .user-controls span { font-weight: bold; color: var(--accent); }
+        .logout-btn { color: var(--danger); text-decoration: none; margin-left: 15px; cursor: pointer; font-weight: 600; }
+
+        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        .welcome-section { background: white; padding: 20px; border-radius: 10px; border-left: 5px solid var(--primary); margin-bottom: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+
+        .card {
+            background: white; border-radius: 12px; padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease; display: flex; flex-direction: column; 
+            justify-content: space-between; position: relative; overflow: hidden;
+        }
+        .card:hover { transform: translateY(-5px); }
+        .card.material { border-top: 5px solid #ffc107; }
+        .card.quiz { border-top: 5px solid var(--primary); }
+        .card.test { border-top: 5px solid var(--danger); }
+
+        /* Locked State */
+        .card.locked { opacity: 0.8; background: #f8f9fa; }
+        .lock-badge {
+            position: absolute; top: 15px; right: 15px;
+            background: var(--danger); color: white;
+            padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: bold;
+        }
+
+        .btn {
+            display: inline-block; background: var(--primary); color: white;
+            padding: 12px; border-radius: 6px; text-decoration: none;
+            margin-top: 20px; font-weight: bold; text-align: center; transition: 0.2s;
+        }
+        .btn-locked { background: var(--locked) !important; }
+
+        #statusMsg { font-weight: 600; margin-top: 5px; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo"><strong>SSC EXAM PORTAL</strong></div>
+        <div class="user-controls">
+            <span id="displayPhone">👤 Loading...</span>
+            <a onclick="logout()" class="logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="welcome-section">
+            <h2 style="margin:0;">Welcome back!</h2>
+            <div id="statusMsg">Checking subscription...</div>
+        </div>
+
+        <div class="grid">
+            <div class="card material">
+                <div>
+                    <h3>📚 Study Materials</h3>
+                    <p>Free PDF notes, e-books, and daily updates for all users.</p>
+                </div>
+                <a href="materials.html" class="btn" style="background:#ffc107; color:#333;">Open Library</a>
+            </div>
+
+            <div class="card quiz">
+                <div>
+                    <h3>⚡ Daily Quiz</h3>
+                    <p>Test your speed with daily topic-wise short quizzes.</p>
+                </div>
+                <a href="quizzes.html" class="btn">Start Quiz</a>
+            </div>
+
+            <div id="testCard" class="card test">
+                <div>
+                    <h3>📝 Mock Tests</h3>
+                    <p>Full-length practice exams with detailed performance rank.</p>
+                </div>
+                <a href="tests.html" id="testBtn" onclick="return checkAccess(event)" class="btn" style="background:var(--danger);">Start Exam</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Use your published CSV link
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFS3OzViVjz7Zypd6GF_Pb_jtvt0j_fdp7qtrYyhd9OJBvbITiFRH9NugojnAC3Y1_sTFtOwtFRDfW/pub?gid=0&single=true&output=csv';
+        
+        let hasAccess = false;
+
+        window.onload = function() {
+            const user = localStorage.getItem('currentUser');
+            if (!user) { window.location.href = 'login.html'; return; }
+            document.getElementById('displayPhone').innerText = "👤 " + user;
+
+            // 1. Instant Cache Load
+            const cachedExpiry = localStorage.getItem('expiry_' + user);
+            if (cachedExpiry) { validateDate(cachedExpiry); }
+
+            // 2. Fetch Fresh Data
+            fetchSubscriptionData(user);
+        };
+
+        async function fetchSubscriptionData(user) {
+            try {
+                const response = await fetch(`${CSV_URL}&t=${Date.now()}`);
+                const text = await response.text();
+                
+                // Find row containing the user's phone number
+                const rows = text.split('\n');
+                const userRow = rows.find(row => row.includes(user));
+
+                if (userRow) {
+                    // REGEX: Look for DD-MM-YYYY anywhere in the row string
+                    const dateMatch = userRow.match(/(\d{2}-\d{2}-\d{4})/);
+                    
+                    if (dateMatch) {
+                        const expiryStr = dateMatch[0];
+                        localStorage.setItem('expiry_' + user, expiryStr);
+                        validateDate(expiryStr);
+                    } else {
+                        applyLock("Date format error");
+                    }
+                } else {
+                    localStorage.removeItem('expiry_' + user);
+                    applyLock("No Plan Found");
+                }
+            } catch (error) {
+                console.error("Fetch failed", error);
+                if (!hasAccess) applyLock("Network Error");
+            }
+        }
+
+        function validateDate(dateStr) {
+            const parts = dateStr.split('-');
+            const expiryDate = new Date(parts[2], parts[1] - 1, parts[0]);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (expiryDate >= today) {
+                hasAccess = true;
+                unlockUI(dateStr);
+            } else {
+                applyLock("Expired: " + dateStr);
+            }
+        }
+
+        function unlockUI(dateStr) {
+            const testCard = document.getElementById('testCard');
+            const testBtn = document.getElementById('testBtn');
+            const status = document.getElementById('statusMsg');
+
+            testCard.classList.remove('locked');
+            const badge = testCard.querySelector('.lock-badge');
+            if (badge) badge.remove();
+            
+            testBtn.innerText = "Start Exam";
+            testBtn.classList.remove('btn-locked');
+            status.innerHTML = `✅ Premium Access Active (Valid till: ${dateStr})`;
+            status.style.color = "var(--primary)";
+        }
+
+        function applyLock(reason) {
+            hasAccess = false;
+            const testCard = document.getElementById('testCard');
+            const testBtn = document.getElementById('testBtn');
+            const status = document.getElementById('statusMsg');
+
+            testCard.classList.add('locked');
+            if(!testCard.querySelector('.lock-badge')) {
+                testCard.insertAdjacentHTML('beforeend', `<div class="lock-badge">🔒 ${reason}</div>`);
+            }
+            testBtn.innerText = "Unlock Now";
+            testBtn.classList.add('btn-locked');
+            status.innerText = "⚠️ Premium content is locked. Check subscription.";
+            status.style.color = "var(--danger)";
+        }
+
+        function checkAccess(event) {
+            if (!hasAccess) {
+                event.preventDefault();
+                alert("Please purchase a premium plan to unlock Full Mock Tests.");
+                window.location.href = 'purchase.html';
+                return false;
+            }
+            return true;
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

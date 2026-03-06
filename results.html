@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSC Test Results - Review</title>
+    
+    <script>
+      window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #ffc107; }
+        body { margin: 0; padding: 20px; font-family: 'Segoe UI', sans-serif; background: #f2f4f8; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        #results-container {
+            background: #fff; padding: 30px; border-radius: 15px; 
+            box-shadow: 0 5px 25px rgba(0,0,0,0.1); text-align: center; margin-bottom: 30px;
+        }
+
+        .score-big { font-size: 3.5em; color: var(--primary); font-weight: bold; margin: 10px 0; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 25px 0; }
+        .stat-box { padding: 15px; border-radius: 10px; border-bottom: 4px solid #ddd; background: #f9f9f9; }
+        .stat-box.correct { border-color: var(--success); color: var(--success); }
+        .stat-box.wrong { border-color: var(--danger); color: var(--danger); }
+        .stat-box.skipped { border-color: var(--warning); color: #856404; }
+        .stat-box.unvisited { border-color: #6c757d; color: #6c757d; }
+        
+        .stat-val { font-size: 1.6em; font-weight: bold; display: block; }
+        .stat-label { font-size: 0.75em; text-transform: uppercase; font-weight: bold; }
+
+        .review-card {
+            background: #fff; padding: 25px; border-radius: 12px;
+            margin-bottom: 20px; box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+            border-left: 8px solid #ccc; text-align: left;
+        }
+        .review-card.correct-border { border-left-color: var(--success); }
+        .review-card.wrong-border { border-left-color: var(--danger); }
+        .review-card.skipped-border { border-left-color: var(--warning); }
+
+        .q-text { font-size: 1.1em; font-weight: 600; margin-bottom: 15px; display: block; white-space: pre-wrap; }
+        
+        .opt { padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 6px; display: flex; justify-content: space-between; }
+        .opt-correct { background: #d4edda; border-color: #c3e6cb; color: #155724; font-weight: bold; }
+        .opt-wrong { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        
+        .explanation-box {
+            margin-top: 15px; padding: 15px; background: #eef7ff;
+            border-radius: 8px; font-size: 0.95em; border-left: 4px solid var(--primary);
+            white-space: pre-wrap;
+        }
+
+        .badge { padding: 4px 10px; border-radius: 4px; font-size: 0.75em; color: white; font-weight: bold; margin-bottom: 10px; display: inline-block; }
+        button { padding: 12px 30px; border: none; border-radius: 8px; background: var(--primary); color: #fff; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="results-container">
+        <h2 id="test-display-name">Loading Results...</h2>
+        <div class="score-big" id="final-score">0.00</div>
+        <p id="marks-info"></p>
+        
+        <div class="stats-grid">
+            <div class="stat-box correct"><span class="stat-val" id="stat-correct">0</span><span class="stat-label">Correct</span></div>
+            <div class="stat-box wrong"><span class="stat-val" id="stat-wrong">0</span><span class="stat-label">Wrong</span></div>
+            <div class="stat-box skipped"><span class="stat-val" id="stat-skipped">0</span><span class="stat-label">Skipped</span></div>
+            <div class="stat-box unvisited"><span class="stat-val" id="stat-unvisit">0</span><span class="stat-label">Unvisited</span></div>
+        </div>
+        <button onclick="window.location.href='index.html'">Back to Dashboard</button>
+    </div>
+
+    <h2 style="text-align:center;">Review Your Answers</h2>
+    <div id="review-list"></div>
+</div>
+
+<script>
+    function loadResults() {
+        // Retrieve data from LocalStorage
+        const questions = JSON.parse(localStorage.getItem('last_questions') || "[]");
+        const userAnswers = JSON.parse(localStorage.getItem('last_answers') || "[]");
+        const testStatus = JSON.parse(localStorage.getItem('last_status') || "[]");
+        const meta = JSON.parse(localStorage.getItem('test_meta') || "{}");
+
+        if (!questions.length) {
+            document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>No Test Data Found!</h2>";
+            return;
+        }
+
+        document.getElementById('test-display-name').innerText = meta.name || "Test Summary";
+        
+        let correctCount = 0, wrongCount = 0, skippedCount = 0, unvisitedCount = 0;
+        let reviewHtml = "";
+
+        questions.forEach((q, i) => {
+            const uAns = userAnswers[i];
+            const qStatus = testStatus[i]; // 0:Unvisited, 1:Visited/NotAns, 2:Ans, 3:Marked
+
+            // Stats Logic
+            if (qStatus === 0) unvisitedCount++;
+            else if (uAns === "" || uAns === null) skippedCount++;
+            else if (uAns === q.answer) correctCount++;
+            else wrongCount++;
+
+            // UI Card Logic
+            let isCorrect = uAns === q.answer;
+            let isSkipped = (uAns === "" || uAns === null);
+            
+            let cardClass = isSkipped ? "skipped-border" : (isCorrect ? "correct-border" : "wrong-border");
+            let badgeText = isSkipped ? (qStatus === 0 ? "UNVISITED" : "SKIPPED") : (isCorrect ? "CORRECT" : "WRONG");
+            let badgeColor = isSkipped ? (qStatus === 0 ? "#6c757d" : "#ffc107") : (isCorrect ? "#28a745" : "#dc3545");
+
+            let optionsHtml = q.options.map((opt, idx) => {
+                const char = String.fromCharCode(97 + idx); // a, b, c, d
+                let optClass = "opt";
+                let icon = "";
+
+                if (char === q.answer) {
+                    optClass += " opt-correct";
+                    icon = "<span>✔ (Correct)</span>";
+                } else if (char === uAns && !isCorrect) {
+                    optClass += " opt-wrong";
+                    icon = "<span>✘ (Your Answer)</span>";
+                }
+                return `<div class="${optClass}"><div>${char.toUpperCase()}. ${opt}</div> ${icon}</div>`;
+            }).join('');
+
+            reviewHtml += `
+                <div class="review-card ${cardClass}">
+                    <span class="badge" style="background:${badgeColor}">${badgeText}</span>
+                    <div class="q-text"><strong>Q${i+1}:</strong> ${q.question}</div>
+                    <div class="options-container">${optionsHtml}</div>
+                    <div class="explanation-box">
+                        <strong>Explanation:</strong><br>${q.explanation || "No explanation provided for this question."}
+                    </div>
+                </div>
+            `;
+        });
+
+        // Score Calculation
+        const pos = parseFloat(meta.pos) || 1;
+        const neg = parseFloat(meta.neg) || 0;
+        const score = (correctCount * pos) - (wrongCount * neg);
+
+        document.getElementById('final-score').innerText = score.toFixed(2);
+        document.getElementById('marks-info').innerText = `Scoring: +${pos} / -${neg}`;
+        document.getElementById('stat-correct').innerText = correctCount;
+        document.getElementById('stat-wrong').innerText = wrongCount;
+        document.getElementById('stat-skipped').innerText = skippedCount;
+        document.getElementById('stat-unvisit').innerText = unvisitedCount;
+        document.getElementById('review-list').innerHTML = reviewHtml;
+
+        if (window.MathJax) MathJax.typesetPromise();
+    }
+
+    window.onload = loadResults;
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upgrade to Premium - SSC Portal</title>
+    <style>
+        :root { --primary: #28a745; --accent: #007bff; --bg: #f4f7f9; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; text-align: center; }
+        
+        .container { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h2 { color: #333; margin-bottom: 10px; }
+        p { color: #666; font-size: 0.95rem; }
+
+        .plan-card {
+            border: 2px solid var(--primary); border-radius: 10px;
+            padding: 20px; margin: 25px 0; background: #f0fff4;
+        }
+        .price { font-size: 2.5rem; font-weight: bold; color: #333; }
+        .price span { font-size: 1rem; color: #666; }
+
+        .features { text-align: left; margin: 20px 0; padding: 0; list-style: none; }
+        .features li { margin-bottom: 10px; color: #444; }
+        .features li::before { content: "✅ "; }
+
+        .payment-qr { width: 200px; height: 200px; background: #eee; margin: 20px auto; display: flex; align-items: center; justify-content: center; border: 1px dashed #ccc; }
+        
+        .upi-id { background: #e9ecef; padding: 10px; border-radius: 5px; font-family: monospace; font-weight: bold; display: block; margin-bottom: 20px; }
+
+        .btn-back { display: inline-block; margin-top: 20px; text-decoration: none; color: var(--accent); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Unlock Premium Access</h2>
+        <p>Get unlimited access to all Mock Tests and Rank Analytics.</p>
+
+        <div class="plan-card">
+            <h3>Yearly Master Plan</h3>
+            <div class="price">₹499<span>/year</span></div>
+            <ul class="features">
+                <li>100+ Full Length Mock Tests</li>
+                <li>Previous Year Solved Papers</li>
+                <li>Real-time All India Ranking</li>
+                <li>Detailed Subject Analysis</li>
+            </ul>
+        </div>
+
+        <hr>
+
+        <h3>Scan to Pay</h3>
+        <div class="payment-qr">
+            <img src="your-qr-code-link.png" alt="Payment QR Code" style="width:100%; height:100%; object-fit: contain;">
+        </div>
+        
+        <p>Or Pay via UPI ID:</p>
+        <span class="upi-id">yourname@upi</span>
+
+        <p style="font-size: 0.8rem; color: #dc3545;">*After payment, send your screenshot and registered phone number to <b>WhatsApp: +91 0000000000</b>. Access will be granted within 2 hours.</p>
+
+        <a href="index.html" class="btn-back">← Back to Dashboard</a>
+    </div>
+
+</body>
+</html>

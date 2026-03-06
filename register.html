@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register - SSC Portal</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; }
+        h2 { color: #007bff; text-align: center; margin-bottom: 1.5rem; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        button:disabled { background: #ccc; }
+        .footer { text-align: center; margin-top: 1rem; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Register</h2>
+        <input type="text" id="name" placeholder="Full Name">
+        <input type="email" id="email" placeholder="Email Address">
+        <input type="tel" id="phone" placeholder="Phone Number (Login ID)">
+        <input type="password" id="pass" placeholder="Create Password">
+        <button id="regBtn" onclick="register()">Create Account</button>
+        <div class="footer">Already registered? <a href="login.html">Login here</a></div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7i-Wyfqt2LnFQE3EOQcYeU14OHa51QQWyG6ciglLp1TyxeeyMSppC0wukgMfKectJzg/exec";
+
+        async function register() {
+            const btn = document.getElementById('regBtn');
+            const data = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value.trim(),
+                password: document.getElementById('pass').value
+            };
+
+            if (!data.name || !data.phone || !data.password) return alert("Fill Name, Phone, and Password!");
+
+            btn.disabled = true;
+            btn.innerText = "Checking availability...";
+
+            try {
+                // Step 1: Check for duplicate phone
+                const checkRes = await fetch(`${SCRIPT_URL}?action=check&phone=${data.phone}`);
+                const status = await checkRes.text();
+
+                if (status.trim() === "Exists") {
+                    alert("This phone number is already registered!");
+                    btn.disabled = false;
+                    btn.innerText = "Create Account";
+                    return;
+                }
+
+                // Step 2: Register User
+                btn.innerText = "Saving to Database...";
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify(data)
+                });
+
+                alert("Registration Successful!");
+                window.location.href = 'login.html';
+            } catch (err) {
+                alert("Server Error. Try again.");
+                btn.disabled = false;
+                btn.innerText = "Create Account";
+            }
+        }
+    </script>
+</body>
+</html>
