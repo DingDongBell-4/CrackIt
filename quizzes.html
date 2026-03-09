@@ -11,6 +11,8 @@
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
         :root { 
@@ -45,16 +47,24 @@
             position: relative;
         }
 
+        .content { padding: 25px; }
         
-        
-        h2 {  
-            line-height: 1.4; 
-            margin: -15px 0 5px 0; 
+        h2 { 
+            line-height: 1.6; 
+            margin: 0 0 20px 0; 
             font-size: 1.2rem; 
         }
-	.content { padding: 25px;}
+
+        /* Tighten Markdown Paragraphs */
+        h2 p, #explanation-text p {
+            margin: 0 0 12px 0;
+        }
         
-        .options-grid { display: grid; gap: 5px; }
+        h2 p:last-child, #explanation-text p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .options-grid { display: grid; gap: 12px; }
         
         .option-item { 
             padding: 15px; 
@@ -65,6 +75,7 @@
             background: #fff;
             font-weight: 500;
         }
+
 
         .option-item:hover:not(.disabled) {
             border-color: var(--primary);
@@ -100,59 +111,58 @@
         #next-btn:hover { opacity: 0.9; }
         
         #explanation-box {
-            padding: 20px;
+            padding: 15px 20px;
             background: #f8f9fa;
             border-top: 1px solid #eee;
             border-left: 6px solid var(--primary);
             line-height: 1.6;
-            white-space: pre-line;
-            font-size: 0.95rem;
+            font-size: 1.05rem;
         }
 
         .exp-label { 
             color: var(--primary); 
             font-weight: bold; 
             text-transform: uppercase; 
-            font-size: 0.75rem; 
+            font-size: 1.1rem; 
             display: block; 
-            margin-bottom: 5px; 
+            margin-bottom: 5px;
+            text-align: center;
         }
 
         .hidden { display: none !important; }
 
-/* Updated Table Styles to match reference design */
-.table-container { 
-    margin: 20px 0; 
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    overflow: hidden; /* Ensures borders round properly */
-}
+        /* Table Styles: Left Aligned */
+        .table-container { 
+            margin: 20px 0; 
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            overflow: hidden;
+        }
 
-.data-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    font-size: 1rem; 
-    background: #ffffff; 
-}
+        .data-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 1rem; 
+            background: #ffffff; 
+        }
 
-.data-table th { 
-    background-color: #4a90e2; /* Matching Blue Header */
-    color: #ffffff;
-    padding: 15px;
-    font-weight: 600;
-    text-align: center;
-    border-bottom: 2px solid #357abd;
-}
+        .data-table th { 
+            background-color: #4a90e2; 
+            color: #ffffff;
+            padding: 15px;
+            font-weight: 600;
+            text-align: left; /* Changed to Left */
+            border-bottom: 2px solid #357abd;
+        }
 
-.data-table td { 
-    padding: 15px; 
-    text-align: center; 
-    border-bottom: 1px solid #e5e7eb;
-    color: #374151;
-}
+        .data-table td { 
+            padding: 15px; 
+            text-align: left; /* Changed to Left */
+            border-bottom: 1px solid #e5e7eb;
+            color: #374151;
+        }
 
-/* Removes bottom border on last row for clean look */
-.data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:last-child td { border-bottom: none; }
 
         /* AD MODAL STYLES */
         #ad-modal { 
@@ -181,6 +191,7 @@
         .bg-circle { stroke: #333; }
         .progress-circle { stroke: var(--primary); transition: stroke-dashoffset 1s linear; }
         .timer-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; }
+
     </style>
 </head>
 <body>
@@ -216,8 +227,6 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
 <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbxU2n1UiBH5_EgKdHIMMIx69ClT9ASIeDL9e2kHjI2bnhqCX3SdIIUb9TERWAsEsIts/exec';
     
@@ -225,7 +234,15 @@
     let currentIndex = 0;
     let questionsSinceAd = 0;
 
-    // Table Parser
+    // Configure Marked to handle single line breaks
+    marked.setOptions({ breaks: true, gfm: true });
+
+    // Sanitizer helper to remove leading/trailing newlines
+    function sanitize(str) {
+        if (!str) return "";
+        return str.replace(/^[\s\r\n]+|[\s\r\n]+$/g, '');
+    }
+
     function parseTableData(input) {
         if (!input || typeof input !== 'string' || !input.includes('|||')) return input;
         return input.replace(/\|\|\|(.*?)\|\|\|/gs, (match, content) => {
@@ -249,7 +266,7 @@
             document.getElementById('quiz-box').classList.remove('hidden');
             startNewCycle();
         } catch (e) { 
-            document.getElementById('loading').innerHTML = "<b>Error:</b> Could not load quiz data."; 
+            document.getElementById('loading').innerHTML = "<b>Error:</b> Could not load data."; 
             console.error(e);
         }
     }
@@ -263,8 +280,8 @@
     function showQuestion() {
         const data = questions[currentIndex];
         
-        // Process: Markdown -> Table -> HTML
-        const mdParsed = marked.parse(data.question);
+        // 1. Sanitize -> 2. Marked (Bold) -> 3. Tables
+        const mdParsed = marked.parse(sanitize(data.question));
         document.getElementById('question').innerHTML = parseTableData(mdParsed);
         
         document.getElementById('next-btn').classList.add('hidden');
@@ -297,6 +314,7 @@
     function checkAnswer(selectedDiv) {
         const data = questions[currentIndex];
         const isUserCorrect = (selectedDiv.dataset.isCorrect === "true");
+        
         document.querySelectorAll('.option-item').forEach(opt => {
             opt.classList.add('disabled');
             if (opt.dataset.isCorrect === "true") opt.classList.add('correct');
@@ -306,10 +324,17 @@
         document.getElementById('next-btn').classList.remove('hidden');
 
         if (data.explanation) {
-            const mdExp = marked.parse(data.explanation);
-            document.getElementById('explanation-text').innerHTML = parseTableData(mdExp);
+            const expText = document.getElementById('explanation-text');
+            // 1. Sanitize -> 2. Marked (Bold) -> 3. Tables
+            const mdParsed = marked.parse(sanitize(data.explanation));
+            expText.innerHTML = parseTableData(mdParsed);
             document.getElementById('explanation-box').classList.remove('hidden');
-            if (window.MathJax) MathJax.typesetPromise([document.getElementById('explanation-text')]);
+            
+            if (window.MathJax) {
+                MathJax.typesetPromise([expText]).then(() => {
+                    MathJax.typesetPromise([expText]);
+                });
+            }
         }
     }
 
@@ -329,7 +354,6 @@
         const progress = document.getElementById('timer-progress');
         const text = document.getElementById('ad-countdown');
         modal.classList.remove('hidden');
-        
         let time = 7;
         text.innerText = time;
         progress.style.strokeDashoffset = 0;
@@ -350,15 +374,36 @@
         else startNewCycle();
     }
 
-    // Standard Fisher-Yates Shuffle
     function shuffle(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [array[i], array[j]] = [array[j], array[i]];
         }
     }
+window.addEventListener('keydown', (e) => {
+    const nextBtn = document.getElementById('next-btn');
+    const adModal = document.getElementById('ad-modal');
 
+    // 1. Ignore shortcuts if an Ad is showing
+    if (!adModal.classList.contains('hidden')) return;
+
+    // 2. "Next" Shortcut (Enter or 'n')
+    if ((e.key === 'Enter' || e.key.toLowerCase() === 'n') && !nextBtn.classList.contains('hidden')) {
+        nextBtn.click();
+        return;
+    }
+
+    // 3. Option Selection (Keys 1, 2, 3, 4)
+    const options = document.querySelectorAll('.option-item');
+    if (options.length > 0 && !options[0].classList.contains('disabled')) {
+        if (e.key === '1') options[0]?.click();
+        if (e.key === '2') options[1]?.click();
+        if (e.key === '3') options[2]?.click();
+        if (e.key === '4') options[3]?.click();
+    }
+});
     loadData();
 </script>
+
 </body>
 </html>
