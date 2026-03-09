@@ -45,16 +45,16 @@
             position: relative;
         }
 
-        .content { padding: 25px; }
         
-        h2 { 
-            white-space: pre-line; 
-            line-height: 1.6; 
-            margin: 0 0 20px 0; 
+        
+        h2 {  
+            line-height: 1.4; 
+            margin: -15px 0 5px 0; 
             font-size: 1.2rem; 
         }
+	.content { padding: 25px;}
         
-        .options-grid { display: grid; gap: 12px; }
+        .options-grid { display: grid; gap: 5px; }
         
         .option-item { 
             padding: 15px; 
@@ -216,6 +216,8 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
 <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbxU2n1UiBH5_EgKdHIMMIx69ClT9ASIeDL9e2kHjI2bnhqCX3SdIIUb9TERWAsEsIts/exec';
     
@@ -243,13 +245,11 @@
             const res = await fetch(API_URL);
             const data = await res.json();
             questions = data.filter(q => q.question);
-            
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('quiz-box').classList.remove('hidden');
-            
             startNewCycle();
         } catch (e) { 
-            document.getElementById('loading').innerHTML = "<b>Error:</b> Could not load quiz data.<br>Check your API URL and permissions."; 
+            document.getElementById('loading').innerHTML = "<b>Error:</b> Could not load quiz data."; 
             console.error(e);
         }
     }
@@ -263,8 +263,10 @@
     function showQuestion() {
         const data = questions[currentIndex];
         
-        // Rendered with table parser
-        document.getElementById('question').innerHTML = parseTableData(data.question);
+        // Process: Markdown -> Table -> HTML
+        const mdParsed = marked.parse(data.question);
+        document.getElementById('question').innerHTML = parseTableData(mdParsed);
+        
         document.getElementById('next-btn').classList.add('hidden');
         document.getElementById('explanation-box').classList.add('hidden');
         
@@ -272,17 +274,12 @@
         container.innerHTML = ''; 
 
         const correctLetter = String(data.correct).toLowerCase().trim();
-        
         let optionsArray = [];
         ['a', 'b', 'c', 'd'].forEach(letter => {
             if (data[letter]) {
-                optionsArray.push({
-                    text: data[letter],
-                    isCorrect: (letter === correctLetter)
-                });
+                optionsArray.push({ text: data[letter], isCorrect: (letter === correctLetter) });
             }
         });
-
         shuffle(optionsArray);
 
         optionsArray.forEach(opt => {
@@ -300,41 +297,25 @@
     function checkAnswer(selectedDiv) {
         const data = questions[currentIndex];
         const isUserCorrect = (selectedDiv.dataset.isCorrect === "true");
-        const allOptions = document.querySelectorAll('.option-item');
-        
-        allOptions.forEach(opt => {
+        document.querySelectorAll('.option-item').forEach(opt => {
             opt.classList.add('disabled');
-            if (opt.dataset.isCorrect === "true") {
-                opt.classList.add('correct');
-            }
+            if (opt.dataset.isCorrect === "true") opt.classList.add('correct');
         });
 
-        if (!isUserCorrect) {
-            selectedDiv.classList.add('wrong');
-        }
-
+        if (!isUserCorrect) selectedDiv.classList.add('wrong');
         document.getElementById('next-btn').classList.remove('hidden');
 
-        const expBox = document.getElementById('explanation-box');
-        const expText = document.getElementById('explanation-text');
-        
         if (data.explanation) {
-            // Rendered with table parser
-            expText.innerHTML = parseTableData(data.explanation);
-            expBox.classList.remove('hidden');
-            
-            if (window.MathJax) {
-                MathJax.typesetPromise([expText]).then(() => {
-                    expBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                });
-            }
+            const mdExp = marked.parse(data.explanation);
+            document.getElementById('explanation-text').innerHTML = parseTableData(mdExp);
+            document.getElementById('explanation-box').classList.remove('hidden');
+            if (window.MathJax) MathJax.typesetPromise([document.getElementById('explanation-text')]);
         }
     }
 
     document.getElementById('next-btn').onclick = () => {
         currentIndex++;
         questionsSinceAd++;
-        
         if (questionsSinceAd >= 30) {
             questionsSinceAd = 0;
             showAd();
@@ -352,12 +333,10 @@
         let time = 7;
         text.innerText = time;
         progress.style.strokeDashoffset = 0;
-
         const timer = setInterval(() => {
             time--;
             text.innerText = time;
             progress.style.strokeDashoffset = 176 - (time / 7) * 176;
-            
             if (time <= 0) {
                 clearInterval(timer);
                 modal.classList.add('hidden');
@@ -367,23 +346,19 @@
     }
 
     function proceed() {
-        if (currentIndex < questions.length) {
-            showQuestion();
-        } else {
-            startNewCycle();
+        if (currentIndex < questions.length) showQuestion();
+        else startNewCycle();
+    }
+
+    // Standard Fisher-Yates Shuffle
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
         }
     }
 
-    function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        // Simple swap
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-}
-
     loadData();
 </script>
-
 </body>
 </html>
