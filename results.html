@@ -109,7 +109,16 @@
             return tableHtml;
         });
 
-        // 2. Handle Bold: **text**
+        // 2. Handle Headers
+        formatted = formatted.replace(/^#### (.*$)/gim, '<h4 style="margin-bottom:10px;">$1</h4>');
+        formatted = formatted.replace(/^### (.*$)/gim, '<h3 style="margin-bottom:10px;">$1</h3>');
+
+        // 3. Handle Bullet Points
+        formatted = formatted.replace(/^\* (.*$)/gim, '<li>$1</li>');
+        formatted = formatted.replace(/(<li>.*<\/li>)/gim, '<ul style="margin: 10px 0; padding-left: 20px;">$1</ul>');
+        formatted = formatted.replace(/<\/ul>\s*<ul[^>]*>/gim, '');
+
+        // 4. Handle Bold
         formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
         return formatted;
