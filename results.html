@@ -115,7 +115,7 @@
 
         // 3. Handle Bullet Points
         formatted = formatted.replace(/^\* (.*$)/gim, '<li>$1</li>');
-        formatted = formatted.replace(/(<li>.*<\/li>)/gim, '<ul style="margin: -20px 0; padding-left: 20px;">$1</ul>');
+        formatted = formatted.replace(/(<li>.*<\/li>)/gim, '<ul style="margin: 10px 0; padding-left: 20px;">$1</ul>');
         formatted = formatted.replace(/<\/ul>\s*<ul[^>]*>/gim, '');
 
         // 4. Handle Bold
@@ -202,4 +202,5 @@
 </script>
 </body>
 </html>
+
 
