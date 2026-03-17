@@ -21,20 +21,45 @@
             --error: #e74c3c; 
             --bg: #f4f7f6; 
             --text: #2d3436;
+            --dark: #2d3436;
         }
         
         body { 
             background: var(--bg); 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             display: flex; 
+            flex-direction: column;
             align-items: center; 
             justify-content: center; 
             min-height: 100vh; 
             margin: 0; 
-            padding: 15px; 
+            padding: 20px; 
             color: var(--text);
         }
+
+        /* FIXED TOP STATS BAR - SEPARATE FROM QUIZ */
+        #stats-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: var(--dark);
+            color: white;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            padding: 10px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .stat-item { text-align: center; min-width: 80px; }
+        .stat-label { display: block; font-size: 0.6rem; text-transform: uppercase; color: #aaa; letter-spacing: 1px; }
+        .stat-val { font-size: 1.2rem; font-weight: 800; }
+        #stat-total { color: #74b9ff; }
+        #stat-correct { color: #55efc4; }
+        #stat-wrong { color: #ff7675; }
         
+        /* Main Quiz Container */
         .quiz-container { 
             background: white; 
             width: 100%; 
@@ -45,24 +70,14 @@
             display: flex; 
             flex-direction: column; 
             position: relative;
+            margin-top: 60px; /* Space for the fixed stats bar */
         }
 
         .content { padding: 25px; }
         
-        h2 { 
-            line-height: 1.6; 
-            margin: 0 0 20px 0; 
-            font-size: 1.2rem; 
-        }
-
-        /* Tighten Markdown Paragraphs */
-        h2 p, #explanation-text p {
-            margin: 0 0 12px 0;
-        }
-        
-        h2 p:last-child, #explanation-text p:last-child {
-            margin-bottom: 0;
-        }
+        h2 { line-height: 1.6; margin: 0 0 20px 0; font-size: 1.2rem; }
+        h2 p, #explanation-text p { margin: 0 0 12px 0; }
+        h2 p:last-child, #explanation-text p:last-child { margin-bottom: 0; }
         
         .options-grid { display: grid; gap: 12px; }
         
@@ -75,116 +90,33 @@
             background: #fff;
             font-weight: 500;
         }
-
-
-        .option-item:hover:not(.disabled) {
-            border-color: var(--primary);
-            background: #f0f7ff;
-        }
-
-        .option-item.correct { 
-            background: #d4edda !important; 
-            border-color: var(--success) !important; 
-            color: #155724; 
-        }
-
-        .option-item.wrong { 
-            background: #f8d7da !important; 
-            border-color: var(--error) !important; 
-            color: #721c24; 
-        }
-
+        .option-item:hover:not(.disabled) { border-color: var(--primary); background: #f0f7ff; }
+        .option-item.correct { background: #d4edda !important; border-color: var(--success) !important; color: #155724; }
+        .option-item.wrong { background: #f8d7da !important; border-color: var(--error) !important; color: #721c24; }
         .option-item.disabled { pointer-events: none; }
 
-        #next-btn { 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            width: 100%; 
-            padding: 20px; 
-            font-size: 1.1rem; 
-            font-weight: bold; 
-            cursor: pointer; 
-            transition: opacity 0.2s;
-        }
+        #next-btn { background: var(--primary); color: white; border: none; width: 100%; padding: 20px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
 
-        #next-btn:hover { opacity: 0.9; }
+        /* Subject Screen */
+        .subject-card { padding: 15px; background: #fff; border: 2px solid #edf2f7; border-radius: 10px; text-align: center; font-weight: bold; cursor: pointer; }
+        .subject-card.selected { background: var(--primary); color: white; border-color: var(--primary); }
+        #select-all-btn { margin-bottom: 15px; background: #edf2f7; border: 1px solid #cbd5e0; padding: 12px; border-radius: 10px; width: 100%; cursor: pointer; font-weight: 600; }
+        #start-quiz-btn { background: var(--success); color: white; border: none; padding: 15px; margin-top: 20px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; }
         
-        #explanation-box {
-            padding: 15px 20px;
-            background: #f8f9fa;
-            border-top: 1px solid #eee;
-            border-left: 6px solid var(--primary);
-            line-height: 1.6;
-            font-size: 1.05rem;
-        }
-
-        .exp-label { 
-            color: var(--primary); 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            font-size: 1.1rem; 
-            display: block; 
-            margin-bottom: 5px;
-            text-align: center;
-        }
+        #explanation-box { padding: 15px 20px; background: #f8f9fa; border-top: 1px solid #eee; border-left: 6px solid var(--primary); }
+        .exp-label { color: var(--primary); font-weight: bold; text-transform: uppercase; font-size: 1.1rem; display: block; margin-bottom: 5px; text-align: center; }
 
         .hidden { display: none !important; }
 
-        /* Table Styles: Left Aligned */
-        .table-container { 
-            margin: 20px 0; 
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            overflow: hidden;
-        }
+        /* Tables */
+        .table-container { margin: 20px 0; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; }
+        .data-table { width: 100%; border-collapse: collapse; background: #ffffff; }
+        .data-table th { background-color: #4a90e2; color: #ffffff; padding: 15px; text-align: left; }
+        .data-table td { padding: 15px; text-align: left; border-bottom: 1px solid #e5e7eb; }
 
-        .data-table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            font-size: 1rem; 
-            background: #ffffff; 
-        }
-
-        .data-table th { 
-            background-color: #4a90e2; 
-            color: #ffffff;
-            padding: 15px;
-            font-weight: 600;
-            text-align: left; /* Changed to Left */
-            border-bottom: 2px solid #357abd;
-        }
-
-        .data-table td { 
-            padding: 15px; 
-            text-align: left; /* Changed to Left */
-            border-bottom: 1px solid #e5e7eb;
-            color: #374151;
-        }
-
-        .data-table tr:last-child td { border-bottom: none; }
-
-        /* AD MODAL STYLES */
-        #ad-modal { 
-            position: absolute; 
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); 
-            display: flex; 
-            flex-direction: column;
-            align-items: center; 
-            justify-content: center; 
-            z-index: 100; 
-            color: white;
-            text-align: center; 
-        }
-
-        #ad-image { 
-            max-width: 80%; 
-            max-height: 50%; 
-            border-radius: 10px; 
-            margin-bottom: 20px; 
-        }
-
+        /* Ad Modal */
+        #ad-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; }
+        #ad-image { max-width: 80%; max-height: 50%; border-radius: 10px; margin-bottom: 20px; }
         .timer-box { position: relative; width: 60px; height: 60px; }
         .timer-box svg { transform: rotate(-90deg); width: 60px; height: 60px; }
         circle { fill: none; stroke-width: 4; stroke-dasharray: 176; stroke-dashoffset: 0; stroke-linecap: round; }
@@ -196,9 +128,31 @@
 </head>
 <body>
 
+<div id="stats-bar" class="hidden">
+    <div class="stat-item">
+        <span class="stat-label">Total</span>
+        <span id="stat-total" class="stat-val">0</span>
+    </div>
+    <div class="stat-item">
+        <span class="stat-label">Correct</span>
+        <span id="stat-correct" class="stat-val">0</span>
+    </div>
+    <div class="stat-item">
+        <span class="stat-label">Wrong</span>
+        <span id="stat-wrong" class="stat-val">0</span>
+    </div>
+</div>
+
 <div class="quiz-container">
     <div id="loading" style="text-align:center; padding:3rem;">
-        <p>Loading Questions...</p>
+        <p>Initializing App...</p>
+    </div>
+
+    <div id="subject-screen" class="content hidden">
+        <h2 style="text-align: center;">Choose Your Subjects</h2>
+        <button id="select-all-btn">Select All</button>
+        <div id="subject-list" class="options-grid"></div>
+        <button id="start-quiz-btn" class="hidden">Start Quiz →</button>
     </div>
 
     <div id="ad-modal" class="hidden">
@@ -233,11 +187,15 @@
     let questions = [];
     let currentIndex = 0;
     let questionsSinceAd = 0;
+    let selectedSubjects = [];
 
-    // Configure Marked to handle single line breaks
+    // Counter State
+    let countTotal = 0;
+    let countCorrect = 0;
+    let countWrong = 0;
+
     marked.setOptions({ breaks: true, gfm: true });
 
-    // Sanitizer helper to remove leading/trailing newlines
     function sanitize(str) {
         if (!str) return "";
         return str.replace(/^[\s\r\n]+|[\s\r\n]+$/g, '');
@@ -257,17 +215,76 @@
         });
     }
 
-    async function loadData() {
+    async function initApp() {
         try {
-            const res = await fetch(API_URL);
+            const res = await fetch(`${API_URL}?getSheets=true`);
+            const subjects = await res.json();
+            const listContainer = document.getElementById('subject-list');
+            const startBtn = document.getElementById('start-quiz-btn');
+            const selectAllBtn = document.getElementById('select-all-btn');
+            
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('subject-screen').classList.remove('hidden');
+
+            subjects.forEach(name => {
+                const card = document.createElement('div');
+                card.className = 'subject-card';
+                card.innerText = name;
+                card.onclick = () => {
+                    card.classList.toggle('selected');
+                    if (selectedSubjects.includes(name)) {
+                        selectedSubjects = selectedSubjects.filter(s => s !== name);
+                    } else {
+                        selectedSubjects.push(name);
+                    }
+                    updateUI(subjects.length);
+                };
+                listContainer.appendChild(card);
+            });
+
+            function updateUI(total) {
+                startBtn.classList.toggle('hidden', selectedSubjects.length === 0);
+                selectAllBtn.innerText = selectedSubjects.length === total ? "Deselect All" : "Select All";
+            }
+
+            selectAllBtn.onclick = () => {
+                const allCards = document.querySelectorAll('.subject-card');
+                const shouldSelectAll = selectedSubjects.length < subjects.length;
+                selectedSubjects = [];
+                allCards.forEach(card => {
+                    if (shouldSelectAll) {
+                        card.classList.add('selected');
+                        selectedSubjects.push(card.innerText);
+                    } else {
+                        card.classList.remove('selected');
+                    }
+                });
+                updateUI(subjects.length);
+            };
+
+            startBtn.onclick = loadQuizData;
+        } catch (e) {
+            document.getElementById('loading').innerHTML = "<b>Error:</b> Could not load subjects.";
+        }
+    }
+
+    async function loadQuizData() {
+        document.getElementById('subject-screen').classList.add('hidden');
+        document.getElementById('loading').classList.remove('hidden');
+        document.getElementById('loading').innerHTML = "<p>Mixing questions...</p>";
+
+        try {
+            const subjectsParam = encodeURIComponent(selectedSubjects.join(','));
+            const res = await fetch(`${API_URL}?subjects=${subjectsParam}`);
             const data = await res.json();
+            
             questions = data.filter(q => q.question);
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('quiz-box').classList.remove('hidden');
+            document.getElementById('stats-bar').classList.remove('hidden');
             startNewCycle();
-        } catch (e) { 
-            document.getElementById('loading').innerHTML = "<b>Error:</b> Could not load data."; 
-            console.error(e);
+        } catch (e) {
+            document.getElementById('loading').innerHTML = "<b>Error:</b> Could not load quiz data.";
         }
     }
 
@@ -279,11 +296,8 @@
 
     function showQuestion() {
         const data = questions[currentIndex];
-        
-        // 1. Sanitize -> 2. Marked (Bold) -> 3. Tables
         const mdParsed = marked.parse(sanitize(data.question));
         document.getElementById('question').innerHTML = parseTableData(mdParsed);
-        
         document.getElementById('next-btn').classList.add('hidden');
         document.getElementById('explanation-box').classList.add('hidden');
         
@@ -315,6 +329,14 @@
         const data = questions[currentIndex];
         const isUserCorrect = (selectedDiv.dataset.isCorrect === "true");
         
+        countTotal++;
+        if (isUserCorrect) countCorrect++;
+        else countWrong++;
+        
+        document.getElementById('stat-total').innerText = countTotal;
+        document.getElementById('stat-correct').innerText = countCorrect;
+        document.getElementById('stat-wrong').innerText = countWrong;
+
         document.querySelectorAll('.option-item').forEach(opt => {
             opt.classList.add('disabled');
             if (opt.dataset.isCorrect === "true") opt.classList.add('correct');
@@ -325,23 +347,17 @@
 
         if (data.explanation) {
             const expText = document.getElementById('explanation-text');
-            // 1. Sanitize -> 2. Marked (Bold) -> 3. Tables
             const mdParsed = marked.parse(sanitize(data.explanation));
             expText.innerHTML = parseTableData(mdParsed);
             document.getElementById('explanation-box').classList.remove('hidden');
-            
-            if (window.MathJax) {
-                MathJax.typesetPromise([expText]).then(() => {
-                    MathJax.typesetPromise([expText]);
-                });
-            }
+            if (window.MathJax) MathJax.typesetPromise([expText]);
         }
     }
 
     document.getElementById('next-btn').onclick = () => {
         currentIndex++;
         questionsSinceAd++;
-        if (questionsSinceAd >= 30) {
+        if (questionsSinceAd >= 50) {
             questionsSinceAd = 0;
             showAd();
         } else {
@@ -380,29 +396,25 @@
             [array[i], array[j]] = [array[j], array[i]];
         }
     }
-window.addEventListener('keydown', (e) => {
-    const nextBtn = document.getElementById('next-btn');
-    const adModal = document.getElementById('ad-modal');
 
-    // 1. Ignore shortcuts if an Ad is showing
-    if (!adModal.classList.contains('hidden')) return;
+    window.addEventListener('keydown', (e) => {
+        const nextBtn = document.getElementById('next-btn');
+        const adModal = document.getElementById('ad-modal');
+        if (!adModal.classList.contains('hidden')) return;
+        if ((e.key === 'Enter' || e.key.toLowerCase() === 'n') && !nextBtn.classList.contains('hidden')) {
+            nextBtn.click();
+            return;
+        }
+        const options = document.querySelectorAll('.option-item');
+        if (options.length > 0 && !options[0].classList.contains('disabled')) {
+            if (e.key === '1') options[0]?.click();
+            if (e.key === '2') options[1]?.click();
+            if (e.key === '3') options[2]?.click();
+            if (e.key === '4') options[3]?.click();
+        }
+    });
 
-    // 2. "Next" Shortcut (Enter or 'n')
-    if ((e.key === 'Enter' || e.key.toLowerCase() === 'n') && !nextBtn.classList.contains('hidden')) {
-        nextBtn.click();
-        return;
-    }
-
-    // 3. Option Selection (Keys 1, 2, 3, 4)
-    const options = document.querySelectorAll('.option-item');
-    if (options.length > 0 && !options[0].classList.contains('disabled')) {
-        if (e.key === '1') options[0]?.click();
-        if (e.key === '2') options[1]?.click();
-        if (e.key === '3') options[2]?.click();
-        if (e.key === '4') options[3]?.click();
-    }
-});
-    loadData();
+    initApp();
 </script>
 
 </body>
