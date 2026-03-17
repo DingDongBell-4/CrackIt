@@ -37,7 +37,6 @@
             color: var(--text);
         }
 
-        /* FIXED TOP STATS BAR - SEPARATE FROM QUIZ */
         #stats-bar {
             position: fixed;
             top: 0;
@@ -59,7 +58,6 @@
         #stat-correct { color: #55efc4; }
         #stat-wrong { color: #ff7675; }
         
-        /* Main Quiz Container */
         .quiz-container { 
             background: white; 
             width: 100%; 
@@ -70,7 +68,7 @@
             display: flex; 
             flex-direction: column; 
             position: relative;
-            margin-top: 60px; /* Space for the fixed stats bar */
+            margin-top: 60px;
         }
 
         .content { padding: 25px; }
@@ -97,7 +95,6 @@
 
         #next-btn { background: var(--primary); color: white; border: none; width: 100%; padding: 20px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
 
-        /* Subject Screen */
         .subject-card { padding: 15px; background: #fff; border: 2px solid #edf2f7; border-radius: 10px; text-align: center; font-weight: bold; cursor: pointer; }
         .subject-card.selected { background: var(--primary); color: white; border-color: var(--primary); }
         #select-all-btn { margin-bottom: 15px; background: #edf2f7; border: 1px solid #cbd5e0; padding: 12px; border-radius: 10px; width: 100%; cursor: pointer; font-weight: 600; }
@@ -108,13 +105,11 @@
 
         .hidden { display: none !important; }
 
-        /* Tables */
         .table-container { margin: 20px 0; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; }
         .data-table { width: 100%; border-collapse: collapse; background: #ffffff; }
         .data-table th { background-color: #4a90e2; color: #ffffff; padding: 15px; text-align: left; }
         .data-table td { padding: 15px; text-align: left; border-bottom: 1px solid #e5e7eb; }
 
-        /* Ad Modal */
         #ad-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; }
         #ad-image { max-width: 80%; max-height: 50%; border-radius: 10px; margin-bottom: 20px; }
         .timer-box { position: relative; width: 60px; height: 60px; }
@@ -189,7 +184,6 @@
     let questionsSinceAd = 0;
     let selectedSubjects = [];
 
-    // Counter State
     let countTotal = 0;
     let countCorrect = 0;
     let countWrong = 0;
@@ -198,7 +192,7 @@
 
     function sanitize(str) {
         if (!str) return "";
-        return str.replace(/^[\s\r\n]+|[\s\r\n]+$/g, '');
+        return str.toString().replace(/^[\s\r\n]+|[\s\r\n]+$/g, '');
     }
 
     function parseTableData(input) {
@@ -271,7 +265,7 @@
     async function loadQuizData() {
         document.getElementById('subject-screen').classList.add('hidden');
         document.getElementById('loading').classList.remove('hidden');
-        document.getElementById('loading').innerHTML = "<p>Mixing questions...</p>";
+        document.getElementById('loading').innerHTML = "<p>Loading questions...</p>";
 
         try {
             const subjectsParam = encodeURIComponent(selectedSubjects.join(','));
@@ -279,12 +273,17 @@
             const data = await res.json();
             
             questions = data.filter(q => q.question);
+            
+            if (questions.length === 0) {
+                throw new Error("No questions found for selection.");
+            }
+
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('quiz-box').classList.remove('hidden');
             document.getElementById('stats-bar').classList.remove('hidden');
             startNewCycle();
         } catch (e) {
-            document.getElementById('loading').innerHTML = "<b>Error:</b> Could not load quiz data.";
+            document.getElementById('loading').innerHTML = `<b>Error:</b> ${e.message}`;
         }
     }
 
