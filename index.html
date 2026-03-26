@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSC Portal - Dashboard</title>
     <style>
-        :root { --primary: #28a745; --accent: #007bff; --bg: #f4f7f9; --danger: #dc3545; --locked: #6c757d; }
+        :root { --primary: #28a745; --accent: #007bff; --bg: #f4f7f9; --danger: #dc3545; --locked: #6c757d; --quiz-purple: #6f42c1;}
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; color: #333; }
         
         nav {
@@ -31,7 +31,8 @@
         .card.material { border-top: 5px solid #ffc107; }
         .card.quiz { border-top: 5px solid var(--primary); }
         .card.test { border-top: 5px solid var(--danger); }
-
+	.card.topic-quiz { border-top: 5px solid var(--quiz-purple); }
+	.card.updates { border-top: 5px solid var(--accent); }
         /* Locked State */
         .card.locked { opacity: 0.8; background: #f8f9fa; }
         .lock-badge {
@@ -80,8 +81,17 @@
                     <h3>⚡ Daily Quiz</h3>
                     <p>Test your speed with daily topic-wise short quizzes.</p>
                 </div>
-                <a href="quizzes.html" class="btn">Start Quiz</a>
+                <a href="dailyquiz.html" class="btn">Start Quiz</a>
             </div>
+	<!-- New Quizzes Card -->
+<div id="quizCard" class="card topic-quiz">
+    <div>
+        <span class="lock-badge" style="display:none;" id="quizBadge"></span>
+        <h3>📖 Topic Quizzes</h3>
+        <p>Subject-wise practice sets for History, Math, English, and more.</p>
+    </div>
+    <a href="quizzes.html" id="quizBtn" onclick="return checkAccess(event)" class="btn" style="background:var(--quiz-purple);">Explore Topics</a>
+</div>
 
             <div id="testCard" class="card test">
                 <div>
@@ -90,6 +100,14 @@
                 </div>
                 <a href="tests.html" id="testBtn" onclick="return checkAccess(event)" class="btn" style="background:var(--danger);">Start Exam</a>
             </div>
+		<!-- New Updates Card -->
+<div class="card updates">
+    <div>
+        <h3>📢 Latest Updates</h3>
+        <p>Stay informed with the latest SSC notifications, exam dates, and result alerts.</p>
+    </div>
+    <a href="updates.html" class="btn" style="background:var(--accent);">View All Updates</a>
+</div>
         </div>
     </div>
 

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Quiz</title>
+    <style>
+        :root { 
+            --primary: #3a86ff; --folder: #8338ec; --bg: #f4f7f6; 
+            --card-bg: #ffffff; --text: #000000; --border: #edf2f7; --nav-bg: #ffffff;
+            --locked-bg: #f8f9fa; --accent-red: #e63946; --success: #2ec4b6;
+        }
+        [data-theme="dark"] {
+            --bg: #121212; --card-bg: #1e1e1e; --text: #ffffff;
+            --border: #333333; --nav-bg: #1e1e1e; --primary: #6ab0ff;
+            --locked-bg: #252525;
+        }
+        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; color: var(--text); transition: 0.3s; }
+        
+        .top-bar {
+            background: var(--nav-bg); padding: 15px 25px; 
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000;
+        }
+
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+
+        .control-ribbon {
+            display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+            background: var(--card-bg); padding: 15px; border-radius: 12px;
+            border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+
+        .control-ribbon input, .control-ribbon select {
+            padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text); font-size: 0.95rem; outline: none;
+        }
+        .control-ribbon input { flex: 2; min-width: 200px; }
+        .control-ribbon select { flex: 1; min-width: 140px; cursor: pointer; }
+
+        .breadcrumb-nav { 
+            background: var(--card-bg); padding: 12px 20px; border-radius: 12px; 
+            margin-bottom: 25px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border);
+        }
+
+        .nav-btn { 
+            cursor: pointer; background: var(--primary); color: white; 
+            border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; text-decoration: none;
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+        
+        .card {
+            background: var(--card-bg); padding: 30px 20px; border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); cursor: pointer;
+            transition: all 0.3s ease; border: 1px solid var(--border); text-align: center;
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .card.folder-card { border-bottom: 5px solid var(--folder); }
+        .card.file-card { border-bottom: 5px solid var(--primary); }
+        
+        .card.locked {
+            background: var(--locked-bg); cursor: not-allowed; opacity: 0.8; filter: grayscale(0.6);
+            border-bottom: 5px solid #6c757d !important;
+        }
+
+        .time-badge { font-size: 0.75rem; margin-top: 12px; padding: 5px 12px; border-radius: 20px; background: rgba(0,0,0,0.04); font-weight: 500; }
+        .hidden { display: none !important; }
+        .theme-toggle { cursor: pointer; background: var(--border); border: none; padding: 8px 15px; border-radius: 20px; color: var(--text); }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div style="font-weight: 800;">🚀 CrackIt Portal</div>
+        <a href="index.html" class="nav-btn">📊 Dashboard</a>
+    </div>
+    <div class="top-bar-right">
+        <button class="theme-toggle" onclick="toggleFS()" id="fs-btn">🖥️ Fullscreen</button>
+        <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙 Night Mode</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="control-ribbon">
+        <input type="text" id="search-input" placeholder="🔍 Search quizzes or folders..." onkeyup="renderExplorer()">
+        
+        <select id="status-filter" onchange="renderExplorer()">
+            <option value="all">All Status</option>
+            <option value="available">✅ Available</option>
+            <option value="locked">🔒 Locked</option>
+        </select>
+
+        <select id="sort-select" onchange="renderExplorer()">
+            <option value="name-az">Name (A-Z)</option>
+            <option value="name-za">Name (Z-A)</option>
+            <option value="date-new">Date (Newest)</option>
+            <option value="date-old">Date (Oldest)</option>
+        </select>
+    </div>
+
+    <div class="breadcrumb-nav">
+        <button class="nav-btn" onclick="goHome()">🏠 Home</button>
+        <button id="back-btn" class="nav-btn hidden" onclick="goBack()">⬅ Back</button>
+        <span id="current-path" style="margin-left: 10px; opacity: 0.7;">Root</span>
+    </div>
+
+    <div id="explorer-grid" class="grid">
+        <div style="grid-column: 1/-1; text-align: center; padding: 50px;">⏳ Syncing with Drive...</div>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwidAzFenUbcgcsSYFW8sN2Qy_41M8u2X7jEMPC2nqncB_d1J__9p1qiJdKcAg3lA-laA/exec";
+    
+    let allData = [];
+    let currentPath = [];
+
+    async function initExplorer() {
+        const grid = document.getElementById('explorer-grid');
+        try {
+            const res = await fetch(SCRIPT_URL);
+            if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+            allData = await res.json();
+            if (!Array.isArray(allData) || allData.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px;"><h3>📭 No Sheets Found</h3></div>`;
+            } else {
+                renderExplorer();
+            }
+        } catch (e) { 
+            grid.innerHTML = `<div style="grid-column: 1/-1; background: #ffe3e3; color: #b91c1c; padding: 20px; border-radius: 10px;"><h3>❌ Connection Failed</h3><p>${e.message}</p></div>`;
+        }
+    }
+
+    function getLockStatus(fullName) {
+        if (!fullName.includes('|')) return { isAvailable: true, cleanName: fullName, dateObj: new Date(0) };
+
+        const parts = fullName.split('|');
+        const name = parts[0].trim();
+        const dateStr = parts[1].trim(); 
+        const timeStr = parts[2].trim(); 
+
+        const [day, month, year] = dateStr.split('-').map(Number);
+        const [hour, min] = timeStr.split('.').map(Number);
+
+        const unlockDate = new Date(year, month - 1, day, hour, min);
+        const now = new Date();
+
+        return {
+            isAvailable: now >= unlockDate,
+            cleanName: name,
+            unlockText: `${dateStr} @ ${timeStr.replace('.', ':')}`,
+            dateObj: unlockDate
+        };
+    }
+
+    function renderExplorer() {
+        const grid = document.getElementById('explorer-grid');
+        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+        const statusFilter = document.getElementById('status-filter').value;
+        const sortType = document.getElementById('sort-select').value;
+        
+        grid.innerHTML = '';
+        document.getElementById('current-path').innerText = currentPath.length === 0 ? "Root" : currentPath.join(" / ");
+        currentPath.length > 0 ? document.getElementById('back-btn').classList.remove('hidden') : document.getElementById('back-btn').classList.add('hidden');
+
+        let folders = new Set();
+        let files = [];
+
+        allData.forEach(item => {
+            const folderPath = item.folder || "";
+            const pathArr = folderPath === "" ? [] : folderPath.split('/');
+            const isMatchPath = currentPath.every((folder, i) => pathArr[i] === folder);
+            
+            if (isMatchPath) {
+                if (pathArr.length > currentPath.length) {
+                    const folderName = pathArr[currentPath.length];
+                    if (folderName.toLowerCase().includes(searchTerm)) folders.add(folderName);
+                } else if (pathArr.length === currentPath.length) {
+                    const status = getLockStatus(item.name);
+                    const matchesSearch = status.cleanName.toLowerCase().includes(searchTerm);
+                    const matchesStatus = (statusFilter === 'all') || 
+                                         (statusFilter === 'available' && status.isAvailable) || 
+                                         (statusFilter === 'locked' && !status.isAvailable);
+
+                    if (matchesSearch && matchesStatus) {
+                        item.meta = status; // Attach status for sorting
+                        files.push(item);
+                    }
+                }
+            }
+        });
+
+        // Sort Files
+        files.sort((a, b) => {
+            switch (sortType) {
+                case 'name-az': return a.meta.cleanName.localeCompare(b.meta.cleanName);
+                case 'name-za': return b.meta.cleanName.localeCompare(a.meta.cleanName);
+                case 'date-new': return b.meta.dateObj - a.meta.dateObj;
+                case 'date-old': return a.meta.dateObj - b.meta.dateObj;
+                default: return 0;
+            }
+        });
+
+        // Render Folders
+        Array.from(folders).sort().forEach(name => {
+            const card = document.createElement('div');
+            card.className = 'card folder-card';
+            card.innerHTML = `<span style="font-size:2rem">📁</span><h3 style="margin-top:10px;">${name}</h3>`;
+            card.onclick = () => { currentPath.push(name); renderExplorer(); };
+            grid.appendChild(card);
+        });
+
+        // Render Files
+        files.forEach(file => {
+            const card = document.createElement('div');
+            card.className = `card file-card ${file.meta.isAvailable ? '' : 'locked'}`;
+            card.innerHTML = `
+                <span style="font-size:2rem">${file.meta.isAvailable ? '📝' : '🔒'}</span>
+                <h3 style="margin: 15px 0 5px 0; font-size: 1.1rem;">${file.meta.cleanName}</h3>
+                <div class="time-badge" style="color:${file.meta.isAvailable ? 'var(--success)' : 'var(--accent-red)'}">
+                    ${file.meta.isAvailable ? '✅ Available' : '📅 Opens: ' + file.meta.unlockText}
+                </div>`;
+            card.onclick = () => {
+                if (file.meta.isAvailable) window.location.href = `quizinterface.html?id=${file.id}`;
+                else alert(`Access Denied: Unlocks on ${file.meta.unlockText}`);
+            };
+            grid.appendChild(card);
+        });
+    }
+
+    function goBack() { currentPath.pop(); renderExplorer(); }
+    function goHome() { currentPath = []; renderExplorer(); }
+    function toggleTheme() {
+        const body = document.body;
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', newTheme);
+        document.getElementById('theme-btn').innerText = newTheme === 'dark' ? '☀️ Day Mode' : '🌙 Night Mode';
+    }
+    function toggleFS() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else if (document.exitFullscreen) document.exitFullscreen();
+    }
+
+    window.onload = initExplorer;
+</script>
+</body>
+</html>

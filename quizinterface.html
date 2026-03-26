@@ -9,32 +9,75 @@
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
     <style>
-        :root { --primary: #3a86ff; --folder: #8338ec; --success: #2ecc71; --error: #e74c3c; --bg: #f4f7f6; --card-bg: #ffffff; --text: #000000; --border: #edf2f7; --nav-bg: #ffffff; }
-        [data-theme="dark"] { --bg: #121212; --card-bg: #1e1e1e; --text: #ffffff; --border: #333333; --nav-bg: #1e1e1e; --primary: #6ab0ff; }
-        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; color: var(--text); transition: 0.3s; }
+        :root { 
+            --primary: #3a86ff; 
+            --folder: #8338ec; 
+            --success: #2ecc71; 
+            --error: #e74c3c; 
+            --bg: #f4f7f6; 
+            --card-bg: #ffffff; 
+            --text: #000000; 
+            --border: #edf2f7; 
+            --nav-bg: #ffffff; 
+            --table-head: #4a90e2;
+        }
+
+        [data-theme="dark"] { 
+            --bg: #121212; 
+            --card-bg: #1e1e1e; 
+            --text: #ffffff; 
+            --border: #333333; 
+            --nav-bg: #1e1e1e; 
+            --primary: #6ab0ff;
+            --table-head: #2c5282;
+        }
+
+        body { background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; color: var(--text); transition: 0.3s; }
         .top-bar { background: var(--nav-bg); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
         .top-bar-right { display: flex; gap: 10px; }
         .quiz-window { display: flex; align-items: center; justify-content: center; min-height: 85vh; padding: 15px; }
-        .quiz-container { background: var(--card-bg); width: 100%; max-width: 700px; border-radius: 15px; box-shadow: 0 10px 10px rgba(0,0,0,0.2); overflow: hidden; border: 1px solid var(--border); }
-        #question { font-size: 1.4rem; padding: 25px; font-weight: 700; }
-        #options-container { display: grid; gap: 12px; padding: 0 25px 25px 25px; }
-        .option-item { padding: 15px; border: 2px solid var(--border); border-radius: 10px; cursor: pointer; font-size: 1.15rem; transition: 0.2s; }
+        .quiz-container { background: var(--card-bg); width: 100%; max-width: 800px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); overflow: hidden; border: 1px solid var(--border); }
+
+        #question { font-size: 1.3rem; padding: 25px; font-weight: 600; line-height: 1.5; }
+        #options-container { display: grid; gap: 12px; padding: 0 25px 20px 25px; }
+        
+        .option-item { padding: 18px; border: 2px solid var(--border); border-radius: 10px; cursor: pointer; font-size: 1.1rem; transition: all 0.2s ease; background: var(--card-bg); }
+        .option-item:hover { border-color: var(--primary); background: rgba(58, 134, 255, 0.05); }
+        
         .option-item.correct { background: #d4edda !important; border-color: var(--success) !important; color: #155724; }
         .option-item.wrong { background: #f8d7da !important; border-color: var(--error) !important; color: #721c24; }
+        [data-theme="dark"] .option-item.correct { background: #1b4332 !important; color: #d4edda; }
+        [data-theme="dark"] .option-item.wrong { background: #4a1212 !important; color: #f8d7da; }
         .option-item.disabled { pointer-events: none; }
-        #explanation-box { padding: 15px 20px; background: rgba(0,0,0,0.02); border-left: 6px solid var(--primary); margin: 0 25px 25px 25px; }
-        #next-btn { background: var(--primary); color: white; border: none; width: 100%; padding: 20px; font-size: 1.1rem; cursor: pointer; font-weight: bold; }
+
+        .table-container { margin: 20px 0; border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; background: var(--card-bg); }
+        .data-table th { background-color: var(--table-head); color: #ffffff; padding: 12px; text-align: left; }
+        .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+
+        /* UI Elements */
+        #explanation-box { padding: 20px; background: rgba(58, 134, 255, 0.08); border-top: 5px solid var(--primary); border-left: 5px solid var(--primary); margin: 25px; border-radius: 0 8px 8px 0; }
+        
+        /* Spacing for Next Button when it appears between items */
+        .btn-wrapper { padding: 0 25px 5px 25px; }
+        #next-btn { background: var(--primary); color: white; border: none; width: 100%; padding: 18px; font-size: 1.1rem; cursor: pointer; font-weight: bold; transition: 0.2s; border-radius: 10px; }
+        #next-btn:hover { filter: brightness(1.1); }
+        
         .nav-btn { cursor: pointer; background: var(--folder); color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 0.85rem; }
         .theme-toggle { cursor: pointer; background: var(--border); border: none; padding: 8px 15px; border-radius: 20px; color: var(--text); font-weight: bold; }
         .hidden { display: none !important; }
+
+        #question h3, #explanation-text h3 { margin: 10px 0; }
+        #question ul, #explanation-text ul { padding-left: 25px; }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
     <div style="display: flex; align-items: center; gap: 15px;">
-        <div style="font-weight: bold;">🚀 CrackIt Portal</div>
+        <div style="font-weight: bold; font-size: 1.2rem;">🚀 CrackIt</div>
         <a href="index.html" class="nav-btn">📊 Dashboard</a>
     </div>
     <div class="top-bar-right">
@@ -45,17 +88,26 @@
 
 <div class="quiz-window">
     <div class="quiz-container">
-        <div id="quiz-loader" style="text-align: center; padding: 80px;">Loading Questions...</div>
+        <div id="quiz-loader" style="text-align: center; padding: 80px;">
+            <div style="font-size: 1.5rem; margin-bottom: 10px;">Loading Questions...</div>
+            <small>Fetching your custom sheet data</small>
+        </div>
+
         <div id="quiz-body" class="hidden">
-            <div style="padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.02);">
                 <button onclick="location.href='index.html'" style="background:none; border:none; color:var(--error); cursor:pointer; font-weight:bold;">✖ Stop Quiz</button>
-                <span id="q-progress" style="font-weight:bold;"></span>
+                <span id="q-progress" style="font-weight:bold; color: var(--primary);"></span>
             </div>
+            
             <div id="question"></div>
             <div id="options-container"></div>
-            <button id="next-btn" class="hidden">Next Question →</button>
+            
+            <div class="btn-wrapper">
+                <button id="next-btn" class="hidden">Next Question →</button>
+            </div>
+
             <div id="explanation-box" class="hidden">
-                <strong style="color:var(--primary)">Explanation</strong>
+                <div style="margin-bottom: 8px;"><strong style="color:var(--primary)">💡 Explanation</strong></div>
                 <div id="explanation-text"></div>
             </div>
         </div>
@@ -63,6 +115,8 @@
 </div>
 
 <script>
+    marked.setOptions({ breaks: true, gfm: true });
+
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxVXyy_kCp3hh58cOIeD4xqNMXJV0Y7GkUd_2bimS1l1gp35KcX9YzjLTQHB1pwRbc6/exec";
     let activeQuestions = [];
     let currentIndex = 0;
@@ -79,16 +133,42 @@
             document.getElementById('quiz-loader').classList.add('hidden');
             document.getElementById('quiz-body').classList.remove('hidden');
             displayQuestion();
-        } catch (e) { window.location.href = 'index.html'; }
+        } catch (e) { 
+            console.error("Load Error:", e);
+            alert("Failed to load quiz.");
+            window.location.href = 'index.html'; 
+        }
+    }
+
+    function formatCustomTable(text) {
+        if (!text) return "";
+        return text.replace(/\|\|\|([\s\S]*?)\|\|\|/g, (match, tableContent) => {
+            const rows = tableContent.trim().split('||').filter(r => r.trim() !== "");
+            let html = '<div class="table-container"><table class="data-table">';
+            rows.forEach((row, index) => {
+                const columns = row.split('|').filter(col => col.trim() !== "");
+                html += '<tr>';
+                columns.forEach(col => {
+                    const tag = (index === 0) ? 'th' : 'td';
+                    const cellContent = marked.parseInline(col.trim());
+                    html += `<${tag}>${cellContent}</${tag}>`;
+                });
+                html += '</tr>';
+            });
+            html += '</table></div>';
+            return html;
+        });
     }
 
     function displayQuestion() {
         const data = activeQuestions[currentIndex];
-        document.getElementById('q-progress').innerText = `Q${currentIndex + 1} / ${activeQuestions.length}`;
-        document.getElementById('question').innerHTML = marked.parse(data.question);
+        document.getElementById('q-progress').innerText = `Question ${currentIndex + 1} of ${activeQuestions.length}`;
+        
+        const questionHtml = formatCustomTable(data.question);
+        document.getElementById('question').innerHTML = marked.parse(questionHtml);
+        
         document.getElementById('next-btn').classList.add('hidden');
         document.getElementById('explanation-box').classList.add('hidden');
-        
         const container = document.getElementById('options-container');
         container.innerHTML = ''; 
 
@@ -96,56 +176,65 @@
             if (data[l]) {
                 const div = document.createElement('div');
                 div.className = 'option-item';
-                div.innerHTML = data[l];
+                const tableProcessed = formatCustomTable(data[l]);
+                div.innerHTML = marked.parseInline(tableProcessed);
+                
                 div.onclick = () => {
-                    document.querySelectorAll('.option-item').forEach(opt => opt.classList.add('disabled'));
-                    const correct = data.correct.toLowerCase().trim();
-                    if (l === correct) div.classList.add('correct');
-                    else {
+                    const allOptions = document.querySelectorAll('.option-item');
+                    allOptions.forEach(opt => opt.classList.add('disabled'));
+                    const correctChoice = data.correct.toLowerCase().trim();
+                    
+                    if (l === correctChoice) {
+                        div.classList.add('correct');
+                    } else {
                         div.classList.add('wrong');
-                        const cIdx = ['a','b','c','d'].indexOf(correct);
-                        document.querySelectorAll('.option-item')[cIdx]?.classList.add('correct');
+                        const correctIdx = ['a','b','c','d'].indexOf(correctChoice);
+                        if (allOptions[correctIdx]) allOptions[correctIdx].classList.add('correct');
                     }
+                    
+                    // Show Next Button FIRST
                     document.getElementById('next-btn').classList.remove('hidden');
+
+                    // Show Explanation Box SECOND
                     if (data.explanation) {
-                        document.getElementById('explanation-text').innerHTML = marked.parse(data.explanation);
+                        const explHtml = formatCustomTable(data.explanation);
+                        document.getElementById('explanation-text').innerHTML = marked.parse(explHtml);
                         document.getElementById('explanation-box').classList.remove('hidden');
                     }
+                    
                     if(window.MathJax) MathJax.typesetPromise();
                 };
                 container.appendChild(div);
             }
         });
+        
         if(window.MathJax) MathJax.typesetPromise();
     }
 
-    function toggleFS() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
-            document.getElementById('fs-btn').innerText = "🪟 Exit Full";
+    // Standard control logic
+    document.getElementById('next-btn').onclick = () => {
+        currentIndex++;
+        if (currentIndex < activeQuestions.length) {
+            displayQuestion();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
-            document.exitFullscreen();
-            document.getElementById('fs-btn').innerText = "🖥️ Fullscreen";
+            alert("Quiz Completed!");
+            window.location.href = 'index.html';
         }
+    };
+
+    function toggleFS() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
     }
 
     function toggleTheme() {
         const target = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', target);
-        document.getElementById('theme-btn').innerText = target === 'dark' ? '☀️ Day Mode' : '🌙 Night Mode';
         localStorage.setItem('theme', target);
     }
     
-    if (localStorage.getItem('theme') === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        document.getElementById('theme-btn').innerText = '☀️ Day Mode';
-    }
-
-    document.getElementById('next-btn').onclick = () => {
-        currentIndex++;
-        if (currentIndex < activeQuestions.length) displayQuestion();
-        else window.location.href = 'index.html';
-    };
+    if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
 
     window.onload = startQuiz;
 </script>
