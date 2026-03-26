@@ -3,63 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSC Practice Explorer Pro</title>
-    
-    <script>
-        window.MathJax = { 
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] },
-            svg: { fontCache: 'global' }
-        };
-    </script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
+    <title>Dashboard - CrackIt Portal</title>
     <style>
         :root { 
-            --primary: #3a86ff; --folder: #8338ec; --success: #2ecc71; 
-            --error: #e74c3c; --bg: #f4f7f6; --card-bg: #ffffff;
-            --text: #000000; --border: #edf2f7; --nav-bg: #ffffff;
+            --primary: #3a86ff; --folder: #8338ec; --bg: #f4f7f6; 
+            --card-bg: #ffffff; --text: #000000; --border: #edf2f7; --nav-bg: #ffffff;
         }
-
         [data-theme="dark"] {
             --bg: #121212; --card-bg: #1e1e1e; --text: #ffffff;
             --border: #333333; --nav-bg: #1e1e1e; --primary: #6ab0ff;
         }
-        
-        body { 
-            background: var(--bg); font-family: 'Segoe UI', system-ui, sans-serif; 
-            margin: 0; color: var(--text); min-height: 100vh; transition: background 0.3s, color 0.3s;
-        }
-
+        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; color: var(--text); transition: 0.3s; }
         .top-bar {
             background: var(--nav-bg); padding: 15px 25px; 
             display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000;
         }
-
-        .top-bar-left { display: flex; align-items: center; gap: 15px; }
         .top-bar-right { display: flex; gap: 10px; }
-
-        .theme-toggle {
-            cursor: pointer; background: var(--border); border: none;
-            padding: 8px 15px; border-radius: 20px; color: var(--text); font-weight: bold;
-        }
-
         .container { max-width: 1100px; margin: 30px auto; padding: 20px; }
-        
         .breadcrumb-nav { 
             background: var(--card-bg); padding: 12px 20px; border-radius: 10px; 
-            margin-bottom: 25px; display: flex; align-items: center; gap: 10px;
-            border: 1px solid var(--border);
+            margin-bottom: 25px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border);
         }
         .nav-btn { 
             cursor: pointer; background: var(--primary); color: white; 
-            border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold;
-            text-decoration: none; display: inline-flex; align-items: center;
+            border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; text-decoration: none;
         }
-
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
-        
         .card {
             background: var(--card-bg); padding: 25px 15px; border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); cursor: pointer;
@@ -68,138 +38,40 @@
         .card:hover { transform: translateY(-5px); border-color: var(--primary); }
         .card.folder-card { border-bottom: 5px solid var(--folder); }
         .card.file-card { border-bottom: 5px solid var(--primary); }
-
-        .quiz-window { display: flex; align-items: center; justify-content: center; min-height: 90vh; padding: 15px; }
-        .quiz-container { 
-            background: var(--card-bg); width: 100%; max-width: 700px; 
-            border-radius: 15px; box-shadow: 0 10px 10px rgba(0,0,0,0.2); 
-            overflow: hidden; border: 1px solid var(--border);
-        }
-
-        #question { 
-            font-size: 1.4rem; line-height: 1.6; margin-bottom: 5px; 
-            padding: 25px; font-weight: 700; color: var(--text);
-        }
-        
-        #options-container { display: grid; gap: 12px; padding: 0px 25px 25px 25px; }
-        .option-item { 
-            padding: 15px; border: 2px solid var(--border); border-radius: 10px; 
-            cursor: pointer; transition: all 0.2s ease; background: var(--card-bg); 
-            font-weight: 500; color: var(--text); word-wrap: break-word; font-size: 1.15rem;
-        }
-        .option-item:hover:not(.disabled) { border-color: var(--primary); background: rgba(74, 144, 226, 0.05); }
-        
-        .option-item.correct { background: #d4edda !important; border-color: var(--success) !important; color: #155724; }
-        .option-item.wrong { background: #f8d7da !important; border-color: var(--error) !important; color: #721c24; }
-        .option-item.disabled { pointer-events: none; }
-
-        #explanation-box { 
-            padding-top: 50px;padding: 15px 20px; background: rgba(0,0,0,0.02); 
-            border-bottom: 6px solid var(--primary); border-left: 6px solid var(--primary); 
-            margin: 0 25px 25px 25px; border-radius: 0 4px 4px 0; font-size: 1.2rem;
-        }
-        .exp-label { 
-            color: var(--primary); font-weight: bold; text-transform: uppercase; 
-            font-size: 1.5rem; display: block; margin-bottom: 5px; text-align: center; 
-        }
-
-        #next-btn { background: var(--primary); color: white; border: none; width: 100%; padding: 22px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
-
         .hidden { display: none !important; }
-
-        .table-container { margin: 15px 0; border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; }
-        .data-table { width: 100%; border-collapse: collapse; background: var(--card-bg); font-weight: normal; }
-        .data-table th { background: var(--primary); color: white; padding: 10px; text-align: left; }
-        .data-table td { padding: 10px; border-bottom: 1px solid var(--border); }
+        .theme-toggle { cursor: pointer; background: var(--border); border: none; padding: 8px 15px; border-radius: 20px; color: var(--text); font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
-    <div class="top-bar-left">
-        <div style="font-weight: bold; font-size: 1.2rem;">🚀 CrackIt Portal</div>
-        <a href="index.html" class="nav-btn" style="background: var(--folder); font-size: 0.85rem;">📊 Dashboard</a>
+<div style="display: flex; align-items: center; gap: 15px;">
+        <div style="font-weight: bold;">🚀 CrackIt Portal</div>
+        <a href="index.html" class="nav-btn">📊 Dashboard</a>
     </div>
+
+	
     <div class="top-bar-right">
-        <button class="theme-toggle" onclick="toggleFullScreen()" id="fs-btn">🖥️ Fullscreen</button>
+        <button class="theme-toggle" onclick="toggleFS()" id="fs-btn">🖥️ Fullscreen</button>
         <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙 Night Mode</button>
     </div>
 </div>
 
-<div id="view-dashboard" class="container">
+<div class="container">
     <div class="breadcrumb-nav">
         <button class="nav-btn" onclick="goHome()">🏠 Home</button>
         <button id="back-btn" class="nav-btn hidden" onclick="goBack()">⬅ Back</button>
-        <span id="current-path" class="nav-path" style="margin-left: 10px;">Root</span>
+        <span id="current-path" style="margin-left: 10px;">Root</span>
     </div>
     <div id="explorer-grid" class="grid">
         <div style="grid-column: 1/-1; text-align: center; padding: 50px;">⏳ Syncing with Drive...</div>
     </div>
 </div>
 
-<div id="view-quiz" class="quiz-window hidden">
-    <div class="quiz-container">
-        <div id="quiz-loader" style="text-align: center; padding: 80px;">Shuffling Questions...</div>
-        <div id="quiz-body" class="hidden">
-            <div style="padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;">
-                <button onclick="exitQuiz()" style="background:none; border:none; color:var(--error); cursor:pointer; font-weight:bold;">✖ Exit</button>
-                <span id="q-progress" style="font-weight:bold;"></span>
-            </div>
-            <div class="quiz-content">
-                <div id="question"></div>
-                <div id="options-container"></div>
-		<button id="next-btn" class="hidden">Next Question →</button>
-                <div id="explanation-box" class="hidden">
-                    <strong class="exp-label">Explanation</strong>
-                    <div id="explanation-text"></div>
-                </div>
-            </div>
-            
-        </div>
-    </div>
-</div>
-
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxVXyy_kCp3hh58cOIeD4xqNMXJV0Y7GkUd_2bimS1l1gp35KcX9YzjLTQHB1pwRbc6/exec"; 
-    
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxVXyy_kCp3hh58cOIeD4xqNMXJV0Y7GkUd_2bimS1l1gp35KcX9YzjLTQHB1pwRbc6/exec";
     let allData = [];
-    let currentPath = []; 
-    let activeQuestions = [];
-    let currentIndex = 0;
-
-    marked.setOptions({ breaks: true, gfm: true });
-
-    // --- FULLSCREEN LOGIC ---
-    function toggleFullScreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(e => console.log(e));
-            document.getElementById('fs-btn').innerText = "🪟 Exit Full";
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-                document.getElementById('fs-btn').innerText = "🖥️ Fullscreen";
-            }
-        }
-    }
-
-    document.addEventListener('fullscreenchange', () => {
-        if (!document.fullscreenElement) {
-            document.getElementById('fs-btn').innerText = "🖥️ Fullscreen";
-        }
-    });
-
-    function toggleTheme() {
-        const current = document.documentElement.getAttribute('data-theme');
-        const target = current === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', target);
-        document.getElementById('theme-btn').innerText = target === 'dark' ? '☀️ Day Mode' : '🌙 Night Mode';
-        localStorage.setItem('theme', target);
-    }
-    
-    if (localStorage.getItem('theme') === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        document.getElementById('theme-btn').innerText = '☀️ Day Mode';
-    }
+    let currentPath = [];
 
     async function initExplorer() {
         try {
@@ -241,120 +113,35 @@
             const card = document.createElement('div');
             card.className = 'card file-card';
             card.innerHTML = `<span style="font-size:2.5rem">📄</span><h3>${file.name}</h3>`;
-            card.onclick = () => startQuiz(file.id);
+            card.onclick = () => { window.location.href = `quizinterface.html?id=${file.id}`; };
             grid.appendChild(card);
         });
     }
 
     function goBack() { currentPath.pop(); renderExplorer(); }
     function goHome() { currentPath = []; renderExplorer(); }
-
-    function shuffle(arr) {
-        for (let i = arr.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [arr[i], arr[j]] = [arr[j], arr[i]];
+    
+    function toggleFS() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+            document.getElementById('fs-btn').innerText = "🪟 Exit Full";
+        } else {
+            document.exitFullscreen();
+            document.getElementById('fs-btn').innerText = "🖥️ Fullscreen";
         }
-        return arr;
     }
 
-    async function startQuiz(id) {
-        // Auto-enable fullscreen on start
-        if (!document.fullscreenElement) toggleFullScreen();
-
-        document.getElementById('view-dashboard').classList.add('hidden');
-        document.getElementById('view-quiz').classList.remove('hidden');
-        document.getElementById('quiz-loader').classList.remove('hidden');
-        document.getElementById('quiz-body').classList.add('hidden');
-
-        try {
-            const res = await fetch(`${SCRIPT_URL}?sheetId=${id}`);
-            const data = await res.json();
-            activeQuestions = shuffle(data);
-            document.getElementById('quiz-loader').classList.add('hidden');
-            document.getElementById('quiz-body').classList.remove('hidden');
-            currentIndex = 0;
-            displayQuestion();
-        } catch (e) { exitQuiz(); }
+    function toggleTheme() {
+        const target = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', target);
+        document.getElementById('theme-btn').innerText = target === 'dark' ? '☀️ Day Mode' : '🌙 Night Mode';
+        localStorage.setItem('theme', target);
     }
-
-    function displayQuestion() {
-        const data = activeQuestions[currentIndex];
-        document.getElementById('q-progress').innerText = `Q${currentIndex + 1} / ${activeQuestions.length}`;
-        
-        document.getElementById('question').innerHTML = parseTables(marked.parse(data.question));
-        document.getElementById('next-btn').classList.add('hidden');
-        document.getElementById('explanation-box').classList.add('hidden');
-        document.getElementById('explanation-text').innerHTML = ""; 
-        
-        const container = document.getElementById('options-container');
-        container.innerHTML = ''; 
-
-        ['a', 'b', 'c', 'd'].forEach(l => {
-            if (data[l]) {
-                const div = document.createElement('div');
-                div.className = 'option-item';
-                div.innerHTML = data[l];
-                div.onclick = () => {
-                    if (div.classList.contains('disabled')) return;
-                    document.querySelectorAll('.option-item').forEach(opt => opt.classList.add('disabled'));
-                    
-                    const correct = data.correct.toLowerCase().trim();
-                    if (l === correct) div.classList.add('correct');
-                    else {
-                        div.classList.add('wrong');
-                        const cIdx = ['a','b','c','d'].indexOf(correct);
-                        document.querySelectorAll('.option-item')[cIdx]?.classList.add('correct');
-                    }
-
-                    document.getElementById('next-btn').classList.remove('hidden');
-
-                    if (data.explanation && data.explanation.trim() !== "") {
-                        document.getElementById('explanation-text').innerHTML = parseTables(marked.parse(data.explanation));
-                        document.getElementById('explanation-box').classList.remove('hidden');
-                    }
-                    
-                    if(window.MathJax) MathJax.typesetPromise();
-                };
-                container.appendChild(div);
-            }
-        });
-        if(window.MathJax) MathJax.typesetPromise();
+    
+    if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('theme-btn').innerText = '☀️ Day Mode';
     }
-
-    function parseTables(text) {
-        return text.replace(/\|\|\|(.*?)\|\|\|/gs, (m, content) => {
-            const rows = content.trim().split('||');
-            let h = '<div class="table-container"><table class="data-table"><thead>';
-            rows.forEach((r, i) => {
-                const cols = r.split('|');
-                h += (i===0) ? `<tr><th>${cols.join('</th><th>')}</th></tr></thead><tbody>` : `<tr><td>${cols.join('</td><td>')}</td></tr>`;
-            });
-            return h + '</tbody></table></div>';
-        });
-    }
-
-    document.getElementById('next-btn').onclick = () => {
-        currentIndex++;
-        if (currentIndex < activeQuestions.length) displayQuestion();
-        else { exitQuiz(); }
-    };
-
-    function exitQuiz() {
-        document.getElementById('view-quiz').classList.add('hidden');
-        document.getElementById('view-dashboard').classList.remove('hidden');
-    }
-
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') document.getElementById('next-btn').click();
-        if (!document.getElementById('view-quiz').classList.contains('hidden')) {
-            const opts = document.querySelectorAll('.option-item');
-            if (opts.length > 0 && !opts[0].classList.contains('disabled')) {
-                const keyMap = {'1':0, '2':1, '3':2, '4':3, 'a':0, 'b':1, 'c':2, 'd':3};
-                const idx = keyMap[e.key.toLowerCase()];
-                if (idx !== undefined) opts[idx]?.click();
-            }
-        }
-    });
 
     window.onload = initExplorer;
 </script>

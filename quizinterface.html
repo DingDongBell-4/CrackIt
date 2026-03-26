@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Mode - CrackIt Portal</title>
+    <script>
+        window.MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root { --primary: #3a86ff; --folder: #8338ec; --success: #2ecc71; --error: #e74c3c; --bg: #f4f7f6; --card-bg: #ffffff; --text: #000000; --border: #edf2f7; --nav-bg: #ffffff; }
+        [data-theme="dark"] { --bg: #121212; --card-bg: #1e1e1e; --text: #ffffff; --border: #333333; --nav-bg: #1e1e1e; --primary: #6ab0ff; }
+        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; color: var(--text); transition: 0.3s; }
+        .top-bar { background: var(--nav-bg); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .top-bar-right { display: flex; gap: 10px; }
+        .quiz-window { display: flex; align-items: center; justify-content: center; min-height: 85vh; padding: 15px; }
+        .quiz-container { background: var(--card-bg); width: 100%; max-width: 700px; border-radius: 15px; box-shadow: 0 10px 10px rgba(0,0,0,0.2); overflow: hidden; border: 1px solid var(--border); }
+        #question { font-size: 1.4rem; padding: 25px; font-weight: 700; }
+        #options-container { display: grid; gap: 12px; padding: 0 25px 25px 25px; }
+        .option-item { padding: 15px; border: 2px solid var(--border); border-radius: 10px; cursor: pointer; font-size: 1.15rem; transition: 0.2s; }
+        .option-item.correct { background: #d4edda !important; border-color: var(--success) !important; color: #155724; }
+        .option-item.wrong { background: #f8d7da !important; border-color: var(--error) !important; color: #721c24; }
+        .option-item.disabled { pointer-events: none; }
+        #explanation-box { padding: 15px 20px; background: rgba(0,0,0,0.02); border-left: 6px solid var(--primary); margin: 0 25px 25px 25px; }
+        #next-btn { background: var(--primary); color: white; border: none; width: 100%; padding: 20px; font-size: 1.1rem; cursor: pointer; font-weight: bold; }
+        .nav-btn { cursor: pointer; background: var(--folder); color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 0.85rem; }
+        .theme-toggle { cursor: pointer; background: var(--border); border: none; padding: 8px 15px; border-radius: 20px; color: var(--text); font-weight: bold; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div style="font-weight: bold;">🚀 CrackIt Portal</div>
+        <a href="index.html" class="nav-btn">📊 Dashboard</a>
+    </div>
+    <div class="top-bar-right">
+        <button class="theme-toggle" onclick="toggleFS()" id="fs-btn">🖥️ Fullscreen</button>
+        <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙 Night Mode</button>
+    </div>
+</div>
+
+<div class="quiz-window">
+    <div class="quiz-container">
+        <div id="quiz-loader" style="text-align: center; padding: 80px;">Loading Questions...</div>
+        <div id="quiz-body" class="hidden">
+            <div style="padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <button onclick="location.href='index.html'" style="background:none; border:none; color:var(--error); cursor:pointer; font-weight:bold;">✖ Stop Quiz</button>
+                <span id="q-progress" style="font-weight:bold;"></span>
+            </div>
+            <div id="question"></div>
+            <div id="options-container"></div>
+            <button id="next-btn" class="hidden">Next Question →</button>
+            <div id="explanation-box" class="hidden">
+                <strong style="color:var(--primary)">Explanation</strong>
+                <div id="explanation-text"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxVXyy_kCp3hh58cOIeD4xqNMXJV0Y7GkUd_2bimS1l1gp35KcX9YzjLTQHB1pwRbc6/exec";
+    let activeQuestions = [];
+    let currentIndex = 0;
+
+    async function startQuiz() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sheetId = urlParams.get('id');
+        if (!sheetId) return window.location.href = 'index.html';
+
+        try {
+            const res = await fetch(`${SCRIPT_URL}?sheetId=${sheetId}`);
+            const data = await res.json();
+            activeQuestions = data.sort(() => Math.random() - 0.5);
+            document.getElementById('quiz-loader').classList.add('hidden');
+            document.getElementById('quiz-body').classList.remove('hidden');
+            displayQuestion();
+        } catch (e) { window.location.href = 'index.html'; }
+    }
+
+    function displayQuestion() {
+        const data = activeQuestions[currentIndex];
+        document.getElementById('q-progress').innerText = `Q${currentIndex + 1} / ${activeQuestions.length}`;
+        document.getElementById('question').innerHTML = marked.parse(data.question);
+        document.getElementById('next-btn').classList.add('hidden');
+        document.getElementById('explanation-box').classList.add('hidden');
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = ''; 
+
+        ['a', 'b', 'c', 'd'].forEach(l => {
+            if (data[l]) {
+                const div = document.createElement('div');
+                div.className = 'option-item';
+                div.innerHTML = data[l];
+                div.onclick = () => {
+                    document.querySelectorAll('.option-item').forEach(opt => opt.classList.add('disabled'));
+                    const correct = data.correct.toLowerCase().trim();
+                    if (l === correct) div.classList.add('correct');
+                    else {
+                        div.classList.add('wrong');
+                        const cIdx = ['a','b','c','d'].indexOf(correct);
+                        document.querySelectorAll('.option-item')[cIdx]?.classList.add('correct');
+                    }
+                    document.getElementById('next-btn').classList.remove('hidden');
+                    if (data.explanation) {
+                        document.getElementById('explanation-text').innerHTML = marked.parse(data.explanation);
+                        document.getElementById('explanation-box').classList.remove('hidden');
+                    }
+                    if(window.MathJax) MathJax.typesetPromise();
+                };
+                container.appendChild(div);
+            }
+        });
+        if(window.MathJax) MathJax.typesetPromise();
+    }
+
+    function toggleFS() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+            document.getElementById('fs-btn').innerText = "🪟 Exit Full";
+        } else {
+            document.exitFullscreen();
+            document.getElementById('fs-btn').innerText = "🖥️ Fullscreen";
+        }
+    }
+
+    function toggleTheme() {
+        const target = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', target);
+        document.getElementById('theme-btn').innerText = target === 'dark' ? '☀️ Day Mode' : '🌙 Night Mode';
+        localStorage.setItem('theme', target);
+    }
+    
+    if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('theme-btn').innerText = '☀️ Day Mode';
+    }
+
+    document.getElementById('next-btn').onclick = () => {
+        currentIndex++;
+        if (currentIndex < activeQuestions.length) displayQuestion();
+        else window.location.href = 'index.html';
+    };
+
+    window.onload = startQuiz;
+</script>
+</body>
+</html>
