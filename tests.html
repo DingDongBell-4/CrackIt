@@ -80,9 +80,7 @@
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwxVl2SEW5cirE3sjHbpk4dPqlDUjF2fuXRdsF_udfxclXp5uQqlejwefbTWPXWqH5cYw/exec";
     let allTests = [];
-    let currentPath = "";
-    
-    // Initialize sort from LocalStorage or default to 'az'
+    let currentPath = ""; // Tracks the full path string
     let sortType = localStorage.getItem('userSortPref') || "az";
 
     window.onload = () => {
@@ -97,134 +95,131 @@
             const response = await fetch(`${SCRIPT_URL}?action=getMasterTests`);
             allTests = await response.json();
             document.getElementById('loader').classList.add('hidden');
-            renderRoot();
+            renderView(""); 
             checkHistoryBtn();
         } catch (err) {
             document.getElementById('loader').innerHTML = `<p style="color:red">❌ Error: ${err.message}</p>`;
         }
     }
 
-    function updateSortButtonUI() {
-        const btnText = document.getElementById('sort-text');
-        btnText.innerText = sortType === 'az' ? 'Sort: A-Z' : 'Sort: Default';
+    function renderView(path) {
+        currentPath = path;
+        const grid = document.getElementById('category-view');
+        const listView = document.getElementById('test-list-view');
+        
+        // 1. Identify unique immediate subfolders
+        // We look for tests whose category starts with our current path + " > "
+        let subfolders = [];
+        allTests.forEach(t => {
+            let rel = "";
+            if (path === "") {
+                rel = t.category;
+            } else if (t.category.startsWith(path + " > ")) {
+                rel = t.category.replace(path + " > ", "");
+            }
+
+            if (rel !== "") {
+                const firstPart = rel.split(" > ")[0];
+                if (firstPart && !subfolders.includes(firstPart)) {
+                    subfolders.push(firstPart);
+                }
+            }
+        });
+
+        // 2. Identify tests that belong EXACTLY to this category level
+        let testsAtThisLevel = allTests.filter(t => t.category === path);
+
+        // Sorting logic
+        if (sortType === "az") {
+            subfolders.sort((a, b) => a.localeCompare(b));
+            testsAtThisLevel.sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        // 3. Update UI
+        updateBreadcrumbs(path);
+
+        // Render Folders
+        grid.innerHTML = subfolders.map(folder => `
+            <div class="card" onclick="renderView('${path === "" ? folder : path + " > " + folder}')">
+                <h3>📂 ${folder}</h3>
+                <p>Folder</p>
+            </div>
+        `).join('');
+
+        // Render Tests
+        if (testsAtThisLevel.length > 0) {
+            listView.classList.remove('hidden');
+            listView.innerHTML = testsAtThisLevel.map(t => {
+                const query = new URLSearchParams({ sheet: t.link, name: t.name, time: t.duration, pos: t.pos, neg: t.neg }).toString();
+                return `
+                    <div class="test-item">
+                        <div class="test-info">
+                            <h4>📝 ${t.name}</h4>
+                            <div style="font-size:0.8rem; color:#666; margin-top:4px;">⏱ ${t.duration}m | 🟢 +${t.pos} | 🔴 -${t.neg}</div>
+                        </div>
+                        <a href="exam-portal.html?${query}" class="btn-start" onclick="trackAttempt('${t.name}')">Start Test</a>
+                    </div>`;
+            }).join('');
+        } else {
+            listView.innerHTML = subfolders.length === 0 ? `<div style="text-align:center; padding:40px; color:#999;">This folder is empty</div>` : "";
+            listView.classList.remove('hidden');
+        }
+
+        subfolders.length > 0 ? grid.classList.remove('hidden') : grid.classList.add('hidden');
     }
 
+    function updateBreadcrumbs(path) {
+        const breadcrumb = document.getElementById('breadcrumb');
+        const title = document.getElementById('view-title');
+        const backBtn = document.getElementById('back-btn');
+
+        if (path === "") {
+            breadcrumb.innerHTML = "Home";
+            title.innerText = "Test Categories";
+            backBtn.classList.add('hidden');
+        } else {
+            const parts = path.split(" > ");
+            let buildPath = "";
+            let html = `<span style="cursor:pointer; text-decoration:underline;" onclick="renderView('')">Home</span>`;
+            
+            parts.forEach((part, i) => {
+                buildPath += (i === 0 ? part : " > " + part);
+                if (i === parts.length - 1) {
+                    html += ` > ${part}`;
+                    title.innerText = part;
+                } else {
+                    html += ` > <span style="cursor:pointer; text-decoration:underline;" onclick="renderView('${buildPath}')">${part}</span>`;
+                }
+            });
+            breadcrumb.innerHTML = html;
+            
+            // Back button logic (go up one level)
+            backBtn.classList.remove('hidden');
+            backBtn.onclick = () => {
+                const parentPath = parts.slice(0, -1).join(" > ");
+                renderView(parentPath);
+            };
+        }
+    }
+
+    // --- Keep your existing Helper Functions (toggleSort, trackAttempt, etc.) ---
     function toggleSort() {
         sortType = (sortType === "az") ? "default" : "az";
         localStorage.setItem('userSortPref', sortType);
         updateSortButtonUI();
-        
-        // Refresh whatever view is currently open
-        if (currentPath === "") {
-            renderRoot();
-        } else {
-            const items = allTests.filter(t => t.category.startsWith(currentPath));
-            const hasSub = items.some(t => t.category.includes(' > '));
-            hasSub && !currentPath.includes(' > ') ? renderSubfolders(currentPath) : renderTestList(currentPath);
-        }
+        renderView(currentPath);
     }
 
-    function trackAttempt(testName) {
-        localStorage.setItem('lastAttempted', testName);
+    function updateSortButtonUI() {
+        document.getElementById('sort-text').innerText = sortType === 'az' ? 'Sort: A-Z' : 'Sort: Default';
     }
 
-    function clearHistory() {
-        localStorage.removeItem('lastAttempted');
-        location.reload(); 
-    }
-
+    function trackAttempt(testName) { localStorage.setItem('lastAttempted', testName); }
     function checkHistoryBtn() {
         const btn = document.getElementById('clear-history');
         localStorage.getItem('lastAttempted') ? btn.classList.remove('hidden') : btn.classList.add('hidden');
     }
-
-    function renderRoot() {
-        currentPath = "";
-        updateUI("Test Categories", "Home", false);
-        const grid = document.getElementById('category-view');
-        
-        let mainCats = [...new Set(allTests.map(t => t.category.split(' > ')[0]))];
-        if (sortType === "az") mainCats.sort((a, b) => a.localeCompare(b));
-
-        grid.innerHTML = mainCats.map(cat => `
-            <div class="card" onclick="handleFolderClick('${cat}')">
-                <h3>📂 ${cat}</h3>
-                <p>Click to open</p>
-            </div>
-        `).join('');
-    }
-
-    function handleFolderClick(path) {
-        const items = allTests.filter(t => t.category.startsWith(path));
-        const hasSubfolders = items.some(t => t.category.includes(' > '));
-        hasSubfolders ? renderSubfolders(path) : renderTestList(path);
-    }
-
-    function renderSubfolders(mainCat) {
-        currentPath = mainCat;
-        updateUI(mainCat, `<span style="cursor:pointer; text-decoration:underline;" onclick="renderRoot()">Home</span> > ${mainCat}`, true, () => renderRoot());
-        const grid = document.getElementById('category-view');
-        
-        let subfolders = [...new Set(allTests.filter(t => t.category.startsWith(mainCat)).map(t => t.category.split(' > ')[1] || "General"))];
-        if (sortType === "az") subfolders.sort((a, b) => a.localeCompare(b));
-
-        grid.innerHTML = subfolders.map(sub => `
-            <div class="card" style="border-bottom-color: #ffca28;" onclick="renderTestList('${mainCat} > ${sub}')">
-                <h3>📁 ${sub}</h3>
-                <p>View Tests</p>
-            </div>
-        `).join('');
-    }
-
-    function renderTestList(fullPath) {
-        currentPath = fullPath;
-        const parts = fullPath.split(' > ');
-        const breadcrumbHtml = `<span style="cursor:pointer; text-decoration:underline;" onclick="renderRoot()">Home</span> > ` + 
-            (parts.length > 1 ? `<span style="cursor:pointer; text-decoration:underline;" onclick="handleFolderClick('${parts[0]}')">${parts[0]}</span> > ` : "") + parts[parts.length-1];
-
-        updateUI(parts[parts.length - 1], breadcrumbHtml, true, () => {
-            parts.length > 1 ? renderSubfolders(parts[0]) : renderRoot();
-        });
-
-        const listView = document.getElementById('test-list-view');
-        document.getElementById('category-view').classList.add('hidden');
-        listView.classList.remove('hidden');
-
-        let tests = allTests.filter(t => t.category === fullPath);
-        if (sortType === "az") tests.sort((a, b) => a.name.localeCompare(b.name));
-
-        const lastAttemptedName = localStorage.getItem('lastAttempted');
-        if (lastAttemptedName) {
-            const lastIdx = tests.findIndex(t => t.name === lastAttemptedName);
-            if (lastIdx > -1) {
-                const [lastTest] = tests.splice(lastIdx, 1);
-                tests.unshift(lastTest);
-            }
-        }
-
-        listView.innerHTML = tests.map(t => {
-            const isLast = t.name === lastAttemptedName;
-            const query = new URLSearchParams({ sheet: t.link, name: t.name, time: t.duration, pos: t.pos, neg: t.neg }).toString();
-            return `
-                <div class="test-item" style="${isLast ? 'border-left-color: #007bff; background: #f0f7ff;' : ''}">
-                    <div class="test-info">
-                        <h4>📝 ${t.name} ${isLast ? '<span class="badge">Last Attempted</span>' : ''}</h4>
-                        <div style="font-size:0.8rem; color:#666; margin-top:4px;">⏱ ${t.duration}m | 🟢 +${t.pos} | 🔴 -${t.neg}</div>
-                    </div>
-                    <a href="exam-portal.html?${query}" class="btn-start" onclick="trackAttempt('${t.name}')">Start Test</a>
-                </div>`;
-        }).join('');
-    }
-
-    function updateUI(title, breadcrumb, showBack, backFn) {
-        document.getElementById('view-title').innerText = title;
-        document.getElementById('breadcrumb').innerHTML = breadcrumb;
-        document.getElementById('category-view').classList.remove('hidden');
-        document.getElementById('test-list-view').classList.add('hidden');
-        const btn = document.getElementById('back-btn');
-        if (showBack) { btn.classList.remove('hidden'); btn.onclick = backFn; } 
-        else { btn.classList.add('hidden'); }
-    }
+    function clearHistory() { localStorage.removeItem('lastAttempted'); location.reload(); }
 </script>
 </body>
 </html>
