@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSC Test Results - Review</title>
+    <title>SSC Test Results - Review Portal</title>
     
     <script>
       window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] } };
@@ -11,117 +11,154 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --ssc-blue: #0056b3; }
-        body { margin: 0; padding: 20px; font-family: 'Segoe UI', sans-serif; background: #f2f4f8; color: #333; }
-        .container { max-width: 900px; margin: 0 auto; }
+        :root { 
+            --primary: #007bff; 
+            --success: #28a745; 
+            --danger: #dc3545; 
+            --warning: #ffc107; 
+            --ssc-blue: #0056b3; 
+            --light-bg: #f2f4f8; 
+        }
         
+        body { margin: 0; padding: 20px; font-family: 'Segoe UI', sans-serif; background: var(--light-bg); color: #333; line-height: 1.6; }
+        .container { max-width: 950px; margin: 0 auto; }
+        
+        /* Results Header */
         #results-container {
             background: #fff; padding: 30px; border-radius: 15px; 
             box-shadow: 0 5px 25px rgba(0,0,0,0.1); text-align: center; margin-bottom: 30px;
         }
-
         .score-big { font-size: 3.5em; color: var(--primary); font-weight: bold; margin: 10px 0; }
         
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 25px 0; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 25px 0; }
         .stat-box { padding: 15px; border-radius: 10px; border-bottom: 4px solid #ddd; background: #f9f9f9; }
         .stat-box.correct { border-color: var(--success); color: var(--success); }
         .stat-box.wrong { border-color: var(--danger); color: var(--danger); }
         .stat-box.skipped { border-color: var(--warning); color: #856404; }
-        .stat-box.unvisited { border-color: #6c757d; color: #6c757d; }
         
         .stat-val { font-size: 1.6em; font-weight: bold; display: block; }
         .stat-label { font-size: 0.75em; text-transform: uppercase; font-weight: bold; }
 
+        /* Filter Bar */
+        .filter-section {
+            background: #fff; padding: 15px; border-radius: 10px; 
+            margin-bottom: 25px; display: flex; align-items: center; 
+            justify-content: center; gap: 10px; flex-wrap: wrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .filter-btn { 
+            padding: 8px 18px; border: none; border-radius: 20px; 
+            cursor: pointer; font-weight: bold; font-size: 0.85em;
+            transition: 0.3s; background: #eee; color: #555;
+        }
+        .filter-btn.active { transform: scale(1.08); box-shadow: 0 4px 10px rgba(0,0,0,0.15); color: white; }
+        #btn-all.active { background: #555; }
+        #btn-correct.active { background: var(--success); }
+        #btn-wrong.active { background: var(--danger); }
+        #btn-skipped.active { background: var(--warning); color: #856404; }
+
+        /* Review Cards */
         .review-card {
             background: #fff; padding: 25px; border-radius: 12px;
-            margin-bottom: 20px; box-shadow: 0 3px 12px rgba(0,0,0,0.06);
-            border-left: 8px solid #ccc; text-align: left;
+            margin-bottom: 25px; box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+            border-left: 8px solid #ccc; transition: transform 0.2s;
         }
-        .review-card.correct-border { border-left-color: var(--success); }
-        .review-card.wrong-border { border-left-color: var(--danger); }
-        .review-card.skipped-border { border-left-color: var(--warning); }
+        .correct-border { border-left-color: var(--success); }
+        .wrong-border { border-left-color: var(--danger); }
+        .skipped-border { border-left-color: var(--warning); }
 
-        .q-text { font-size: 1.1em; font-weight: 600; margin-bottom: 15px; display: block; white-space: pre-wrap; }
+        .q-text { font-size: 1.1em; font-weight: 600; margin-bottom: 15px; white-space: pre-wrap; }
         
-        .opt { padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 6px; display: flex; justify-content: space-between; }
+        .opt { padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
         .opt-correct { background: #d4edda; border-color: #c3e6cb; color: #155724; font-weight: bold; }
         .opt-wrong { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
         
-        .explanation-box {
-            margin-top: 15px; padding: 15px; background: #eef7ff;
-            border-radius: 8px; font-size: 0.95em; border-left: 4px solid var(--primary);
-            white-space: pre-wrap;
-        }
+        /* Table & Explanation Styles */
+        .explanation-box { margin-top: 15px; padding: 18px; background: #f0f7ff; border-radius: 8px; border-left: 4px solid var(--primary); }
+        .rendered-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .rendered-table th { background: var(--ssc-blue); color: white; padding: 10px; text-align: left; }
+        .rendered-table td { border: 1px solid #dee2e6; padding: 8px; }
+        .rendered-table tr:nth-child(even) { background: #f8fbff; }
 
         .badge { padding: 4px 10px; border-radius: 4px; font-size: 0.75em; color: white; font-weight: bold; margin-bottom: 10px; display: inline-block; }
-        button { padding: 12px 30px; border: none; border-radius: 8px; background: var(--primary); color: #fff; cursor: pointer; font-weight: bold; }
+        .action-btn { padding: 12px 30px; border: none; border-radius: 8px; background: var(--primary); color: #fff; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="results-container">
-        <h2 id="test-display-name">Loading Results...</h2>
+        <h2 id="test-display-name">Summary</h2>
         <div class="score-big" id="final-score">0.00</div>
-        <p id="marks-info"></p>
+        <p id="marks-info" style="color: #666;"></p>
         
         <div class="stats-grid">
             <div class="stat-box correct"><span class="stat-val" id="stat-correct">0</span><span class="stat-label">Correct</span></div>
             <div class="stat-box wrong"><span class="stat-val" id="stat-wrong">0</span><span class="stat-label">Wrong</span></div>
             <div class="stat-box skipped"><span class="stat-val" id="stat-skipped">0</span><span class="stat-label">Skipped</span></div>
-            <div class="stat-box unvisited"><span class="stat-val" id="stat-unvisit">0</span><span class="stat-label">Unvisited</span></div>
+            <div class="stat-box unvisited" style="border-color:#6c757d; color:#6c757d;">
+                <span class="stat-val" id="stat-unvisit">0</span><span class="stat-label">Unvisited</span>
+            </div>
         </div>
-        <button onclick="window.location.href='index.html'">Back to Dashboard</button>
+        <button class="action-btn" onclick="window.location.href='index.html'">Back to Dashboard</button>
     </div>
 
-    <h2 style="text-align:center;">Review Your Answers</h2>
+    <div class="filter-section">
+        <span style="font-weight:bold">Show:</span>
+        <button onclick="applyFilter('all')" class="filter-btn active" id="btn-all">All Questions</button>
+        <button onclick="applyFilter('correct')" class="filter-btn" id="btn-correct">Correct</button>
+        <button onclick="applyFilter('wrong')" class="filter-btn" id="btn-wrong">Wrong</button>
+        <button onclick="applyFilter('skipped')" class="filter-btn" id="btn-skipped">Skipped/Unvisited</button>
+    </div>
+
     <div id="review-list"></div>
 </div>
 
 <script>
     function formatText(text) {
         if (!text) return "";
+        let formatted = String(text);
 
-        // 1. Handle Tables: ||| Header | Header || Row | Row |||
+        // 1. Tables: ||| Header | Header || Row | Row |||
         const tableRegex = /\|\|\|([\s\S]+?)\|\|\|/g;
-        let formatted = text.replace(tableRegex, (match, content) => {
+        formatted = formatted.replace(tableRegex, (match, content) => {
             const rows = content.trim().split('||').filter(r => r.trim() !== "");
-            let tableHtml = '<div style="overflow-x:auto; margin: 15px 0;">';
-            tableHtml += '<table style="width:100%; border-collapse: collapse; border: 1px solid var(--ssc-blue); background: #fff;">';
-            
-            rows.forEach((row, rowIndex) => {
+            let html = '<div style="overflow-x:auto;"><table class="rendered-table">';
+            rows.forEach((row, i) => {
                 const cells = row.split('|').filter(c => c.trim() !== "");
-                tableHtml += `<tr style="${rowIndex % 2 === 0 && rowIndex !== 0 ? 'background: #f2f7ff;' : ''}">`;
-                
+                html += '<tr>';
                 cells.forEach(cell => {
-                    const isHeader = (rowIndex === 0);
-                    const tag = isHeader ? 'th' : 'td';
-                    let style = "border: 1px solid #bdd7f1; padding: 10px; text-align: left;";
-                    
-                    if (isHeader) {
-                        style += "background: #1591EA; color: #ffffff; text-transform: uppercase; font-weight: 700;";
-                    }
-                    tableHtml += `<${tag} style="${style}">${cell.trim()}</${tag}>`;
+                    const tag = (i === 0) ? 'th' : 'td';
+                    html += `<${tag}>${cell.trim()}</${tag}>`;
                 });
-                tableHtml += '</tr>';
+                html += '</tr>';
             });
-            tableHtml += '</table></div>';
-            return tableHtml;
+            return html + '</table></div>';
         });
 
-        // 2. Handle Headers
-        formatted = formatted.replace(/^#### (.*$)/gim, '<h4 style="margin-bottom:-20px;">$1</h4>');
-        formatted = formatted.replace(/^### (.*$)/gim, '<h3 style="margin-bottom:-20px;">$1</h3>');
-
-        // 3. Handle Bullet Points
+        // 2. Formatting: Bold, Headers, and Lists
+        formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        formatted = formatted.replace(/^### (.*$)/gim, '<h3>$1</h3>');
         formatted = formatted.replace(/^\* (.*$)/gim, '<li>$1</li>');
-        formatted = formatted.replace(/(<li>.*<\/li>)/gim, '<ul style="margin: 10px 0; padding-left: 20px;">$1</ul>');
+        formatted = formatted.replace(/(<li>.*<\/li>)/gim, '<ul style="padding-left:20px;">$1</ul>');
         formatted = formatted.replace(/<\/ul>\s*<ul[^>]*>/gim, '');
 
-        // 4. Handle Bold
-        formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
         return formatted;
+    }
+
+    function applyFilter(type) {
+        const cards = document.querySelectorAll('.review-card');
+        const btns = document.querySelectorAll('.filter-btn');
+        
+        btns.forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + type).classList.add('active');
+
+        cards.forEach(card => {
+            const status = card.getAttribute('data-status');
+            if (type === 'all') card.style.display = 'block';
+            else if (type === 'skipped') card.style.display = (status === 'skipped' || status === 'unvisited') ? 'block' : 'none';
+            else card.style.display = (status === type) ? 'block' : 'none';
+        });
     }
 
     function loadResults() {
@@ -130,69 +167,55 @@
         const testStatus = JSON.parse(localStorage.getItem('last_status') || "[]");
         const meta = JSON.parse(localStorage.getItem('test_meta') || "{}");
 
-        if (!questions.length) {
-            document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>No Test Data Found!</h2>";
-            return;
-        }
+        if (!questions.length) return;
 
-        document.getElementById('test-display-name').innerText = meta.name || "Test Summary";
-        
-        let correctCount = 0, wrongCount = 0, skippedCount = 0, unvisitedCount = 0;
+        let correctC = 0, wrongC = 0, skipC = 0, unvisC = 0;
         let reviewHtml = "";
 
         questions.forEach((q, i) => {
             const uAns = userAnswers[i];
-            const qStatus = testStatus[i];
-
-            if (qStatus === 0) unvisitedCount++;
-            else if (uAns === "" || uAns === null) skippedCount++;
-            else if (uAns === q.answer) correctCount++;
-            else wrongCount++;
-
-            let isCorrect = uAns === q.answer;
-            let isSkipped = (uAns === "" || uAns === null);
+            const qStat = testStatus[i];
+            const isAns = (uAns !== "" && uAns !== null);
+            const isCorrect = isAns && (uAns === q.correct);
             
-            let cardClass = isSkipped ? "skipped-border" : (isCorrect ? "correct-border" : "wrong-border");
-            let badgeText = isSkipped ? (qStatus === 0 ? "UNVISITED" : "SKIPPED") : (isCorrect ? "CORRECT" : "WRONG");
-            let badgeColor = isSkipped ? (qStatus === 0 ? "#6c757d" : "#ffc107") : (isCorrect ? "#28a745" : "#dc3545");
+            let status = "";
+            if (qStat === 0) { status = "unvisited"; unvisC++; }
+            else if (!isAns) { status = "skipped"; skipC++; }
+            else if (isCorrect) { status = "correct"; correctC++; }
+            else { status = "wrong"; wrongC++; }
+
+            let cardBorder = (status === "correct") ? "correct-border" : (status === "wrong" ? "wrong-border" : "skipped-border");
+            let badgeCol = (status === "correct") ? "var(--success)" : (status === "wrong" ? "var(--danger)" : "var(--warning)");
+            if (status === "unvisited") badgeCol = "#6c757d";
 
             let optionsHtml = q.options.map((opt, idx) => {
                 const char = String.fromCharCode(97 + idx);
-                let optClass = "opt";
-                let icon = "";
-
-                if (char === q.answer) {
-                    optClass += " opt-correct";
-                    icon = "<span>✔ (Correct)</span>";
-                } else if (char === uAns && !isCorrect) {
-                    optClass += " opt-wrong";
-                    icon = "<span>✘ (Your Answer)</span>";
-                }
-                return `<div class="${optClass}"><div>${char.toUpperCase()}. ${opt}</div> ${icon}</div>`;
+                let cls = "opt";
+                let lbl = "";
+                if (char === q.correct) { cls += " opt-correct"; lbl = "✔"; }
+                else if (char === uAns) { cls += " opt-wrong"; lbl = "✘"; }
+                return `<div class="${cls}"><div>${char.toUpperCase()}. ${formatText(opt)}</div> <span>${lbl}</span></div>`;
             }).join('');
 
             reviewHtml += `
-                <div class="review-card ${cardClass}">
-                    <span class="badge" style="background:${badgeColor}">${badgeText}</span>
-                    <div class="q-text"><strong>Q${i+1}:</strong> ${formatText(q.question)}</div>
-                    <div class="options-container">${optionsHtml}</div>
+                <div class="review-card ${cardBorder}" data-status="${status}">
+                    <span class="badge" style="background:${badgeCol}">${status.toUpperCase()}</span>
+                    <div class="q-text">Q${i+1}: ${formatText(q.question)}</div>
+                    <div>${optionsHtml}</div>
                     <div class="explanation-box">
-                        <strong>Explanation:</strong><br>${formatText(q.explanation || "No explanation provided for this question.")}
+                        <strong>Explanation:</strong><br>${formatText(q.explanation || "No explanation.")}
                     </div>
-                </div>
-            `;
+                </div>`;
         });
 
-        const pos = parseFloat(meta.pos) || 1;
-        const neg = parseFloat(meta.neg) || 0;
-        const score = (correctCount * pos) - (wrongCount * neg);
-
-        document.getElementById('final-score').innerText = score.toFixed(2);
-        document.getElementById('marks-info').innerText = `Scoring: +${pos} / -${neg}`;
-        document.getElementById('stat-correct').innerText = correctCount;
-        document.getElementById('stat-wrong').innerText = wrongCount;
-        document.getElementById('stat-skipped').innerText = skippedCount;
-        document.getElementById('stat-unvisit').innerText = unvisitedCount;
+        // Scoring
+        const p = parseFloat(meta.pos) || 1, n = parseFloat(meta.neg) || 0;
+        document.getElementById('final-score').innerText = ((correctC * p) - (wrongC * n)).toFixed(2);
+        document.getElementById('marks-info').innerText = `Marks: +${p} / -${n}`;
+        document.getElementById('stat-correct').innerText = correctC;
+        document.getElementById('stat-wrong').innerText = wrongC;
+        document.getElementById('stat-skipped').innerText = skipC;
+        document.getElementById('stat-unvisit').innerText = unvisC;
         document.getElementById('review-list').innerHTML = reviewHtml;
 
         if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
@@ -202,5 +225,3 @@
 </script>
 </body>
 </html>
-
-

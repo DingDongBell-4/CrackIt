@@ -3,158 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mock Tests | SSC Portal</title>
+    <title>Available Tests | SSC Portal</title>
     <style>
-        /* CSS Variables to match index.html */
-        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f9; }
-        
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f9; --text: #333; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
 
-        /* Navbar Styles from index.html */
-        nav {
-            background: white; padding: 1rem 5%;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        .logo { cursor: pointer; color: #333; }
-        .user-controls a {
-            text-decoration: none; color: var(--primary);
-            margin-left: 15px; font-weight: 600; font-size: 0.9rem;
-        }
-        .logout-btn { color: #dc3545 !important; cursor: pointer; }
+        /* Navbar */
+        nav { background: white; padding: 0.8rem 5%; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .dashboard-link { display: flex; align-items: center; justify-content: center; color: var(--primary); padding: 8px; border-radius: 8px; transition: 0.2s; text-decoration: none; background: rgba(0, 123, 255, 0.05); }
+        .logo { font-weight: bold; font-size: 1.2rem; color: var(--primary); cursor: pointer; }
+        .user-info { font-weight: 600; font-size: 0.9rem; }
 
-        /* Container & Layout */
-        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        /* Container */
+        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; border-bottom: 1px solid #ddd; padding-bottom: 15px; }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        
-        .card { 
-            background: white; padding: 30px; border-radius: 12px; text-align: center; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); cursor: pointer; 
-            border-bottom: 5px solid var(--primary); transition: 0.3s; 
-        }
-        .card:hover { transform: translateY(-5px); }
+        .controls { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
 
-        .test-item { 
-            background: white; padding: 20px; border-radius: 10px; 
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-        }
+        /* Action Buttons */
+        .btn-action { font-size: 0.8rem; padding: 6px 14px; border-radius: 6px; cursor: pointer; border: 1px solid #ccc; background: white; transition: 0.2s; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .btn-action:hover { background: #f8f9fa; border-color: #adb5bd; }
+        .btn-clear { color: var(--danger); border-color: var(--danger); }
+        .btn-clear:hover { background: var(--danger); color: white; }
+
+        /* Grid & Cards */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); cursor: pointer; border-bottom: 5px solid var(--primary); transition: 0.3s; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
         
-        .start-btn { 
-            background: var(--success); color: white; padding: 10px 20px; 
-            border-radius: 6px; text-decoration: none; font-weight: bold; 
-        }
+        .test-item { background: white; padding: 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 5px solid var(--success); transition: 0.2s; }
+        .test-item:hover { transform: scale(1.01); }
+        
+        .badge { background: var(--primary); color: white; font-size: 0.65rem; padding: 3px 8px; border-radius: 10px; margin-left: 10px; text-transform: uppercase; font-weight: bold; }
+
+        .btn-start { background: var(--success); color: white; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.9rem; }
+        .btn-start:hover { background: #218838; }
+        .btn-back { background: none; border: none; color: var(--primary); cursor: pointer; font-weight: bold; font-size: 1rem; }
         
         .hidden { display: none; }
-        #loader { text-align: center; padding: 50px; font-size: 1.2rem; color: #666; }
+        #loader { text-align: center; padding: 60px; font-weight: 600; color: #666; }
     </style>
 </head>
 <body>
 
     <nav>
-        <div class="logo" onclick="window.location.href='index.html'"><strong>SSC Portal</strong></div>
-        <div class="user-controls">
-            <span id="displayPhone">Checking...</span>
-            <a href="index.html">Dashboard</a>
-            <a onclick="logout()" class="logout-btn">Logout</a>
+        <div class="nav-left">
+            <a href="index.html" class="dashboard-link" title="Dashboard">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            </a>
+            <div class="logo" onclick="location.reload()">EXAM PORTAL</div>
         </div>
+        <div class="user-info" id="userDisplay">👤 Loading...</div>
     </nav>
 
     <div class="container">
         <div class="header">
-            <h1 id="page-title">Categories</h1>
-            <button id="back-btn" class="hidden" onclick="showCategories()" style="border:none; background:none; color:var(--primary); cursor:pointer; font-weight:bold; font-size: 1.1rem;">← Back</button>
+            <div>
+                <div id="breadcrumb" style="font-size: 0.85rem; color: #666; margin-bottom: 4px;"></div>
+                <h1 id="view-title" style="margin: 0;">Test Categories</h1>
+                <div class="controls">
+                    <button id="sort-btn" class="btn-action" onclick="toggleSort()">
+                        <span id="sort-icon">🔄</span> <span id="sort-text">Sort: A-Z</span>
+                    </button>
+                    <button id="clear-history" class="btn-action btn-clear hidden" onclick="clearHistory()">Reset History</button>
+                </div>
+            </div>
+            <button id="back-btn" class="btn-back hidden">← Back</button>
         </div>
 
-        <div id="loader">⏳ Fetching tests from Google Sheets...</div>
-        <div id="category-view" class="grid"></div>
+        <div id="loader">🔄 Syncing available tests...</div>
+        <div id="category-view" class="grid hidden"></div>
         <div id="test-list-view" class="hidden"></div>
     </div>
 
 <script>
-    // 1. SECURITY & INITIALIZATION
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFBULUle62aq2fAYmy0tlhYZ81JkzN38V_idbluc28h7TSwZ0Mw4_I_-0aKSQt66dR/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwxVl2SEW5cirE3sjHbpk4dPqlDUjF2fuXRdsF_udfxclXp5uQqlejwefbTWPXWqH5cYw/exec";
     let allTests = [];
+    let currentPath = "";
+    
+    // Initialize sort from LocalStorage or default to 'az'
+    let sortType = localStorage.getItem('userSortPref') || "az";
 
-    window.onload = function() {
-        const user = localStorage.getItem('currentUser');
-        if (!user) {
-            // Redirect to login if not authenticated
-            window.location.href = 'login.html'; 
-        } else {
-            document.getElementById('displayPhone').innerText = "👤 " + user;
-            init(); // Only fetch data if logged in
-        }
+    window.onload = () => {
+        const user = localStorage.getItem('currentUser') || "Guest User";
+        document.getElementById('userDisplay').innerText = "👤 " + user;
+        updateSortButtonUI();
+        fetchTests();
     };
 
-    function logout() {
-        if(confirm("Are you sure you want to logout?")) {
-            localStorage.removeItem('currentUser');
-            window.location.href = 'login.html';
-        }
-    }
-
-    // 2. DATA FETCHING
-    async function init() {
+    async function fetchTests() {
         try {
             const response = await fetch(`${SCRIPT_URL}?action=getMasterTests`);
             allTests = await response.json();
-            
-            if (allTests.error) throw new Error(allTests.error);
-            
             document.getElementById('loader').classList.add('hidden');
-            showCategories();
+            renderRoot();
+            checkHistoryBtn();
         } catch (err) {
-            document.getElementById('loader').innerHTML = "❌ Error: " + err.message;
+            document.getElementById('loader').innerHTML = `<p style="color:red">❌ Error: ${err.message}</p>`;
         }
     }
 
-    // 3. UI RENDERING
-    function showCategories() {
-        document.getElementById('page-title').innerText = "Categories";
-        document.getElementById('back-btn').classList.add('hidden');
-        document.getElementById('test-list-view').classList.add('hidden');
-        const catView = document.getElementById('category-view');
-        catView.classList.remove('hidden');
+    function updateSortButtonUI() {
+        const btnText = document.getElementById('sort-text');
+        btnText.innerText = sortType === 'az' ? 'Sort: A-Z' : 'Sort: Default';
+    }
 
-        const categories = [...new Set(allTests.map(t => t.category))];
-        catView.innerHTML = categories.map(cat => `
-            <div class="card" onclick="showTests('${cat}')">
-                <h3>${cat}</h3>
-                <p>${allTests.filter(t => t.category === cat).length} Tests Available</p>
+    function toggleSort() {
+        sortType = (sortType === "az") ? "default" : "az";
+        localStorage.setItem('userSortPref', sortType);
+        updateSortButtonUI();
+        
+        // Refresh whatever view is currently open
+        if (currentPath === "") {
+            renderRoot();
+        } else {
+            const items = allTests.filter(t => t.category.startsWith(currentPath));
+            const hasSub = items.some(t => t.category.includes(' > '));
+            hasSub && !currentPath.includes(' > ') ? renderSubfolders(currentPath) : renderTestList(currentPath);
+        }
+    }
+
+    function trackAttempt(testName) {
+        localStorage.setItem('lastAttempted', testName);
+    }
+
+    function clearHistory() {
+        localStorage.removeItem('lastAttempted');
+        location.reload(); 
+    }
+
+    function checkHistoryBtn() {
+        const btn = document.getElementById('clear-history');
+        localStorage.getItem('lastAttempted') ? btn.classList.remove('hidden') : btn.classList.add('hidden');
+    }
+
+    function renderRoot() {
+        currentPath = "";
+        updateUI("Test Categories", "Home", false);
+        const grid = document.getElementById('category-view');
+        
+        let mainCats = [...new Set(allTests.map(t => t.category.split(' > ')[0]))];
+        if (sortType === "az") mainCats.sort((a, b) => a.localeCompare(b));
+
+        grid.innerHTML = mainCats.map(cat => `
+            <div class="card" onclick="handleFolderClick('${cat}')">
+                <h3>📂 ${cat}</h3>
+                <p>Click to open</p>
             </div>
         `).join('');
     }
 
-    function showTests(cat) {
-        document.getElementById('page-title').innerText = cat + " Tests";
-        document.getElementById('back-btn').classList.remove('hidden');
+    function handleFolderClick(path) {
+        const items = allTests.filter(t => t.category.startsWith(path));
+        const hasSubfolders = items.some(t => t.category.includes(' > '));
+        hasSubfolders ? renderSubfolders(path) : renderTestList(path);
+    }
+
+    function renderSubfolders(mainCat) {
+        currentPath = mainCat;
+        updateUI(mainCat, `<span style="cursor:pointer; text-decoration:underline;" onclick="renderRoot()">Home</span> > ${mainCat}`, true, () => renderRoot());
+        const grid = document.getElementById('category-view');
+        
+        let subfolders = [...new Set(allTests.filter(t => t.category.startsWith(mainCat)).map(t => t.category.split(' > ')[1] || "General"))];
+        if (sortType === "az") subfolders.sort((a, b) => a.localeCompare(b));
+
+        grid.innerHTML = subfolders.map(sub => `
+            <div class="card" style="border-bottom-color: #ffca28;" onclick="renderTestList('${mainCat} > ${sub}')">
+                <h3>📁 ${sub}</h3>
+                <p>View Tests</p>
+            </div>
+        `).join('');
+    }
+
+    function renderTestList(fullPath) {
+        currentPath = fullPath;
+        const parts = fullPath.split(' > ');
+        const breadcrumbHtml = `<span style="cursor:pointer; text-decoration:underline;" onclick="renderRoot()">Home</span> > ` + 
+            (parts.length > 1 ? `<span style="cursor:pointer; text-decoration:underline;" onclick="handleFolderClick('${parts[0]}')">${parts[0]}</span> > ` : "") + parts[parts.length-1];
+
+        updateUI(parts[parts.length - 1], breadcrumbHtml, true, () => {
+            parts.length > 1 ? renderSubfolders(parts[0]) : renderRoot();
+        });
+
+        const listView = document.getElementById('test-list-view');
         document.getElementById('category-view').classList.add('hidden');
-        const testView = document.getElementById('test-list-view');
-        testView.classList.remove('hidden');
+        listView.classList.remove('hidden');
 
-        const filtered = allTests.filter(t => t.category === cat);
-        testView.innerHTML = filtered.map(t => {
-            const params = new URLSearchParams({
-                sheet: t.link,
-                name: t.name,
-                time: t.duration,
-                pos: t.pos,
-                neg: t.neg
-            }).toString();
+        let tests = allTests.filter(t => t.category === fullPath);
+        if (sortType === "az") tests.sort((a, b) => a.name.localeCompare(b.name));
 
+        const lastAttemptedName = localStorage.getItem('lastAttempted');
+        if (lastAttemptedName) {
+            const lastIdx = tests.findIndex(t => t.name === lastAttemptedName);
+            if (lastIdx > -1) {
+                const [lastTest] = tests.splice(lastIdx, 1);
+                tests.unshift(lastTest);
+            }
+        }
+
+        listView.innerHTML = tests.map(t => {
+            const isLast = t.name === lastAttemptedName;
+            const query = new URLSearchParams({ sheet: t.link, name: t.name, time: t.duration, pos: t.pos, neg: t.neg }).toString();
             return `
-                <div class="test-item">
-                    <div>
-                        <h4 style="margin:0">${t.name}</h4>
-                        <small style="color:#666">⏱ ${t.duration} min | Marks: +${t.pos}, -${t.neg}</small>
+                <div class="test-item" style="${isLast ? 'border-left-color: #007bff; background: #f0f7ff;' : ''}">
+                    <div class="test-info">
+                        <h4>📝 ${t.name} ${isLast ? '<span class="badge">Last Attempted</span>' : ''}</h4>
+                        <div style="font-size:0.8rem; color:#666; margin-top:4px;">⏱ ${t.duration}m | 🟢 +${t.pos} | 🔴 -${t.neg}</div>
                     </div>
-                    <a href="exam-portal.html?${params}" class="start-btn">Start Test</a>
-                </div>
-            `;
+                    <a href="exam-portal.html?${query}" class="btn-start" onclick="trackAttempt('${t.name}')">Start Test</a>
+                </div>`;
         }).join('');
+    }
+
+    function updateUI(title, breadcrumb, showBack, backFn) {
+        document.getElementById('view-title').innerText = title;
+        document.getElementById('breadcrumb').innerHTML = breadcrumb;
+        document.getElementById('category-view').classList.remove('hidden');
+        document.getElementById('test-list-view').classList.add('hidden');
+        const btn = document.getElementById('back-btn');
+        if (showBack) { btn.classList.remove('hidden'); btn.onclick = backFn; } 
+        else { btn.classList.add('hidden'); }
     }
 </script>
 </body>

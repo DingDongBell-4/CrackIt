@@ -8,7 +8,7 @@
     <script>
       window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] } };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
 
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --bg: #f4f7f9; }
@@ -111,7 +111,7 @@
         window.location.replace('login.html');
     }
 
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFBULUle62aq2fAYmy0tlhYZ81JkzN38V_idbluc28h7TSwZ0Mw4_I_-0aKSQt66dR/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwxVl2SEW5cirE3sjHbpk4dPqlDUjF2fuXRdsF_udfxclXp5uQqlejwefbTWPXWqH5cYw/exec";
     const params = new URLSearchParams(window.location.search);
     
     let questions = [];
@@ -120,26 +120,65 @@
     let status = []; // 0:Unvisited, 1:Visited/NotAns, 2:Ans, 3:Marked
     let timeLeft = (parseInt(params.get('time')) || 60) * 60;
 
-    async function init() {
-        const sheetLink = params.get('sheet');
-        document.getElementById('test-name').innerText = params.get('name') || "SSC Test";
+   async function init() {
+    // 1. Get parameters first
+    const params = new URLSearchParams(window.location.search);
+    const sheetLink = params.get('sheet');
+    const testName = params.get('name') || "SSC Test";
+    
+    document.getElementById('test-name').innerText = testName;
 
-        try {
-            const res = await fetch(`${SCRIPT_URL}?sheet=${encodeURIComponent(sheetLink)}`);
-            questions = await res.json();
-            answers = Array(questions.length).fill("");
-            status = Array(questions.length).fill(0); 
-            status[0] = 1; 
-
-            document.getElementById('loader').classList.add('hidden');
-            document.getElementById('exam-ui').classList.remove('hidden');
-            
-            render();
-            startTimer();
-        } catch (e) {
-            document.getElementById('loader').innerText = "❌ Error loading questions.";
-        }
+    // 2. Check if sheetLink exists
+    if (!sheetLink) {
+        document.getElementById('loader').innerHTML = "❌ Error: No Test ID found. Please go back and select a test.";
+        return;
     }
+
+    try {
+        // 3. Setup Cache Buster and Fetch
+        const cacheBuster = new Date().getTime();
+        const fetchUrl = `${SCRIPT_URL}?sheet=${sheetLink}&v=${cacheBuster}`;
+        
+        console.log("Fetching from:", fetchUrl);
+
+        const res = await fetch(fetchUrl, {
+            method: 'GET',
+            redirect: 'follow'
+        });
+
+        const text = await res.text();
+
+        // 4. Try parsing JSON
+        try {
+            questions = JSON.parse(text);
+        } catch (e) {
+            console.error("Failed to parse JSON. Received:", text);
+            document.getElementById('loader').innerText = "❌ Script Error: The Google Script returned an invalid response. Check Deployment settings.";
+            return;
+        }
+
+        if (questions.error) {
+            document.getElementById('loader').innerText = "❌ " + questions.error;
+            return;
+        }
+
+        // 5. Initialize Exam State
+        answers = Array(questions.length).fill("");
+        status = Array(questions.length).fill(0); 
+        status[0] = 1; 
+
+        // 6. Show UI
+        document.getElementById('loader').classList.add('hidden');
+        document.getElementById('exam-ui').classList.remove('hidden');
+        
+        render();
+        startTimer();
+
+    } catch (e) {
+        console.error("Fetch failed:", e);
+        document.getElementById('loader').innerText = "❌ Connection Failed. Make sure you are connected to the internet.";
+    }
+}
 
     function parseTable(text) {
         const tableRegex = /\|\|\|([\s\S]*?)\|\|\|/g;
@@ -243,18 +282,36 @@
         }, 1000);
     }
 
-    function submitExam(isAuto = false) {
-        if(!isAuto && !confirm("Finish and Submit Test?")) return;
+   function submitExam(isAuto = false) {
+    if(!isAuto && !confirm("Finish and Submit Test?")) return;
+
+    try {
+        // 1. Capture the current meta-data
+        const testTitle = document.getElementById('test-name').innerText;
+        const posValue = params.get('pos') || "1";
+        const negValue = params.get('neg') || "0.25";
+
+        // 2. Save everything to LocalStorage
         localStorage.setItem('last_questions', JSON.stringify(questions));
         localStorage.setItem('last_answers', JSON.stringify(answers));
         localStorage.setItem('last_status', JSON.stringify(status)); 
         localStorage.setItem('test_meta', JSON.stringify({
-            name: document.getElementById('test-name').innerText,
-            pos: params.get('pos') || 1,
-            neg: params.get('neg') || 0.25
+            name: testTitle,
+            pos: posValue,
+            neg: negValue
         }));
-        window.location.href = "results.html";
+
+        console.log("Data saved. Redirecting...");
+
+        // 3. Use a slight delay to ensure the browser writes the data
+        setTimeout(() => {
+            window.location.href = "results.html";
+        }, 100);
+
+    } catch (e) {
+        alert("Error saving results: " + e.message);
     }
+}
 
     window.onload = init;
 </script>
