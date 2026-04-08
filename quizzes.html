@@ -3,147 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - CrackIt Portal</title>
+    <title>CrackIt Portal - Deep Explorer</title>
     <style>
         :root { 
             --primary: #3a86ff; --folder: #8338ec; --bg: #f4f7f6; 
             --card-bg: #ffffff; --text: #000000; --border: #edf2f7; --nav-bg: #ffffff;
+            --word-color: #2b579a;
         }
         [data-theme="dark"] {
             --bg: #121212; --card-bg: #1e1e1e; --text: #ffffff;
             --border: #333333; --nav-bg: #1e1e1e; --primary: #6ab0ff;
         }
-        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; color: var(--text); transition: 0.3s; }
+
+        body { background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; color: var(--text); transition: 0.3s; }
+        
         .top-bar {
             background: var(--nav-bg); padding: 15px 25px; 
             display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000;
         }
-        .top-bar-right { display: flex; gap: 10px; }
+
         .container { max-width: 1100px; margin: 30px auto; padding: 20px; }
+        
         .breadcrumb-nav { 
             background: var(--card-bg); padding: 12px 20px; border-radius: 10px; 
-            margin-bottom: 25px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border);
+            margin-bottom: 25px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border);
+            font-size: 0.9rem; overflow-x: auto; white-space: nowrap;
         }
+
+        .btn-group { display: flex; gap: 10px; align-items: center; }
+
         .nav-btn { 
             cursor: pointer; background: var(--primary); color: white; 
-            border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; text-decoration: none;
+            border: none; padding: 7px 14px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;
+            transition: 0.2s; text-decoration: none; display: inline-block;
         }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+        .nav-btn:hover { opacity: 0.9; transform: scale(1.02); }
+        
+        /* Dashboard Button Style */
+        .dash-btn { background: #2d3436; }
+
+        .bc-link { color: var(--primary); cursor: pointer; text-decoration: none; font-weight: 500; }
+        .bc-link:hover { text-decoration: underline; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        
         .card {
             background: var(--card-bg); padding: 25px 15px; border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); cursor: pointer;
             transition: 0.3s; border: 2px solid var(--border); text-align: center;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        .card:hover { transform: translateY(-5px); border-color: var(--primary); }
-        .card.folder-card { border-bottom: 5px solid var(--folder); }
-        .card.file-card { border-bottom: 5px solid var(--primary); }
-        .hidden { display: none !important; }
-        .theme-toggle { cursor: pointer; background: var(--border); border: none; padding: 8px 15px; border-radius: 20px; color: var(--text); font-weight: bold; }
+        .card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .card h3 { font-size: 0.95rem; margin: 15px 0 0; word-break: break-word; line-height: 1.4; }
+        
+        .folder-card { border-bottom: 5px solid var(--folder); }
+        .file-card { border-bottom: 5px solid var(--primary); }
+        .word-card { border-bottom: 5px solid var(--word-color); }
+
+        .theme-toggle { cursor: pointer; background: var(--border); border: none; padding: 8px 18px; border-radius: 20px; color: var(--text); font-weight: bold; transition: 0.3s; }
+        .empty-msg { grid-column: 1/-1; text-align: center; padding: 60px; opacity: 0.5; font-style: italic; }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
-<div style="display: flex; align-items: center; gap: 15px;">
-        <div style="font-weight: bold;">🚀 CrackIt Portal</div>
-        <a href="index.html" class="nav-btn">📊 Dashboard</a>
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div style="font-weight: bold; font-size: 1.2rem;">🚀 CrackIt Portal</div>
+        <a href="index.html" class="nav-btn dash-btn">📊 Dashboard</a>
     </div>
-
-	
-    <div class="top-bar-right">
-        <button class="theme-toggle" onclick="toggleFS()" id="fs-btn">🖥️ Fullscreen</button>
+    <div class="btn-group">
+        <span id="stat" style="font-size: 0.75rem; opacity: 0.6; background: var(--border); padding: 3px 8px; border-radius: 4px; display: none;">Loading...</span>
         <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙 Night Mode</button>
     </div>
 </div>
 
 <div class="container">
-    <div class="breadcrumb-nav">
+    <div class="breadcrumb-nav" id="bc">
         <button class="nav-btn" onclick="goHome()">🏠 Home</button>
-        <button id="back-btn" class="nav-btn hidden" onclick="goBack()">⬅ Back</button>
-        <span id="current-path" style="margin-left: 10px;">Root</span>
     </div>
-    <div id="explorer-grid" class="grid">
-        <div style="grid-column: 1/-1; text-align: center; padding: 50px;">⏳ Syncing with Drive...</div>
+
+    <div id="grid" class="grid">
+        <div style="grid-column: 1/-1; text-align: center; padding: 50px;">
+            <div style="font-size: 2rem; margin-bottom: 10px;">📡</div>
+            Updating...
+        </div>
     </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxVXyy_kCp3hh58cOIeD4xqNMXJV0Y7GkUd_2bimS1l1gp35KcX9YzjLTQHB1pwRbc6/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwaDjgR34EZ6e1IrlEkGkdMM8EhZY1-lkVPIsBttYfU-pTLII0gYvJbArhXjyBv2GrZhA/exec";
+    
     let allData = [];
-    let currentPath = [];
+    let currentPath = []; 
 
-    async function initExplorer() {
+    async function init() {
         try {
             const res = await fetch(SCRIPT_URL);
             allData = await res.json();
-            renderExplorer();
-        } catch (e) { document.getElementById('explorer-grid').innerHTML = "Connection Error."; }
-    }
-
-    function renderExplorer() {
-        const grid = document.getElementById('explorer-grid');
-        const pathDisplay = document.getElementById('current-path');
-        const backBtn = document.getElementById('back-btn');
-        grid.innerHTML = '';
-        pathDisplay.innerText = currentPath.length === 0 ? "Root" : currentPath.join(" / ");
-        currentPath.length > 0 ? backBtn.classList.remove('hidden') : backBtn.classList.add('hidden');
-
-        const folders = new Set();
-        const files = [];
-
-        allData.forEach(item => {
-            const pathArr = item.folder ? item.folder.split('/').filter(s => s.length > 0) : [];
-            const isMatch = currentPath.every((folder, i) => pathArr[i] === folder);
-            if (isMatch) {
-                if (pathArr.length > currentPath.length) folders.add(pathArr[currentPath.length]);
-                else if (pathArr.length === currentPath.length) files.push(item);
+            
+            if (allData.error) {
+                document.getElementById('grid').innerHTML = `<div class="empty-msg">Error: ${allData.error}</div>`;
+                return;
             }
-        });
 
-        Array.from(folders).sort().forEach(name => {
-            const card = document.createElement('div');
-            card.className = 'card folder-card';
-            card.innerHTML = `<span style="font-size:2.5rem">📁</span><h3>${name}</h3>`;
-            card.onclick = () => { currentPath.push(name); renderExplorer(); };
-            grid.appendChild(card);
-        });
-
-        files.forEach(file => {
-            const card = document.createElement('div');
-            card.className = 'card file-card';
-            card.innerHTML = `<span style="font-size:2.5rem">📄</span><h3>${file.name}</h3>`;
-            card.onclick = () => { window.location.href = `quizinterface.html?id=${file.id}`; };
-            grid.appendChild(card);
-        });
-    }
-
-    function goBack() { currentPath.pop(); renderExplorer(); }
-    function goHome() { currentPath = []; renderExplorer(); }
-    
-    function toggleFS() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
-            document.getElementById('fs-btn').innerText = "🪟 Exit Full";
-        } else {
-            document.exitFullscreen();
-            document.getElementById('fs-btn').innerText = "🖥️ Fullscreen";
+            const statEl = document.getElementById('stat');
+            statEl.style.display = 'block';
+            statEl.innerText = allData.length + " Documents";
+            render();
+        } catch (e) {
+            document.getElementById('grid').innerHTML = `<div class="empty-msg">Failed to connect to Drive.</div>`;
         }
     }
 
+    function render() {
+        const grid = document.getElementById('grid');
+        const bc = document.getElementById('bc');
+        grid.innerHTML = '';
+        
+        // Build Breadcrumb
+        bc.innerHTML = `<button class="nav-btn" onclick="goHome()">🏠 Home</button>`;
+        currentPath.forEach((p, i) => {
+            bc.innerHTML += `<span style="opacity:0.4; margin: 0 5px;">▶</span> <span class="bc-link" onclick="jump(${i})">${p}</span>`;
+        });
+
+        const targetPath = currentPath.join('/');
+        const folders = new Set();
+        let files = [];
+
+        // Filter Content
+        allData.forEach(item => {
+            const itemPath = item.folder || "";
+            if (targetPath === "") {
+                if (itemPath === "") files.push(item);
+                else folders.add(itemPath.split('/')[0]);
+            } else {
+                if (itemPath === targetPath) files.push(item);
+                else if (itemPath.startsWith(targetPath + "/")) {
+                    const sub = itemPath.substring(targetPath.length + 1).split('/')[0];
+                    folders.add(sub);
+                }
+            }
+        });
+
+        // Alphabetical Sort (Default)
+        files.sort((a, b) => a.name.localeCompare(b.name));
+
+        // Render Folders (Alphabetical)
+        Array.from(folders).sort().forEach(folderName => {
+            const div = document.createElement('div');
+            div.className = 'card folder-card';
+            div.innerHTML = `<span style="font-size:2.8rem">📁</span><h3>${folderName}</h3>`;
+            div.onclick = () => { currentPath.push(folderName); render(); };
+            grid.appendChild(div);
+        });
+
+        // Render Files
+        files.forEach(file => {
+            const isDocx = file.name.toLowerCase().endsWith('.docx');
+            // Clean Name: Strip extensions for display
+            const displayName = file.name.replace(/\.(docx|doc|pdf)$/i, "");
+            
+            const div = document.createElement('div');
+            div.className = isDocx ? 'card file-card word-card' : 'card file-card';
+            const icon = isDocx ? '🟦' : '📄'; 
+            
+            div.innerHTML = `<span style="font-size:2.8rem">${icon}</span><h3>${displayName}</h3>`;
+            div.onclick = () => {enterFullScreen(); window.location.href = `quizinterface.html?id=${file.id}`; };
+		
+            grid.appendChild(div);
+        });
+
+        if (grid.innerHTML === '') {
+            grid.innerHTML = `<div class="empty-msg">No documents found in this folder.</div>`;
+        }
+    }
+
+    function goHome() { currentPath = []; render(); }
+    function jump(index) { currentPath = currentPath.slice(0, index + 1); render(); }
+function enterFullScreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) { /* Safari */
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { /* IE11 */
+        elem.msRequestFullscreen();
+    }
+}
     function toggleTheme() {
-        const target = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        const current = document.documentElement.getAttribute('data-theme');
+        const target = current === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', target);
         document.getElementById('theme-btn').innerText = target === 'dark' ? '☀️ Day Mode' : '🌙 Night Mode';
-        localStorage.setItem('theme', target);
+        localStorage.setItem('portal-theme', target);
     }
     
-    if (localStorage.getItem('theme') === 'dark') {
+    const savedTheme = localStorage.getItem('portal-theme');
+    if (savedTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
         document.getElementById('theme-btn').innerText = '☀️ Day Mode';
     }
 
-    window.onload = initExplorer;
+    window.onload = init;
 </script>
+
 </body>
 </html>

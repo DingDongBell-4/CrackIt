@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Quiz</title>
+    <title>Daily Quiz Portal</title>
     <style>
         :root { 
             --primary: #3a86ff; --folder: #8338ec; --bg: #f4f7f6; 
@@ -84,7 +84,7 @@
 
 <div class="container">
     <div class="control-ribbon">
-        <input type="text" id="search-input" placeholder="🔍 Search quizzes or folders..." onkeyup="renderExplorer()">
+        <input type="text" id="search-input" placeholder="🔍 Search documents or folders..." onkeyup="renderExplorer()">
         
         <select id="status-filter" onchange="renderExplorer()">
             <option value="all">All Status</option>
@@ -107,12 +107,13 @@
     </div>
 
     <div id="explorer-grid" class="grid">
-        <div style="grid-column: 1/-1; text-align: center; padding: 50px;">⏳ Syncing with Drive...</div>
+        <div style="grid-column: 1/-1; text-align: center; padding: 50px;">⏳ Syncing with Drive Docs...</div>
     </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwidAzFenUbcgcsSYFW8sN2Qy_41M8u2X7jEMPC2nqncB_d1J__9p1qiJdKcAg3lA-laA/exec";
+    // Updated SCRIPT_URL to your newest deployment
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx1XXkBn4-x9gWpXAEA6gPOs9y2kqbNq80q_1Q3JTqdevn-NctzRmMZX17j2elqPzaz/exec";
     
     let allData = [];
     let currentPath = [];
@@ -124,7 +125,7 @@
             if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
             allData = await res.json();
             if (!Array.isArray(allData) || allData.length === 0) {
-                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px;"><h3>📭 No Sheets Found</h3></div>`;
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px;"><h3>📭 No Documents Found</h3></div>`;
             } else {
                 renderExplorer();
             }
@@ -185,7 +186,7 @@
                                          (statusFilter === 'locked' && !status.isAvailable);
 
                     if (matchesSearch && matchesStatus) {
-                        item.meta = status; // Attach status for sorting
+                        item.meta = status;
                         files.push(item);
                     }
                 }
@@ -212,19 +213,23 @@
             grid.appendChild(card);
         });
 
-        // Render Files
+        // Render Files (Docs)
         files.forEach(file => {
             const card = document.createElement('div');
             card.className = `card file-card ${file.meta.isAvailable ? '' : 'locked'}`;
             card.innerHTML = `
-                <span style="font-size:2rem">${file.meta.isAvailable ? '📝' : '🔒'}</span>
+                <span style="font-size:2rem">${file.meta.isAvailable ? '📄' : '🔒'}</span>
                 <h3 style="margin: 15px 0 5px 0; font-size: 1.1rem;">${file.meta.cleanName}</h3>
                 <div class="time-badge" style="color:${file.meta.isAvailable ? 'var(--success)' : 'var(--accent-red)'}">
                     ${file.meta.isAvailable ? '✅ Available' : '📅 Opens: ' + file.meta.unlockText}
                 </div>`;
             card.onclick = () => {
-                if (file.meta.isAvailable) window.location.href = `quizinterface.html?id=${file.id}`;
-                else alert(`Access Denied: Unlocks on ${file.meta.unlockText}`);
+                if (file.meta.isAvailable) {
+                    // Redirects to quizinterface.html with the Doc ID
+                    window.location.href = `quizinterface.html?id=${file.id}`;
+                } else {
+                    alert(`Access Denied: This quiz unlocks on ${file.meta.unlockText}`);
+                }
             };
             grid.appendChild(card);
         });
