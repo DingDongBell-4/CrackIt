@@ -15,16 +15,22 @@
             --primary: #3a86ff; --success: #2ecc71; --error: #e74c3c; 
             --bg: #f4f7f6; --card-bg: #ffffff; --text: #000000; 
             --border: #edf2f7; --nav-bg: #ffffff; --table-head: #4a90e2;
+            --dash-btn: #4a5568;
         }
         [data-theme="dark"] { 
             --bg: #121212; --card-bg: #1e1e1e; --text: #ffffff; 
             --border: #333333; --nav-bg: #1e1e1e; --primary: #6ab0ff;
             --table-head: #2c5282;
+            --dash-btn: #a0aec0;
         }
 
         body { background: var(--bg); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; color: var(--text); transition: 0.3s; }
         .top-bar { background: var(--nav-bg); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
         
+        /* Dashboard Button Style */
+        .dash-btn { cursor:pointer; background:var(--dash-btn); color:white; border:none; padding:8px 15px; border-radius:20px; font-weight:bold; text-decoration: none; font-size: 0.9rem; transition: 0.2s; }
+        .dash-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
         .quiz-window { display: flex; align-items: center; justify-content: center; min-height: 85vh; padding: 15px; }
         .quiz-container { background: var(--card-bg); width: 100%; max-width: 900px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); overflow: hidden; border: 1px solid var(--border); }
 
@@ -39,11 +45,12 @@
             #question { font-size: 1.2rem; padding: 25px; }
             .option-item { padding: 14px 20px; font-size: 1.05rem; }
             #options-container { gap: 10px; padding: 0 25px 20px 25px; }
+            .top-bar { padding: 10px 15px; }
         }
 
-        .table-container { margin: 15px 0; border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; background: var(--card-bg); width: 100; max-width: 100%; }
-        .data-table { border-collapse: collapse; width: auto; font-size: 0.95rem;min-width: 400px; }
-        .table-header td, .table-header th { background-color: var(--table-head) !important; color: white !important; font-weight: bold !important;padding: 12px 15px !important; }
+        .table-container { margin: 15px 0; border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; background: var(--card-bg); width: 100%; max-width: 100%; }
+        .data-table { border-collapse: collapse; width: auto; font-size: 0.95rem; min-width: 400px; }
+        .table-header td, .table-header th { background-color: var(--table-head) !important; color: white !important; font-weight: bold !important; padding: 12px 15px !important; }
         .data-table td { padding: 12px 15px; border: 1px solid var(--border); text-align: left; }
 
         #quiz-body img { max-width: 100%; height: auto !important; display: block; margin: 10px 0; border-radius: 5px; }
@@ -71,14 +78,7 @@
 
         #explanation-box { padding: 25px; background: rgba(58, 134, 255, 0.08); border-top: 5px solid var(--primary); border-left: 5px solid var(--primary); margin: 25px; border-radius: 0 8px 8px 0; }
         
-        #explanation-text h4 {
-            color: var(--text);
-            margin: 20px 0 10px 0;
-            font-size: 1.1rem;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 5px;
-            font-weight: bold;
-        }
+        #explanation-text h4 { color: var(--text); margin: 20px 0 10px 0; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 5px; font-weight: bold; }
         #explanation-text ul { margin-bottom: 15px; padding-left: 25px; }
         #explanation-text li { margin-bottom: 8px; line-height: 1.5; }
         #explanation-text p { margin-bottom: 12px; line-height: 1.5; }
@@ -89,22 +89,23 @@
         .hidden { display: none !important; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-	/* New Start Button Styling */
-#start-quiz-btn { 
-    padding: 15px 40px; background: var(--success); color: white; border: none; 
-    border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.2rem; 
-    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3); transition: 0.3s;
-}
-#start-quiz-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+        #start-quiz-btn { 
+            padding: 15px 40px; background: var(--success); color: white; border: none; 
+            border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.2rem; 
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3); transition: 0.3s;
+        }
+        #start-quiz-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
     <div style="font-weight: bold; font-size: 1.2rem;">🚀 CrackIt Portal</div>
-    <div style="display: flex; gap: 10px;">
-        <button onclick="restartQuiz()" style="cursor:pointer; background:var(--error); color:white; border:none; padding:8px 15px; border-radius:20px; font-weight:bold;">🔄 Restart</button>
-        <button onclick="toggleTheme()" id="theme-btn" style="cursor:pointer; background:var(--border); border:none; padding:8px 15px; border-radius:20px;">🌙 Night Mode</button>
+    <div style="display: flex; gap: 8px; align-items: center;">
+        <button onclick="goToDashboard()" class="dash-btn">🏠 Dashboard</button>
+        <button onclick="restartQuiz()" style="cursor:pointer; background:var(--error); color:white; border:none; padding:8px 15px; border-radius:20px; font-weight:bold; font-size:0.9rem;">🔄 Restart</button>
+        <button onclick="toggleTheme()" id="theme-btn" style="cursor:pointer; background:var(--border); border:none; padding:8px 15px; border-radius:20px; font-size:0.9rem;">🌙</button>
     </div>
 </div>
 
@@ -117,7 +118,7 @@
 
         <div id="quiz-body" class="hidden">
             <div style="padding: 15px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-                <button onclick="window.history.back()" style="background:none; border:none; color:var(--error); cursor:pointer; font-weight:bold;">✖ Exit Quiz</button>
+                <button onclick="goToDashboard()" style="background:none; border:none; color:var(--error); cursor:pointer; font-weight:bold;">✖ Exit</button>
                 <span id="q-progress" style="font-weight:bold; color: var(--primary); font-size: 1.1rem;"></span>
             </div>
             <div id="question"></div>
@@ -141,44 +142,46 @@
     let score = 0;
     let currentFileId = "";
 
-async function loadDocument() {
-    const urlParams = new URLSearchParams(window.location.search);
-    currentFileId = urlParams.get('id');
-    if (!currentFileId) return;
-    try {
-        const response = await fetch(`${SCRIPT_URL}?id=${currentFileId}&action=download`);
-        const data = await response.json();
-        const bytes = atob(data.base64.replace(/\s/g, ''));
-        const array = new Uint8Array(bytes.length);
-        for (let i = 0; i < bytes.length; i++) array[i] = bytes.charCodeAt(i);
-        mammoth.convertToHtml({arrayBuffer: array.buffer}).then(res => {
-            parseDoc(res.value);
-            // restoreProgress();  <-- DELETE OR COMMENT OUT THIS LINE
-        });
-    } catch (err) {
-        document.getElementById('status-text').innerText = "📡 Connection Error";
+    // Change this to your actual dashboard link
+    function goToDashboard() {
+        if (currentIndex > 0 && currentIndex < activeQuestions.length) {
+            if (!confirm("Are you sure? Progress will be saved locally.")) return;
+        }
+        window.location.href = "index.html"; 
     }
-}
+
+    async function loadDocument() {
+        const urlParams = new URLSearchParams(window.location.search);
+        currentFileId = urlParams.get('id');
+        if (!currentFileId) return;
+        try {
+            const response = await fetch(`${SCRIPT_URL}?id=${currentFileId}&action=download`);
+            const data = await response.json();
+            const bytes = atob(data.base64.replace(/\s/g, ''));
+            const array = new Uint8Array(bytes.length);
+            for (let i = 0; i < bytes.length; i++) array[i] = bytes.charCodeAt(i);
+            mammoth.convertToHtml({arrayBuffer: array.buffer}).then(res => {
+                parseDoc(res.value);
+            });
+        } catch (err) {
+            document.getElementById('status-text').innerText = "📡 Connection Error";
+        }
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
 
     function saveProgress() {
         const state = { index: currentIndex, score: score };
         localStorage.setItem(`quiz_progress_${currentFileId}`, JSON.stringify(state));
     }
 
-    function restoreProgress() {
-        const saved = localStorage.getItem(`quiz_progress_${currentFileId}`);
-        if (saved) {
-            const data = JSON.parse(saved);
-            if (confirm(`Resume from Question ${data.index + 1}?`)) {
-                currentIndex = data.index;
-                score = data.score;
-                displayQuestion();
-            }
-        }
-    }
-
     function restartQuiz() {
-        if (confirm("Are you sure you want to restart the quiz? This will reset your score.")) {
+        if (confirm("Restart the quiz? Score will be reset.")) {
             localStorage.removeItem(`quiz_progress_${currentFileId}`);
             location.reload();
         }
@@ -201,136 +204,93 @@ async function loadDocument() {
         return doc.body.innerHTML;
     }
 
- function formatMarkdown(html) {
-    if (!html) return "";
-    let text = html.replace(/\^l/g, '\n').replace(/<br\s*\/?>/gi, '\n');
+    function formatMarkdown(html) {
+        if (!html) return "";
+        let text = html.replace(/\^l/g, '\n').replace(/<br\s*\/?>/gi, '\n');
+        text = text.replace(/(?:<p>|^)###\s+(.*?)(?:<\/p>|$|\n)/gim, '<h4>$1</h4>')
+                   .replace(/(?:<p>|^)####\s+(.*?)(?:<\/p>|$|\n)/gim, '<h5 style="margin: 15px 0 5px 0; color: var(--primary);">$1</h5>')
+                   .replace(/(?:<p>|^)---\s*(?:<\/p>|$|\n)/gim, '<hr style="border:0; border-top:1px solid var(--border); margin:15px 0;">')
+                   .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
+                   .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                   .replace(/\*(.*?)\*/g, '<em>$1</em>');
 
-    // 1. Convert Headings (### for h4, #### for h5)
-    text = text.replace(/(?:<p>|^)###\s+(.*?)(?:<\/p>|$|\n)/gim, '<h4>$1</h4>');
-    text = text.replace(/(?:<p>|^)####\s+(.*?)(?:<\/p>|$|\n)/gim, '<h5 style="margin: 15px 0 5px 0; color: var(--primary);">$1</h5>');
-
-    // 2. Convert Horizontal Rules (---)
-    text = text.replace(/(?:<p>|^)---\s*(?:<\/p>|$|\n)/gim, '<hr style="border:0; border-top:1px solid var(--border); margin:15px 0;">');
-
-    // 3. Bold and Italics
-    text = text.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
-               .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-               .replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-    let lines = text.split('\n'), inList = false, output = "";
-    lines.forEach(line => {
-        let clean = line.trim();
-        if (!clean || clean === '<p></p>') return;
-        
-        // 4. Bullet Points
-        if (clean.startsWith('* ')) {
-            if (!inList) { output += '<ul>'; inList = true; }
-            output += `<li>${clean.substring(2)}</li>`;
-        } else {
-            if (inList) { output += '</ul>'; inList = false; }
-            // Avoid wrapping existing HTML tags (like <h4>, <hr>, <h5>) in <p> tags
-            if (clean.startsWith('<h') || clean.startsWith('<hr')) {
-                output += clean;
+        let lines = text.split('\n'), inList = false, output = "";
+        lines.forEach(line => {
+            let clean = line.trim();
+            if (!clean || clean === '<p></p>') return;
+            if (clean.startsWith('* ')) {
+                if (!inList) { output += '<ul>'; inList = true; }
+                output += `<li>${clean.substring(2)}</li>`;
             } else {
-                output += (clean.startsWith('<p')) ? clean : `<p>${clean}</p>`;
+                if (inList) { output += '</ul>'; inList = false; }
+                output += (clean.startsWith('<h') || clean.startsWith('<hr')) ? clean : (clean.startsWith('<p') ? clean : `<p>${clean}</p>`);
             }
-        }
-    });
-    if (inList) output += '</ul>';
-    return output;
-}
-
+        });
+        if (inList) output += '</ul>';
+        return output;
+    }
 
     function getCleanText(html) {
         if (!html) return "";
         const temp = document.createElement("div");
         temp.innerHTML = html;
         let text = temp.textContent || temp.innerText || "";
-        return text.replace(/[\u201C\u201D]/g, '"')
-                   .replace(/[\u2018\u2019]/g, "'")
-                   .replace(/\u2013|\u2014/g, "-")
-                   .replace(/\s+/g, '')
-                   .trim()
-                   .toLowerCase();
+        return text.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'").replace(/\u2013|\u2014/g, "-").replace(/\s+/g, '').trim().toLowerCase();
     }
-// Fullscreen trigger
-function enterFullScreen() {
-    const elem = document.documentElement;
-    if (elem.requestFullscreen) elem.requestFullscreen();
-    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-}
 
-function parseDoc(html) {
-    const blocks = html.split(/Question:/gi).slice(1);
-    activeQuestions = blocks.map((block, index) => {
-        try {
-            const optA = block.match(/\(a\)\s*([\s\S]*?)\s*\(b\)/i)?.[1] || "";
-            const optB = block.match(/\(b\)\s*([\s\S]*?)\s*\(c\)/i)?.[1] || "";
-            const optC = block.match(/\(c\)\s*([\s\S]*?)\s*\(d\)/i)?.[1] || "";
-            const optD = block.match(/\(d\)\s*([\s\S]*?)\s*Ans:/i)?.[1] || "";
+    function parseDoc(html) {
+        const blocks = html.split(/Question:/gi).slice(1);
+        activeQuestions = blocks.map(block => {
+            try {
+                const optA = block.match(/\(a\)\s*([\s\S]*?)\s*\(b\)/i)?.[1] || "";
+                const optB = block.match(/\(b\)\s*([\s\S]*?)\s*\(c\)/i)?.[1] || "";
+                const optC = block.match(/\(c\)\s*([\s\S]*?)\s*\(d\)/i)?.[1] || "";
+                const optD = block.match(/\(d\)\s*([\s\S]*?)\s*Ans:/i)?.[1] || "";
+                let ansKey = "a"; 
+                const ansIndex = block.search(/Ans\s*:/i);
+                if (ansIndex !== -1) {
+                    const ansSnippet = block.substring(ansIndex, ansIndex + 100).replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
+                    const letterMatch = ansSnippet.match(/Ans\s*:\s*([a-d*])/i);
+                    if (letterMatch) ansKey = letterMatch[1].toLowerCase();
+                }
+                const clean = (h) => h.replace(/<p>&nbsp;<\/p>/g, '').trim();
+                const optionsMap = { a: clean(optA), b: clean(optB), c: clean(optC), d: clean(optD) };
+                return {
+                    question: block.split(/\(a\)/i)[0].trim(),
+                    options: [optionsMap.a, optionsMap.b, optionsMap.c, optionsMap.d].filter(o => o !== ""),
+                    correctText: optionsMap[ansKey === "*" ? "a" : ansKey],
+                    explanation: (block.split(/Explanation:/i)[1] || "").trim()
+                };
+            } catch (e) { return null; }
+        }).filter(q => q && q.question !== "");
 
-            let ansKey = "a"; 
-            const ansIndex = block.search(/Ans\s*:/i);
-            if (ansIndex !== -1) {
-                const ansSnippet = block.substring(ansIndex, ansIndex + 100);
-                const cleanSnippet = ansSnippet.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
-                const letterMatch = cleanSnippet.match(/Ans\s*:\s*([a-d*])/i);
-                if (letterMatch) ansKey = letterMatch[1].toLowerCase();
-            }
+        shuffleArray(activeQuestions);
+        document.getElementById('loading-area').querySelector('.loader').classList.add('hidden');
+        document.getElementById('status-text').innerText = "Exam Material Ready";
 
-            const clean = (h) => h.replace(/<p>&nbsp;<\/p>/g, '').trim();
-            const optionsMap = { a: clean(optA), b: clean(optB), c: clean(optC), d: clean(optD) };
-
-            return {
-                question: block.split(/\(a\)/i)[0].trim(),
-                options: [optionsMap.a, optionsMap.b, optionsMap.c, optionsMap.d].filter(o => o !== ""),
-                correctText: optionsMap[ansKey === "*" ? "a" : ansKey],
-                explanation: (block.split(/Explanation:/i)[1] || "").trim()
-            };
-        } catch (e) { return null; }
-    }).filter(q => q && q.question !== "");
-
-    // Prepare UI: Hide loader and show Start Button
-    const loadingArea = document.getElementById('loading-area');
-    const loader = loadingArea.querySelector('.loader');
-    if (loader) loader.classList.add('hidden');
-
-    document.getElementById('status-text').innerText = "Exam Material Ready";
-
-    if (!document.getElementById('start-quiz-btn')) {
-        const btn = document.createElement('button');
-        btn.id = "start-quiz-btn";
-        btn.innerHTML = "🚀 Start Quiz (Full Screen)";
-        // Using your existing CSS class for styling
-        btn.onclick = triggerStart; 
-        loadingArea.appendChild(btn);
+        if (!document.getElementById('start-quiz-btn')) {
+            const btn = document.createElement('button');
+            btn.id = "start-quiz-btn";
+            btn.innerHTML = "🚀 Start Quiz";
+            btn.onclick = triggerStart; 
+            document.getElementById('loading-area').appendChild(btn);
+        }
     }
-}
 
-// Action when Start Button is clicked
-function triggerStart() {
-    // 1. Enter Fullscreen
-    const elem = document.documentElement;
-    if (elem.requestFullscreen) elem.requestFullscreen();
-    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-
-    // 2. Switch Views
-    document.getElementById('loading-area').classList.add('hidden');
-    document.getElementById('quiz-body').classList.remove('hidden');
-    
-    // 3. Start directly (Data is already in activeQuestions)
-    displayQuestion();
-}
+    function triggerStart() {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        document.getElementById('loading-area').classList.add('hidden');
+        document.getElementById('quiz-body').classList.remove('hidden');
+        displayQuestion();
+    }
 
     function displayQuestion() {
         const data = activeQuestions[currentIndex];
-        document.getElementById('q-progress').innerText = `Question ${currentIndex + 1} of ${activeQuestions.length}`;
+        document.getElementById('q-progress').innerText = `Q${currentIndex + 1} / ${activeQuestions.length}`;
         document.getElementById('question').innerHTML = wrapTablesAndImages(data.question);
         document.getElementById('next-btn').classList.add('hidden');
         document.getElementById('explanation-box').classList.add('hidden');
-        
         const container = document.getElementById('options-container');
         container.innerHTML = ''; 
         const correctClean = getCleanText(data.correctText);
@@ -339,29 +299,21 @@ function triggerStart() {
             const div = document.createElement('div');
             div.className = 'option-item';
             div.innerHTML = wrapTablesAndImages(optContent);
-            
-            // Critical fix: Store pre-MathJax clean text for comparison
-            const optionClean = getCleanText(optContent);
-            div.setAttribute('data-clean', optionClean);
-
+            div.setAttribute('data-clean', getCleanText(optContent));
             div.onclick = () => {
                 const items = document.querySelectorAll('.option-item');
                 if (items[0].classList.contains('disabled')) return;
-
                 const isCorrect = div.getAttribute('data-clean') === correctClean;
                 if (isCorrect) score++;
-
                 items.forEach(item => {
                     item.classList.add('disabled');
                     if (item.getAttribute('data-clean') === correctClean) item.classList.add('correct');
                 });
                 if (!isCorrect) div.classList.add('wrong');
-                
                 saveProgress();
                 document.getElementById('next-btn').classList.remove('hidden');
                 if (data.explanation) {
-                    const markdownProcessed = formatMarkdown(data.explanation);
-                    document.getElementById('explanation-text').innerHTML = wrapTablesAndImages(markdownProcessed);
+                    document.getElementById('explanation-text').innerHTML = wrapTablesAndImages(formatMarkdown(data.explanation));
                     document.getElementById('explanation-box').classList.remove('hidden');
                 }
                 if(window.MathJax) MathJax.typesetPromise();
@@ -373,7 +325,6 @@ function triggerStart() {
 
     document.getElementById('next-btn').onclick = () => {
         currentIndex++;
-        saveProgress();
         if (currentIndex < activeQuestions.length) {
             displayQuestion();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -381,12 +332,14 @@ function triggerStart() {
             localStorage.removeItem(`quiz_progress_${currentFileId}`);
             const percent = Math.round((score / activeQuestions.length) * 100);
             document.getElementById('quiz-body').innerHTML = `
-                <div style="padding:80px; text-align:center;">
-                    <h1>🎉 Quiz Completed!</h1>
+                <div style="padding:60px; text-align:center;">
+                    <h1>🎉 Finished!</h1>
                     <p style="font-size: 1.5rem;">Score: <strong style="color:var(--primary);">${score} / ${activeQuestions.length}</strong></p>
                     <p>Accuracy: <strong>${percent}%</strong></p>
                     <br>
-                    <button onclick="location.reload()" style="padding:15px 40px; background:var(--primary); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold; font-size:1.1rem;">Restart Quiz</button>
+                    <button onclick="location.reload()" style="padding:12px 30px; background:var(--primary); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold; margin-bottom:10px;">🔄 Restart Quiz</button>
+                    <br>
+                    <button onclick="goToDashboard()" style="padding:12px 30px; background:var(--dash-btn); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">🏠 Back to Dashboard</button>
                 </div>`;
         }
     };
@@ -394,7 +347,7 @@ function triggerStart() {
     function toggleTheme() {
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
         document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-        document.getElementById('theme-btn').innerText = isDark ? '🌙 Night Mode' : '☀️ Day Mode';
+        document.getElementById('theme-btn').innerText = isDark ? '🌙' : '☀️';
     }
 
     window.onload = loadDocument;
