@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrackIt - Official Updates</title>
+    <style>
+        :root { 
+            --primary: #3a86ff; --bg: #f4f7f6; --card-bg: #ffffff; 
+            --text: #1a1a1a; --border: #edf2f7; --nav-bg: #ffffff;
+        }
+        [data-theme="dark"] {
+            --bg: #0f0f0f; --card-bg: #1e1e1e; --text: #e0e0e0;
+            --border: #333333; --nav-bg: #1e1e1e; --primary: #6ab0ff;
+        }
+
+        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; color: var(--text); transition: 0.3s; }
+        
+        .top-bar {
+            background: var(--nav-bg); padding: 15px 25px; 
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000;
+        }
+
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+
+        /* Control Ribbon Style */
+        .control-ribbon {
+            display: flex; gap: 12px; margin-bottom: 30px; flex-wrap: wrap;
+            background: var(--card-bg); padding: 15px; border-radius: 12px;
+            border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+
+        .control-ribbon input, .control-ribbon select {
+            padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text); font-size: 0.95rem; outline: none;
+        }
+        .control-ribbon input { flex: 2; min-width: 200px; }
+        .control-ribbon select { flex: 1; min-width: 140px; cursor: pointer; }
+
+        /* Update List View */
+        .updates-feed {
+            position: relative;
+            padding-left: 30px;
+            border-left: 3px solid var(--border);
+        }
+
+        .update-card {
+            position: relative;
+            margin-bottom: 25px;
+            background: var(--card-bg);
+            padding: 20px 25px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .update-card:hover {
+            transform: translateX(10px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+
+        .update-card::before {
+            content: '';
+            position: absolute;
+            left: -42px;
+            top: 25px;
+            width: 14px;
+            height: 14px;
+            background: var(--primary);
+            border-radius: 50%;
+            border: 4px solid var(--bg);
+        }
+
+        .date-label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .caption {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .download-icon { font-size: 1.2rem; opacity: 0.3; }
+        .update-card:hover .download-icon { opacity: 1; transform: translateY(2px); transition: 0.2s; }
+
+        .theme-toggle { cursor: pointer; background: var(--border); border: none; padding: 8px 15px; border-radius: 20px; color: var(--text); }
+        .nav-btn { cursor: pointer; background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; text-decoration: none; }
+        .loading { text-align: center; padding: 50px; opacity: 0.5; }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div style="font-weight: 800; font-size: 1.2rem;">🚀 CrackIt Updates</div>
+        <a href="index.html" class="nav-btn">📊 Dashboard</a>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙 Night Mode</button>
+</div>
+
+<div class="container">
+    <div class="control-ribbon">
+        <input type="text" id="search-input" placeholder="🔍 Search updates by name..." onkeyup="renderFeed()">
+        
+        <select id="sort-select" onchange="renderFeed()">
+            <option value="date-new">Date (Newest)</option>
+            <option value="date-old">Date (Oldest)</option>
+            <option value="name-az">Name (A-Z)</option>
+            <option value="name-za">Name (Z-A)</option>
+        </select>
+    </div>
+
+    <div id="feed-container" class="updates-feed">
+        <div class="loading">📡 Syncing with Drive...</div>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7sMPVC1-btkGSeXkFTcRt1TL4xiMaXwFwl3GKyuGVrRNZKh7eetEefTEQYP6PgBLDFg/exec";
+    let updatesData = [];
+
+    async function initUpdates() {
+        const container = document.getElementById('feed-container');
+        try {
+            const res = await fetch(SCRIPT_URL);
+            updatesData = await res.json();
+            
+            if (updatesData.error) throw new Error(updatesData.error);
+            renderFeed();
+        } catch (e) {
+            container.innerHTML = `<div class="loading">❌ Failed to load updates: ${e.message}</div>`;
+        }
+    }
+
+    function renderFeed() {
+        const container = document.getElementById('feed-container');
+        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+        const sortType = document.getElementById('sort-select').value;
+
+        // 1. Filter
+        let filtered = updatesData.filter(item => 
+            item.name.toLowerCase().includes(searchTerm)
+        );
+
+        // 2. Sort
+        filtered.sort((a, b) => {
+            switch (sortType) {
+                case 'name-az': return a.name.localeCompare(b.name);
+                case 'name-za': return b.name.localeCompare(a.name);
+                case 'date-new': return new Date(b.date) - new Date(a.date);
+                case 'date-old': return new Date(a.date) - new Date(b.date);
+                default: return 0;
+            }
+        });
+
+        // 3. Render
+        container.innerHTML = '';
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="loading">No matching updates found.</div>';
+            return;
+        }
+
+        filtered.forEach(file => {
+            const dateObj = new Date(file.date);
+            const formattedDate = dateObj.toLocaleDateString('en-US', { 
+                year: 'numeric', month: 'long', day: 'numeric' 
+            });
+            const cleanName = file.name.replace(/\.[^/.]+$/, ""); 
+
+            const card = document.createElement('a');
+            card.className = 'update-card';
+            // Force Download URL
+            card.href = `https://drive.google.com/uc?export=download&id=${file.id}`;
+
+            card.innerHTML = `
+                <div class="date-label">${formattedDate}</div>
+                <div class="caption">
+                    <span>${cleanName}</span>
+                    <span class="download-icon">📥</span>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        const current = body.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', next);
+        document.getElementById('theme-btn').innerText = next === 'dark' ? '☀️ Day Mode' : '🌙 Night Mode';
+        localStorage.setItem('portal-theme', next);
+    }
+
+    // Persist theme
+    if (localStorage.getItem('portal-theme') === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+        document.getElementById('theme-btn').innerText = '☀️ Day Mode';
+    }
+
+    window.onload = initUpdates;
+</script>
+
+</body>
+</html>
