@@ -48,11 +48,43 @@
             .top-bar { padding: 10px 15px; }
         }
 
-        .table-container { margin: 15px 0; border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; background: var(--card-bg); width: 100%; max-width: 100%; }
-        .data-table { border-collapse: collapse; width: auto; font-size: 0.95rem; min-width: 400px; }
-        .table-header td, .table-header th { background-color: var(--table-head) !important; color: white !important; font-weight: bold !important; padding: 12px 15px !important; }
-        .data-table td { padding: 12px 15px; border: 1px solid var(--border); text-align: left; }
+/* 1. Ensure the container doesn't hide the border */
+.table-container { 
+    margin: 20px 0; 
+    border: 1px solid #ddd; 
+    border-radius: 8px; 
+    overflow-x: auto; 
+    width: 100% !important; 
+}
 
+/* 2. Force Table Borders to show */
+.data-table { 
+    border-collapse: collapse !important; 
+    width: 100% !important; 
+    background: var(--card-bg);
+}
+
+.data-table td, .data-table th { 
+    border: 1px solid #ccc !important; /* Explicit gray border */
+    padding: 4px 6px !important; 
+    text-align: left !important; 
+    font-weight: normal !important; /* Removes bold */
+    color: var(--text);
+}
+
+/* 3. Restore Header Colors */
+.table-header td, .table-header th { 
+    background-color: var(--table-head) !important; 
+    color: white !important; 
+    font-weight: bold !important; /* Headers stay bold */
+}
+
+/* 4. Stop p-tags from ruining alignment or adding bold */
+.data-table td p {
+    margin: 0 !important;
+    text-align: left !important;
+    font-weight: normal !important;
+}
         #quiz-body img { max-width: 100%; height: auto !important; display: block; margin: 10px 0; border-radius: 5px; }
         
         .option-item { 
@@ -73,7 +105,7 @@
         .option-item.wrong { background: #f8d7da !important; border-color: var(--error) !important; color: #721c24; }
         .option-item.disabled { pointer-events: none; transform: none; }
 
-        #question { font-weight: 600; line-height: 1.5; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+        #question { font-weight: 600; line-height: 1.5;  margin-bottom: 0px; }
         #options-container { display: grid; }
 
         #explanation-box { padding: 25px; background: rgba(58, 134, 255, 0.08); border-top: 5px solid var(--primary); border-left: 5px solid var(--primary); margin: 25px; border-radius: 0 8px 8px 0; }
@@ -186,50 +218,107 @@
             location.reload();
         }
     }
+function wrapTablesAndImages(htmlContent) {
+    if (!htmlContent) return "";
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    
+    doc.querySelectorAll('table').forEach(table => {
+        table.className = 'data-table'; // Reset class
+        
+        // Remove Word/Mammoth specific inline styling
+        table.removeAttribute('style');
+        table.removeAttribute('border');
 
-    function wrapTablesAndImages(htmlContent) {
-        if (!htmlContent) return "";
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlContent, 'text/html');
-        doc.querySelectorAll('table').forEach(table => {
-            table.classList.add('data-table');
-            const firstRow = table.querySelector('tr');
-            if (firstRow) firstRow.classList.add('table-header');
-            table.querySelectorAll('td p').forEach(p => p.replaceWith(p.innerHTML));
-            const wrapper = document.createElement('div');
-            wrapper.className = 'table-container';
-            table.parentNode.insertBefore(wrapper, table);
-            wrapper.appendChild(table);
+        table.querySelectorAll('tr').forEach((row, index) => {
+            // Apply header class to the first row
+            if (index === 0) row.className = 'table-header';
+
+            row.querySelectorAll('td, th').forEach(cell => {
+                // Clear inline alignment/bolding
+                cell.style.textAlign = "left";
+                cell.style.fontWeight = index === 0 ? "bold" : "normal";
+                
+                // Handle raw symbols like < or >
+                if (cell.innerHTML.includes('<') || cell.innerHTML.includes('>')) {
+                    if (cell.children.length === 0) {
+                        cell.textContent = cell.innerText;
+                    }
+                }
+                
+                // Remove bold tags inside non-header cells
+                if (index !== 0) {
+                    cell.querySelectorAll('strong, b').forEach(boldTag => {
+                        const parent = boldTag.parentNode;
+                        while (boldTag.firstChild) parent.insertBefore(boldTag.firstChild, boldTag);
+                        parent.removeChild(boldTag);
+                    });
+                }
+            });
         });
-        return doc.body.innerHTML;
-    }
 
-    function formatMarkdown(html) {
-        if (!html) return "";
-        let text = html.replace(/\^l/g, '\n').replace(/<br\s*\/?>/gi, '\n');
-        text = text.replace(/(?:<p>|^)###\s+(.*?)(?:<\/p>|$|\n)/gim, '<h4>$1</h4>')
-                   .replace(/(?:<p>|^)####\s+(.*?)(?:<\/p>|$|\n)/gim, '<h5 style="margin: 15px 0 5px 0; color: var(--primary);">$1</h5>')
-                   .replace(/(?:<p>|^)---\s*(?:<\/p>|$|\n)/gim, '<hr style="border:0; border-top:1px solid var(--border); margin:15px 0;">')
-                   .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
-                   .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                   .replace(/\*(.*?)\*/g, '<em>$1</em>');
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-container';
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+    });
+    return doc.body.innerHTML;
+}
+function formatMarkdown(html) {
+    if (!html) return "";
 
-        let lines = text.split('\n'), inList = false, output = "";
-        lines.forEach(line => {
-            let clean = line.trim();
-            if (!clean || clean === '<p></p>') return;
-            if (clean.startsWith('* ')) {
-                if (!inList) { output += '<ul>'; inList = true; }
-                output += `<li>${clean.substring(2)}</li>`;
+    // 1. Clean the HTML noise (handles Mammoth's &nbsp; and line breaks)
+    let text = html
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\u00a0/g, ' ') 
+        .replace(/\^l/g, '\n')
+        .replace(/<br\s*\/?>/gi, '\n');
+
+    // 2. Format Markers (Matches symbols even if inside <p> or <strong> tags)
+    // Horizontal Rule: ---
+    text = text.replace(/<p>(?:<strong>)?\s*---\s*(?:<\/strong>)?<\/p>/gim, 
+        '<hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">');
+
+    // H4 Heading: ###
+    text = text.replace(/<p>(?:<strong>)?\s*###\s*(.*?)\s*(?:<\/strong>)?<\/p>/gim, 
+        '<h4 style="margin:20px 0 10px 0; color:var(--text); font-weight:bold; border-bottom:1px solid var(--border); padding-bottom:5px;">$1</h4>');
+
+    // H5 Subheading: ####
+    text = text.replace(/<p>(?:<strong>)?\s*####\s*(.*?)\s*(?:<\/strong>)?<\/p>/gim, 
+        '<h5 style="margin:15px 0 5px 0; color:var(--primary); font-size:1.1rem; font-weight:bold;">$1</h5>');
+
+    // 3. Inline Formatting (Bold/Italic)
+    text = text
+        .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    // 4. List Processing
+    let lines = text.split('\n'), inList = false, output = "";
+    lines.forEach(line => {
+        let clean = line.trim();
+        if (!clean || clean === '<p></p>') return;
+
+        // Bullet Points: *
+        if (clean.includes('* ') || clean.startsWith('<p>*')) {
+            if (!inList) { output += '<ul style="margin-bottom:15px;">'; inList = true; }
+            // Remove the asterisk and paragraph tags for the list item
+            let listItem = clean.replace(/<p>|<\/p>|\*/g, '').trim();
+            output += `<li>${listItem}</li>`;
+        } else {
+            if (inList) { output += '</ul>'; inList = false; }
+            // If it's already a header or hr, don't wrap in <p>
+            if (clean.startsWith('<h') || clean.startsWith('<hr')) {
+                output += clean;
             } else {
-                if (inList) { output += '</ul>'; inList = false; }
-                output += (clean.startsWith('<h') || clean.startsWith('<hr')) ? clean : (clean.startsWith('<p') ? clean : `<p>${clean}</p>`);
+                output += clean.startsWith('<p') ? clean : `<p>${clean}</p>`;
             }
-        });
-        if (inList) output += '</ul>';
-        return output;
-    }
+        }
+    });
 
+    if (inList) output += '</ul>';
+    return output;
+}
     function getCleanText(html) {
         if (!html) return "";
         const temp = document.createElement("div");
