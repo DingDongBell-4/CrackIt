@@ -328,43 +328,62 @@ function formatMarkdown(html) {
     }
 
     function parseDoc(html) {
-        const blocks = html.split(/Question:/gi).slice(1);
-        activeQuestions = blocks.map(block => {
-            try {
-                const optA = block.match(/\(a\)\s*([\s\S]*?)\s*\(b\)/i)?.[1] || "";
-                const optB = block.match(/\(b\)\s*([\s\S]*?)\s*\(c\)/i)?.[1] || "";
-                const optC = block.match(/\(c\)\s*([\s\S]*?)\s*\(d\)/i)?.[1] || "";
-                const optD = block.match(/\(d\)\s*([\s\S]*?)\s*Ans:/i)?.[1] || "";
-                let ansKey = "a"; 
-                const ansIndex = block.search(/Ans\s*:/i);
-                if (ansIndex !== -1) {
-                    const ansSnippet = block.substring(ansIndex, ansIndex + 100).replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
-                    const letterMatch = ansSnippet.match(/Ans\s*:\s*([a-d*])/i);
-                    if (letterMatch) ansKey = letterMatch[1].toLowerCase();
-                }
-                const clean = (h) => h.replace(/<p>&nbsp;<\/p>/g, '').trim();
-                const optionsMap = { a: clean(optA), b: clean(optB), c: clean(optC), d: clean(optD) };
-                return {
-                    question: block.split(/\(a\)/i)[0].trim(),
-                    options: [optionsMap.a, optionsMap.b, optionsMap.c, optionsMap.d].filter(o => o !== ""),
-                    correctText: optionsMap[ansKey === "*" ? "a" : ansKey],
-                    explanation: (block.split(/Explanation:/i)[1] || "").trim()
-                };
-            } catch (e) { return null; }
-        }).filter(q => q && q.question !== "");
+    // 1. Split the document into blocks based on "Question:"
+    const blocks = html.split(/Question:/gi).slice(1);
+    
+    activeQuestions = blocks.map(block => {
+        try {
+            // 2. Extract Options using "Lookaheads" 
+            // This stops capturing exactly when the next option starts
+            const optA = block.match(/\(a\)\s*([\s\S]*?)(?=\s*\(b\))/i)?.[1] || "";
+            const optB = block.match(/\(b\)\s*([\s\S]*?)(?=\s*\(c\))/i)?.[1] || "";
+            const optC = block.match(/\(c\)\s*([\s\S]*?)(?=\s*\(d\))/i)?.[1] || "";
+            const optD = block.match(/\(d\)\s*([\s\S]*?)(?=\s*Ans:)/i)?.[1] || "";
 
-        shuffleArray(activeQuestions);
-        document.getElementById('loading-area').querySelector('.loader').classList.add('hidden');
-        document.getElementById('status-text').innerText = "Exam Material Ready";
+            // 3. Robust Answer Key Extraction
+            // We strip HTML tags from the block first to find the answer letter accurately
+            const textOnlyBlock = block.replace(/<[^>]*>/g, ' ');
+            const ansMatch = textOnlyBlock.match(/Ans\s*:\s*([a-d*])/i);
+            let ansKey = ansMatch ? ansMatch[1].toLowerCase() : "a";
 
-        if (!document.getElementById('start-quiz-btn')) {
-            const btn = document.createElement('button');
-            btn.id = "start-quiz-btn";
-            btn.innerHTML = "🚀 Start Quiz";
-            btn.onclick = triggerStart; 
-            document.getElementById('loading-area').appendChild(btn);
+            // 4. Clean formatting
+            const clean = (h) => h.replace(/<p>&nbsp;<\/p>/g, '').trim();
+            const optionsMap = { 
+                a: clean(optA), 
+                b: clean(optB), 
+                c: clean(optC), 
+                d: clean(optD) 
+            };
+
+            // 5. Map the key to the actual correct option text
+            const finalKey = (ansKey === "*" || !optionsMap[ansKey]) ? "a" : ansKey;
+
+            return {
+                question: block.split(/\(a\)/i)[0].trim(),
+                options: [optionsMap.a, optionsMap.b, optionsMap.c, optionsMap.d].filter(o => o !== ""),
+                correctText: optionsMap[finalKey],
+                explanation: (block.split(/Explanation:/i)[1] || "").trim()
+            };
+        } catch (e) { 
+            console.error("Error parsing block:", e);
+            return null; 
         }
+    }).filter(q => q && q.question !== "");
+
+    // 6. UI Updates
+    shuffleArray(activeQuestions);
+    const loadingArea = document.getElementById('loading-area');
+    loadingArea.querySelector('.loader').classList.add('hidden');
+    document.getElementById('status-text').innerText = "Exam Material Ready";
+
+    if (!document.getElementById('start-quiz-btn')) {
+        const btn = document.createElement('button');
+        btn.id = "start-quiz-btn";
+        btn.innerHTML = "🚀 Start Quiz";
+        btn.onclick = triggerStart; 
+        loadingArea.appendChild(btn);
     }
+}
 
     function triggerStart() {
         const elem = document.documentElement;
