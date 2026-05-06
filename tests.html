@@ -3,223 +3,222 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Available Tests | SSC Portal</title>
+    <title>Daily Quiz Portal</title>
     <style>
-        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f9; --text: #333; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
-
-        /* Navbar */
-        nav { background: white; padding: 0.8rem 5%; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .nav-left { display: flex; align-items: center; gap: 15px; }
-        .dashboard-link { display: flex; align-items: center; justify-content: center; color: var(--primary); padding: 8px; border-radius: 8px; transition: 0.2s; text-decoration: none; background: rgba(0, 123, 255, 0.05); }
-        .logo { font-weight: bold; font-size: 1.2rem; color: var(--primary); cursor: pointer; }
-        .user-info { font-weight: 600; font-size: 0.9rem; }
-
-        /* Container */
-        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
-        .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; border-bottom: 1px solid #ddd; padding-bottom: 15px; }
+        :root { 
+            --primary: #3a86ff; --folder: #8338ec; --bg: #f4f7f6; 
+            --card-bg: #ffffff; --text: #000000; --border: #edf2f7; --nav-bg: #ffffff;
+            --locked-bg: #f8f9fa; --accent-red: #e63946; --success: #2ec4b6;
+        }
+        [data-theme="dark"] {
+            --bg: #121212; --card-bg: #1e1e1e; --text: #ffffff;
+            --border: #333333; --nav-bg: #1e1e1e; --primary: #6ab0ff;
+            --locked-bg: #252525;
+        }
+        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; color: var(--text); transition: 0.3s; }
         
-        .controls { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+        .top-bar {
+            background: var(--nav-bg); padding: 15px 25px; 
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000;
+        }
 
-        /* Action Buttons */
-        .btn-action { font-size: 0.8rem; padding: 6px 14px; border-radius: 6px; cursor: pointer; border: 1px solid #ccc; background: white; transition: 0.2s; font-weight: 600; display: flex; align-items: center; gap: 6px; }
-        .btn-action:hover { background: #f8f9fa; border-color: #adb5bd; }
-        .btn-clear { color: var(--danger); border-color: var(--danger); }
-        .btn-clear:hover { background: var(--danger); color: white; }
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
 
-        /* Grid & Cards */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .card { background: white; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); cursor: pointer; border-bottom: 5px solid var(--primary); transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-        
-        .test-item { background: white; padding: 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 5px solid var(--success); transition: 0.2s; }
-        .test-item:hover { transform: scale(1.01); }
-        
-        .badge { background: var(--primary); color: white; font-size: 0.65rem; padding: 3px 8px; border-radius: 10px; margin-left: 10px; text-transform: uppercase; font-weight: bold; }
+        .control-ribbon {
+            display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+            background: var(--card-bg); padding: 15px; border-radius: 12px;
+            border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
 
-        .btn-start { background: var(--success); color: white; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.9rem; }
-        .btn-start:hover { background: #218838; }
-        .btn-back { background: none; border: none; color: var(--primary); cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .control-ribbon input, .control-ribbon select {
+            padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text); font-size: 0.95rem; outline: none;
+        }
+        .control-ribbon input { flex: 2; min-width: 200px; }
+        .control-ribbon select { flex: 1; min-width: 140px; cursor: pointer; }
+
+        .breadcrumb-nav { 
+            background: var(--card-bg); padding: 12px 20px; border-radius: 12px; 
+            margin-bottom: 25px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border);
+        }
+
+        .nav-btn { 
+            cursor: pointer; background: var(--primary); color: white; 
+            border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; text-decoration: none;
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
         
-        .hidden { display: none; }
-        #loader { text-align: center; padding: 60px; font-weight: 600; color: #666; }
+        .card {
+            background: var(--card-bg); padding: 30px 20px; border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); cursor: pointer;
+            transition: all 0.3s ease; border: 1px solid var(--border); text-align: center;
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .card.folder-card { border-bottom: 5px solid var(--folder); }
+        .card.file-card { border-bottom: 5px solid var(--primary); }
+
+        .meta-info { font-size: 0.8rem; margin-top: 10px; color: var(--text); opacity: 0.8; }
+        .badge-container { display: flex; justify-content: center; gap: 5px; margin-top: 12px; flex-wrap: wrap; }
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; background: rgba(0,0,0,0.05); }
+        
+        .hidden { display: none !important; }
+        .theme-toggle { cursor: pointer; background: var(--border); border: none; padding: 8px 15px; border-radius: 20px; color: var(--text); }
     </style>
 </head>
 <body>
 
-    <nav>
-        <div class="nav-left">
-            <a href="index.html" class="dashboard-link" title="Dashboard">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            </a>
-            <div class="logo" onclick="location.reload()">EXAM PORTAL</div>
-        </div>
-        <div class="user-info" id="userDisplay">👤 Loading...</div>
-    </nav>
+<div class="top-bar">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div style="font-weight: 800; font-size: 1.2rem;">🚀 CrackIt Portal</div>
+        <a href="index.html" class="nav-btn">📊 Dashboard</a>
+    </div>
+    <div class="top-bar-right">
+        <button class="theme-toggle" onclick="toggleFS()" id="fs-btn">🖥️ Fullscreen</button>
+        <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙 Night Mode</button>
+    </div>
+</div>
 
-    <div class="container">
-        <div class="header">
-            <div>
-                <div id="breadcrumb" style="font-size: 0.85rem; color: #666; margin-bottom: 4px;"></div>
-                <h1 id="view-title" style="margin: 0;">Test Categories</h1>
-                <div class="controls">
-                    <button id="sort-btn" class="btn-action" onclick="toggleSort()">
-                        <span id="sort-icon">🔄</span> <span id="sort-text">Sort: A-Z</span>
-                    </button>
-                    <button id="clear-history" class="btn-action btn-clear hidden" onclick="clearHistory()">Reset History</button>
-                </div>
-            </div>
-            <button id="back-btn" class="btn-back hidden">← Back</button>
-        </div>
-
-        <div id="loader">🔄 Syncing available tests...</div>
-        <div id="category-view" class="grid hidden"></div>
-        <div id="test-list-view" class="hidden"></div>
+<div class="container">
+    <div class="control-ribbon">
+        <input type="text" id="search-input" placeholder="🔍 Search quizzes..." onkeyup="renderExplorer()">
+        
+        <select id="sort-select" onchange="renderExplorer()">
+            <option value="name-az">Name (A-Z)</option>
+            <option value="name-za">Name (Z-A)</option>
+        </select>
     </div>
 
+    <div class="breadcrumb-nav">
+        <button class="nav-btn" onclick="goHome()">🏠 Home</button>
+        <button id="back-btn" class="nav-btn hidden" onclick="goBack()">⬅ Back</button>
+        <span id="current-path" style="margin-left: 10px; opacity: 0.7;">Root</span>
+    </div>
+
+    <div id="explorer-grid" class="grid">
+        <div style="grid-column: 1/-1; text-align: center; padding: 50px;">⏳ Syncing Drive Data...</div>
+    </div>
+</div>
+
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwxVl2SEW5cirE3sjHbpk4dPqlDUjF2fuXRdsF_udfxclXp5uQqlejwefbTWPXWqH5cYw/exec";
-    let allTests = [];
-    let currentPath = ""; // Tracks the full path string
-    let sortType = localStorage.getItem('userSortPref') || "az";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzSR-Ilpj2N5sq5IuBHFX6fqz0CbkavOTixZFMik-822VBtS1MDXNLhMbHGP-T-zkK/exec";
+    
+    let allData = [];
+    let currentPath = [];
 
-    window.onload = () => {
-        const user = localStorage.getItem('currentUser') || "Guest User";
-        document.getElementById('userDisplay').innerText = "👤 " + user;
-        updateSortButtonUI();
-        fetchTests();
-    };
-
-    async function fetchTests() {
+    async function initExplorer() {
+        const grid = document.getElementById('explorer-grid');
         try {
-            const response = await fetch(`${SCRIPT_URL}?action=getMasterTests`);
-            allTests = await response.json();
-            document.getElementById('loader').classList.add('hidden');
-            renderView(""); 
-            checkHistoryBtn();
-        } catch (err) {
-            document.getElementById('loader').innerHTML = `<p style="color:red">❌ Error: ${err.message}</p>`;
+            const res = await fetch(SCRIPT_URL);
+            allData = await res.json();
+            renderExplorer();
+        } catch (e) { 
+            grid.innerHTML = `<div style="grid-column: 1/-1; color: red; text-align:center;">Failed to load data.</div>`;
         }
     }
 
-    function renderView(path) {
-        currentPath = path;
-        const grid = document.getElementById('category-view');
-        const listView = document.getElementById('test-list-view');
-        
-        // 1. Identify unique immediate subfolders
-        // We look for tests whose category starts with our current path + " > "
-        let subfolders = [];
-        allTests.forEach(t => {
-            let rel = "";
-            if (path === "") {
-                rel = t.category;
-            } else if (t.category.startsWith(path + " > ")) {
-                rel = t.category.replace(path + " > ", "");
-            }
+    /**
+     * Parses name format: "Survey-1|60|3|1"
+     * Returns: { cleanName, duration, pos, neg }
+     */
+    function parseFileName(fullName) {
+        const parts = fullName.split('|').map(p => p.trim());
+        return {
+            cleanName: parts[0] || fullName,
+            duration: parts[1] || "60",
+            pos: parts[2] || "1",
+            neg: parts[3] || "0"
+        };
+    }
 
-            if (rel !== "") {
-                const firstPart = rel.split(" > ")[0];
-                if (firstPart && !subfolders.includes(firstPart)) {
-                    subfolders.push(firstPart);
+    function renderExplorer() {
+        const grid = document.getElementById('explorer-grid');
+        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+        const sortType = document.getElementById('sort-select').value;
+        
+        grid.innerHTML = '';
+        document.getElementById('current-path').innerText = currentPath.length === 0 ? "Root" : currentPath.join(" / ");
+        currentPath.length > 0 ? document.getElementById('back-btn').classList.remove('hidden') : document.getElementById('back-btn').classList.add('hidden');
+
+        let folders = new Set();
+        let files = [];
+
+        allData.forEach(item => {
+            const pathArr = item.folder ? item.folder.split('/') : [];
+            const isMatchPath = currentPath.every((folder, i) => pathArr[i] === folder);
+            
+            if (isMatchPath) {
+                if (pathArr.length > currentPath.length) {
+                    const folderName = pathArr[currentPath.length];
+                    if (folderName.toLowerCase().includes(searchTerm)) folders.add(folderName);
+                } else if (pathArr.length === currentPath.length) {
+                    const meta = parseFileName(item.name);
+                    if (meta.cleanName.toLowerCase().includes(searchTerm)) {
+                        item.parsedMeta = meta;
+                        files.push(item);
+                    }
                 }
             }
         });
 
-        // 2. Identify tests that belong EXACTLY to this category level
-        let testsAtThisLevel = allTests.filter(t => t.category === path);
-
-        // Sorting logic
-        if (sortType === "az") {
-            subfolders.sort((a, b) => a.localeCompare(b));
-            testsAtThisLevel.sort((a, b) => a.name.localeCompare(b.name));
-        }
-
-        // 3. Update UI
-        updateBreadcrumbs(path);
+        // Sorting
+        if (sortType === 'name-az') files.sort((a, b) => a.parsedMeta.cleanName.localeCompare(b.parsedMeta.cleanName));
+        if (sortType === 'name-za') files.sort((a, b) => b.parsedMeta.cleanName.localeCompare(a.parsedMeta.cleanName));
 
         // Render Folders
-        grid.innerHTML = subfolders.map(folder => `
-            <div class="card" onclick="renderView('${path === "" ? folder : path + " > " + folder}')">
-                <h3>📂 ${folder}</h3>
-                <p>Folder</p>
-            </div>
-        `).join('');
+        Array.from(folders).sort().forEach(name => {
+            const card = document.createElement('div');
+            card.className = 'card folder-card';
+            card.innerHTML = `<span style="font-size:2rem">📁</span><h3 style="margin-top:10px;">${name}</h3>`;
+            card.onclick = () => { currentPath.push(name); renderExplorer(); };
+            grid.appendChild(card);
+        });
 
-        // Render Tests
-        if (testsAtThisLevel.length > 0) {
-            listView.classList.remove('hidden');
-            listView.innerHTML = testsAtThisLevel.map(t => {
-                const query = new URLSearchParams({ sheet: t.link, name: t.name, time: t.duration, pos: t.pos, neg: t.neg }).toString();
-                return `
-                    <div class="test-item">
-                        <div class="test-info">
-                            <h4>📝 ${t.name}</h4>
-                            <div style="font-size:0.8rem; color:#666; margin-top:4px;">⏱ ${t.duration}m | 🟢 +${t.pos} | 🔴 -${t.neg}</div>
-                        </div>
-                        <a href="exam-portal.html?${query}" class="btn-start" onclick="trackAttempt('${t.name}')">Start Test</a>
-                    </div>`;
-            }).join('');
-        } else {
-            listView.innerHTML = subfolders.length === 0 ? `<div style="text-align:center; padding:40px; color:#999;">This folder is empty</div>` : "";
-            listView.classList.remove('hidden');
-        }
-
-        subfolders.length > 0 ? grid.classList.remove('hidden') : grid.classList.add('hidden');
-    }
-
-    function updateBreadcrumbs(path) {
-        const breadcrumb = document.getElementById('breadcrumb');
-        const title = document.getElementById('view-title');
-        const backBtn = document.getElementById('back-btn');
-
-        if (path === "") {
-            breadcrumb.innerHTML = "Home";
-            title.innerText = "Test Categories";
-            backBtn.classList.add('hidden');
-        } else {
-            const parts = path.split(" > ");
-            let buildPath = "";
-            let html = `<span style="cursor:pointer; text-decoration:underline;" onclick="renderView('')">Home</span>`;
+        // Render Files
+        files.forEach(file => {
+            const m = file.parsedMeta;
+            const card = document.createElement('div');
+            card.className = 'card file-card';
+            card.innerHTML = `
+                <span style="font-size:2rem">📄</span>
+                <h3 style="margin: 15px 0 5px 0; font-size: 1.1rem;">${m.cleanName}</h3>
+                <div class="badge-container">
+                    <span class="badge">⏱️ ${m.duration}m</span>
+                    <span class="badge" style="color:var(--success)">✅ +${m.pos}</span>
+                    <span class="badge" style="color:var(--accent-red)">❌ -${m.neg}</span>
+                </div>`;
             
-            parts.forEach((part, i) => {
-                buildPath += (i === 0 ? part : " > " + part);
-                if (i === parts.length - 1) {
-                    html += ` > ${part}`;
-                    title.innerText = part;
-                } else {
-                    html += ` > <span style="cursor:pointer; text-decoration:underline;" onclick="renderView('${buildPath}')">${part}</span>`;
-                }
-            });
-            breadcrumb.innerHTML = html;
-            
-            // Back button logic (go up one level)
-            backBtn.classList.remove('hidden');
-            backBtn.onclick = () => {
-                const parentPath = parts.slice(0, -1).join(" > ");
-                renderView(parentPath);
+            card.onclick = () => {
+                const query = new URLSearchParams({
+                    id: file.id,
+                    name: m.cleanName,
+                    time: m.duration,
+                    pos: m.pos,
+                    neg: m.neg
+                }).toString();
+                window.location.href = `exam-portal.html?${query}`;
             };
-        }
+            grid.appendChild(card);
+        });
     }
 
-    // --- Keep your existing Helper Functions (toggleSort, trackAttempt, etc.) ---
-    function toggleSort() {
-        sortType = (sortType === "az") ? "default" : "az";
-        localStorage.setItem('userSortPref', sortType);
-        updateSortButtonUI();
-        renderView(currentPath);
+    function goBack() { currentPath.pop(); renderExplorer(); }
+    function goHome() { currentPath = []; renderExplorer(); }
+    
+    function toggleTheme() {
+        const body = document.body;
+        const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', newTheme);
+        document.getElementById('theme-btn').innerText = newTheme === 'dark' ? '☀️ Day Mode' : '🌙 Night Mode';
     }
 
-    function updateSortButtonUI() {
-        document.getElementById('sort-text').innerText = sortType === 'az' ? 'Sort: A-Z' : 'Sort: Default';
+    function toggleFS() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
     }
 
-    function trackAttempt(testName) { localStorage.setItem('lastAttempted', testName); }
-    function checkHistoryBtn() {
-        const btn = document.getElementById('clear-history');
-        localStorage.getItem('lastAttempted') ? btn.classList.remove('hidden') : btn.classList.add('hidden');
-    }
-    function clearHistory() { localStorage.removeItem('lastAttempted'); location.reload(); }
+    window.onload = initExplorer;
 </script>
 </body>
 </html>

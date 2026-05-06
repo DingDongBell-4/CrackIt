@@ -12,91 +12,164 @@
 
     <style>
         :root { 
-            --primary: #007bff; 
-            --success: #28a745; 
-            --danger: #dc3545; 
-            --warning: #ffc107; 
+            --primary: #3a86ff; 
+            --success: #2ecc71; 
+            --danger: #e74c3c; 
+            --warning: #ffbe0b; 
             --ssc-blue: #0056b3; 
-            --light-bg: #f2f4f8; 
+            --light-bg: #f4f7f9; 
+            --card-bg: #ffffff;
+            --text: #000000;
         }
         
-        body { margin: 0; padding: 20px; font-family: 'Segoe UI', sans-serif; background: var(--light-bg); color: #333; line-height: 1.6; }
+        body { margin: 0; padding: 20px; font-family: 'Segoe UI', sans-serif; background: var(--light-bg); color: var(--text); line-height: 1.6; }
         .container { max-width: 950px; margin: 0 auto; }
         
         /* Results Header */
         #results-container {
-            background: #fff; padding: 30px; border-radius: 15px; 
-            box-shadow: 0 5px 25px rgba(0,0,0,0.1); text-align: center; margin-bottom: 30px;
+            background: var(--card-bg); padding: 30px; border-radius: 15px; 
+            box-shadow: 0 5px 25px rgba(0,0,0,0.05); text-align: center; margin-bottom: 30px;
+            border: 1px solid #dfe6e9;
         }
-        .score-big { font-size: 3.5em; color: var(--primary); font-weight: bold; margin: 10px 0; }
+        .score-big { font-size: 4em; color: var(--primary); font-weight: bold; margin: 5px 0; }
         
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 25px 0; }
-        .stat-box { padding: 15px; border-radius: 10px; border-bottom: 4px solid #ddd; background: #f9f9f9; }
-        .stat-box.correct { border-color: var(--success); color: var(--success); }
-        .stat-box.wrong { border-color: var(--danger); color: var(--danger); }
-        .stat-box.skipped { border-color: var(--warning); color: #856404; }
+        .stat-box { padding: 15px; border-radius: 10px; border-bottom: 4px solid #ddd; background: #fff; border: 1px solid #eee; border-bottom-width: 4px; }
+        .stat-box.correct { border-bottom-color: var(--success); color: var(--success); }
+        .stat-box.wrong { border-bottom-color: var(--danger); color: var(--danger); }
+        .stat-box.skipped { border-bottom-color: var(--warning); color: #856404; }
         
-        .stat-val { font-size: 1.6em; font-weight: bold; display: block; }
-        .stat-label { font-size: 0.75em; text-transform: uppercase; font-weight: bold; }
+        .stat-val { font-size: 1.8em; font-weight: bold; display: block; }
+        .stat-label { font-size: 0.75em; text-transform: uppercase; font-weight: bold; color: #636e72; }
 
         /* Filter Bar */
         .filter-section {
             background: #fff; padding: 15px; border-radius: 10px; 
             margin-bottom: 25px; display: flex; align-items: center; 
             justify-content: center; gap: 10px; flex-wrap: wrap;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee;
         }
         .filter-btn { 
-            padding: 8px 18px; border: none; border-radius: 20px; 
+            padding: 10px 20px; border: none; border-radius: 25px; 
             cursor: pointer; font-weight: bold; font-size: 0.85em;
-            transition: 0.3s; background: #eee; color: #555;
+            transition: 0.2s; background: #f1f2f6; color: #555;
         }
-        .filter-btn.active { transform: scale(1.08); box-shadow: 0 4px 10px rgba(0,0,0,0.15); color: white; }
-        #btn-all.active { background: #555; }
+        .filter-btn.active { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: white; }
+        #btn-all.active { background: #2d3436; }
         #btn-correct.active { background: var(--success); }
         #btn-wrong.active { background: var(--danger); }
-        #btn-skipped.active { background: var(--warning); color: #856404; }
+        #btn-skipped.active { background: var(--warning); color: #000; }
 
         /* Review Cards */
         .review-card {
             background: #fff; padding: 25px; border-radius: 12px;
-            margin-bottom: 25px; box-shadow: 0 3px 12px rgba(0,0,0,0.06);
-            border-left: 8px solid #ccc; transition: transform 0.2s;
+            margin-bottom: 25px; box-shadow: 0 3px 12px rgba(0,0,0,0.05);
+            border-left: 8px solid #ccc; border: 1px solid #eee; border-left-width: 8px;
         }
         .correct-border { border-left-color: var(--success); }
         .wrong-border { border-left-color: var(--danger); }
         .skipped-border { border-left-color: var(--warning); }
 
-        .q-text { font-size: 1.1em; font-weight: 600; margin-bottom: 15px; white-space: pre-wrap; }
+        .q-text { font-size: 1.5rem; font-weight: 600; margin-bottom: 20px; color: #000000; }
         
-        .opt { padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .opt-correct { background: #d4edda; border-color: #c3e6cb; color: #155724; font-weight: bold; }
-        .opt-wrong { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
-        
-        /* Table & Explanation Styles */
-        .explanation-box { margin-top: 15px; padding: 18px; background: #f0f7ff; border-radius: 8px; border-left: 4px solid var(--primary); }
-        .rendered-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-        .rendered-table th { background: var(--ssc-blue); color: white; padding: 10px; text-align: left; }
-        .rendered-table td { border: 1px solid #dee2e6; padding: 8px; }
-        .rendered-table tr:nth-child(even) { background: #f8fbff; }
+        .opt { padding: 12px 15px; font-size: 1.2rem;margin: 10px 0; border: 1px solid #f1f2f6; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; background: #fbfbfb; }
+        .opt-correct { background: #2ecc71; border-color: #b7eb8f; color: #ffffff; font-weight: bold; }
+        .opt-wrong { background: #e74c3c; border-color: #ffa39e; color: #ffffff; }
+        /* IMPORTANT: Remove auto-spacing from text coming from your data source */
+.opt div, .opt p, .opt span {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+}
+	/* Ensure formulas don't overflow the cards */
+.MathJax {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
 
-        .badge { padding: 4px 10px; border-radius: 4px; font-size: 0.75em; color: white; font-weight: bold; margin-bottom: 10px; display: inline-block; }
-        .action-btn { padding: 12px 30px; border: none; border-radius: 8px; background: var(--primary); color: #fff; cursor: pointer; font-weight: bold; }
+/* Optional: Slight tint to the explanation box to make formulas stand out */
+.explanation-box {
+    background: #f8fbff;
+    border-left: 5px solid var(--primary);
+    font-size: 1.2rem;
+}
+        .explanation-box { margin-top: 20px; padding: 20px; background: #f0f7ff; border-radius: 10px; border-left: 5px solid var(--primary); }
+        /* --- TABLE STYLING --- */
+ .table-container { 
+    overflow-x: auto; 
+    margin: 25px 0; 
+    border: 1px solid var(--border); 
+    border-radius: 8px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+}
+
+table { 
+    border-collapse: collapse !important; 
+    width: auto !important; 
+    min-width: 60% !important; 
+    max-width: 100% !important; 
+    margin: 0 auto; 
+    font-size: 1.2rem !important; 
+    background: white !important; 
+}
+
+/* Header Styling */
+tr:first-child td, tr:first-child th { 
+    background-color: #3a86ff !important; 
+    color: white !important;  
+    padding: 0px 10px !important; 
+    text-align: left !important;
+    text-transform: uppercase;
+    font-size: 1.2rem !important;
+}
+
+/* Data Cell Styling */
+td, th { 
+    border: 1px solid #dee2e6 !important; 
+    padding: 0px 10px !important; 
+    text-align: left !important; 
+    color: #000000 !important;
+    line-height: 1.0 !important; 
+    white-space: nowrap; 
+	font-weight: normal
+}
+
+/* --- BOLDING FIX FOR WORD CONTENT --- */
+/* This ensures <strong> and <b> tags from Mammoth.js are actually bold */
+td strong, th strong, td b, th b {
+    font-weight: 500 !important;
+    color: #000000 !important; /* Ensures bold text is deep black */
+}
+
+
+        .badge { padding: 5px 12px; border-radius: 6px; font-size: 0.7rem; color: white; font-weight: 800; margin-bottom: 12px; display: inline-block; letter-spacing: 0.5px; }
+        .action-btn { padding: 15px 40px; border: none; border-radius: 10px; background: var(--primary); color: #fff; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.3s; }
+        .action-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+	.review-img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 15px auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}	
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="results-container">
-        <h2 id="test-display-name">Summary</h2>
+        <h2 id="test-display-name">Exam Result</h2>
         <div class="score-big" id="final-score">0.00</div>
-        <p id="marks-info" style="color: #666;"></p>
+        <p id="marks-info" style="color: #636e72; font-weight: 500;"></p>
         
         <div class="stats-grid">
             <div class="stat-box correct"><span class="stat-val" id="stat-correct">0</span><span class="stat-label">Correct</span></div>
             <div class="stat-box wrong"><span class="stat-val" id="stat-wrong">0</span><span class="stat-label">Wrong</span></div>
             <div class="stat-box skipped"><span class="stat-val" id="stat-skipped">0</span><span class="stat-label">Skipped</span></div>
-            <div class="stat-box unvisited" style="border-color:#6c757d; color:#6c757d;">
+            <div class="stat-box unvisited" style="border-bottom-color:#6c757d; color:#6c757d;">
                 <span class="stat-val" id="stat-unvisit">0</span><span class="stat-label">Unvisited</span>
             </div>
         </div>
@@ -104,8 +177,8 @@
     </div>
 
     <div class="filter-section">
-        <span style="font-weight:bold">Show:</span>
-        <button onclick="applyFilter('all')" class="filter-btn active" id="btn-all">All Questions</button>
+        <span style="font-weight:bold; color:#2d3436;">Review Questions:</span>
+        <button onclick="applyFilter('all')" class="filter-btn active" id="btn-all">All</button>
         <button onclick="applyFilter('correct')" class="filter-btn" id="btn-correct">Correct</button>
         <button onclick="applyFilter('wrong')" class="filter-btn" id="btn-wrong">Wrong</button>
         <button onclick="applyFilter('skipped')" class="filter-btn" id="btn-skipped">Skipped/Unvisited</button>
@@ -115,37 +188,28 @@
 </div>
 
 <script>
-    function formatText(text) {
-        if (!text) return "";
-        let formatted = String(text);
+    // --- Text Formatting Engine ---
+   function formatText(text) {
+    if (!text) return "";
+    let formatted = String(text);
 
-        // 1. Tables: ||| Header | Header || Row | Row |||
-        const tableRegex = /\|\|\|([\s\S]+?)\|\|\|/g;
-        formatted = formatted.replace(tableRegex, (match, content) => {
-            const rows = content.trim().split('||').filter(r => r.trim() !== "");
-            let html = '<div style="overflow-x:auto;"><table class="rendered-table">';
-            rows.forEach((row, i) => {
-                const cells = row.split('|').filter(c => c.trim() !== "");
-                html += '<tr>';
-                cells.forEach(cell => {
-                    const tag = (i === 0) ? 'th' : 'td';
-                    html += `<${tag}>${cell.trim()}</${tag}>`;
-                });
-                html += '</tr>';
-            });
-            return html + '</table></div>';
-        });
-
-        // 2. Formatting: Bold, Headers, and Lists
-        formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        formatted = formatted.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-        formatted = formatted.replace(/^\* (.*$)/gim, '<li>$1</li>');
-        formatted = formatted.replace(/(<li>.*<\/li>)/gim, '<ul style="padding-left:20px;">$1</ul>');
-        formatted = formatted.replace(/<\/ul>\s*<ul[^>]*>/gim, '');
-
-        return formatted;
+    // 1. Style tables coming from Mammoth
+    if (formatted.includes('<table')) {
+        formatted = formatted.replace(/<table/g, '<div class="table-wrapper"><table class="rendered-table"');
+        formatted = formatted.replace(/<\/table>/g, '</table></div>');
     }
 
+    // 2. Handle Images
+    formatted = formatted.replace(/<img/g, '<img class="review-img"');
+
+    // 3. Simple Bold formatting (Only if not inside a formula)
+    // This is a safe way to handle **bold** without touching LaTeX $...$
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    return formatted;
+}
+
+    // --- Filter Logic ---
     function applyFilter(type) {
         const cards = document.querySelectorAll('.review-card');
         const btns = document.querySelectorAll('.filter-btn');
@@ -161,13 +225,20 @@
         });
     }
 
+    // --- Load and Process Data ---
     function loadResults() {
+        // These keys must match what we saved in the exam page
         const questions = JSON.parse(localStorage.getItem('last_questions') || "[]");
-        const userAnswers = JSON.parse(localStorage.getItem('last_answers') || "[]");
-        const testStatus = JSON.parse(localStorage.getItem('last_status') || "[]");
-        const meta = JSON.parse(localStorage.getItem('test_meta') || "{}");
+const userAnswers = JSON.parse(localStorage.getItem('last_answers') || "[]");
+const testStatus = JSON.parse(localStorage.getItem('last_status') || "[]");
+const meta = JSON.parse(localStorage.getItem('test_meta') || "{}");
 
-        if (!questions.length) return;
+        if (!questions.length) {
+            document.body.innerHTML = '<div style="text-align:center; padding:100px;"><h2>No test data found.</h2><button onclick="window.location.href=\'index.html\'" class="action-btn">Go to Dashboard</button></div>';
+            return;
+        }
+
+        document.getElementById('test-display-name').innerText = meta.name || "Test Result";
 
         let correctC = 0, wrongC = 0, skipC = 0, unvisC = 0;
         let reviewHtml = "";
@@ -175,6 +246,7 @@
         questions.forEach((q, i) => {
             const uAns = userAnswers[i];
             const qStat = testStatus[i];
+            
             const isAns = (uAns !== "" && uAns !== null);
             const isCorrect = isAns && (uAns === q.correct);
             
@@ -192,9 +264,9 @@
                 const char = String.fromCharCode(97 + idx);
                 let cls = "opt";
                 let lbl = "";
-                if (char === q.correct) { cls += " opt-correct"; lbl = "✔"; }
-                else if (char === uAns) { cls += " opt-wrong"; lbl = "✘"; }
-                return `<div class="${cls}"><div>${char.toUpperCase()}. ${formatText(opt)}</div> <span>${lbl}</span></div>`;
+                if (char === q.correct) { cls += " opt-correct"; lbl = "✔ CORRECT"; }
+                else if (char === uAns) { cls += " opt-wrong"; lbl = "✘ YOUR ANSWER"; }
+                return `<div class="${cls}"><div><strong>${char.toUpperCase()}.</strong> ${formatText(opt)}</div> <span style="font-size:0.7rem;">${lbl}</span></div>`;
             }).join('');
 
             reviewHtml += `
@@ -203,23 +275,34 @@
                     <div class="q-text">Q${i+1}: ${formatText(q.question)}</div>
                     <div>${optionsHtml}</div>
                     <div class="explanation-box">
-                        <strong>Explanation:</strong><br>${formatText(q.explanation || "No explanation.")}
+                        <strong style="color:var(--primary); display:block; margin-bottom:8px;">Explanation:</strong>
+                        ${formatText(q.explanation || "No detailed explanation available for this question.")}
                     </div>
                 </div>`;
         });
 
-        // Scoring
-        const p = parseFloat(meta.pos) || 1, n = parseFloat(meta.neg) || 0;
-        document.getElementById('final-score').innerText = ((correctC * p) - (wrongC * n)).toFixed(2);
-        document.getElementById('marks-info').innerText = `Marks: +${p} / -${n}`;
+       // Scoring Logic
+        const p = parseFloat(meta.pos) || 1;
+        const n = parseFloat(meta.neg) || 0;
+        const score = (correctC * p) - (wrongC * n);
+
+        // Update UI Stats
+        document.getElementById('final-score').innerText = score.toFixed(2);
+        document.getElementById('marks-info').innerText = `Scheme: Correct +${p} | Incorrect -${n}`;
         document.getElementById('stat-correct').innerText = correctC;
         document.getElementById('stat-wrong').innerText = wrongC;
         document.getElementById('stat-skipped').innerText = skipC;
         document.getElementById('stat-unvisit').innerText = unvisC;
-        document.getElementById('review-list').innerHTML = reviewHtml;
+        
+        // Inject Review Content once
+        const reviewList = document.getElementById('review-list');
+        reviewList.innerHTML = reviewHtml;
 
-        if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
-    }
+        // Trigger MathJax for the newly injected HTML
+        if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.typesetPromise([reviewList]).catch((err) => console.log('MathJax error:', err));
+        }
+    } // end of loadResults
 
     window.onload = loadResults;
 </script>
