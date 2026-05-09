@@ -67,6 +67,10 @@
         .time-badge { font-size: 0.75rem; margin-top: 12px; padding: 5px 12px; border-radius: 20px; background: rgba(0,0,0,0.04); font-weight: 500; }
         .hidden { display: none !important; }
         .theme-toggle { cursor: pointer; background: var(--border); border: none; padding: 8px 15px; border-radius: 20px; color: var(--text); }
+        
+        .empty-state {
+            grid-column: 1/-1; text-align: center; padding: 50px; color: var(--text); opacity: 0.7;
+        }
     </style>
 </head>
 <body>
@@ -107,7 +111,7 @@
     </div>
 
     <div id="explorer-grid" class="grid">
-        <div style="grid-column: 1/-1; text-align: center; padding: 50px;">⏳ Syncing with Drive Docs...</div>
+        <div class="empty-state">⏳ Syncing with Drive Docs...</div>
     </div>
 </div>
 
@@ -125,7 +129,7 @@
             if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
             allData = await res.json();
             if (!Array.isArray(allData) || allData.length === 0) {
-                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px;"><h3>📭 No Documents Found</h3></div>`;
+                grid.innerHTML = `<div class="empty-state"><h3>📭 No Documents Found</h3></div>`;
             } else {
                 renderExplorer();
             }
@@ -134,26 +138,86 @@
         }
     }
 
-    function getLockStatus(fullName) {
-        if (!fullName.includes('|')) return { isAvailable: true, cleanName: fullName, dateObj: new Date(0) };
+    /**
+     * Parse filename format: SubjectName_DD-MM-YYYY_HH.mm.ext
+     * Returns: { isAvailable, cleanName, unlockText, dateObj }
+     */
+    function getLockStatus(filename) {
+        try {
+            // Remove file extension
+            const nameWithoutExt = filename.replace(/\.[^.]+$/, '');
+            
+            // Split by underscore: [SubjectName, DD-MM-YYYY, HH.mm]
+            const parts = nameWithoutExt.split('_');
+            
+            if (parts.length < 3) {
+                // No date/time info - treat as always available
+                return {
+                    isAvailable: true,
+                    cleanName: filename,
+                    dateObj: new Date(0)
+                };
+            }
 
-        const parts = fullName.split('|');
-        const name = parts[0].trim();
-        const dateStr = parts[1].trim(); 
-        const timeStr = parts[2].trim(); 
+            const subjectName = parts.slice(0, -2).join('_'); // Handle subject names with underscores
+            const dateStr = parts[parts.length - 2]; // DD-MM-YYYY
+            const timeStr = parts[parts.length - 1]; // HH.mm
 
-        const [day, month, year] = dateStr.split('-').map(Number);
-        const [hour, min] = timeStr.split('.').map(Number);
+            // Parse date: DD-MM-YYYY
+            const dateRegex = /^(\d{1,2})-(\d{1,2})-(\d{4})$/;
+            const dateMatch = dateStr.match(dateRegex);
+            
+            if (!dateMatch) {
+                return {
+                    isAvailable: true,
+                    cleanName: filename,
+                    dateObj: new Date(0)
+                };
+            }
 
-        const unlockDate = new Date(year, month - 1, day, hour, min);
-        const now = new Date();
+            const [, day, month, year] = dateMatch.map(Number);
 
-        return {
-            isAvailable: now >= unlockDate,
-            cleanName: name,
-            unlockText: `${dateStr} @ ${timeStr.replace('.', ':')}`,
-            dateObj: unlockDate
-        };
+            // Validate date
+            if (day < 1 || day > 31 || month < 1 || month > 12) {
+                return {
+                    isAvailable: true,
+                    cleanName: filename,
+                    dateObj: new Date(0)
+                };
+            }
+
+            // Parse time: HH.mm
+            const timeRegex = /^(\d{1,2})\.(\d{2})$/;
+            const timeMatch = timeStr.match(timeRegex);
+            
+            if (!timeMatch) {
+                return {
+                    isAvailable: true,
+                    cleanName: filename,
+                    dateObj: new Date(0)
+                };
+            }
+
+            const [, hour, min] = timeMatch.map(Number);
+
+            const unlockDate = new Date(year, month - 1, day, hour, min, 0);
+            const now = new Date();
+
+            return {
+                isAvailable: now >= unlockDate,
+                cleanName: subjectName.trim(),
+                unlockText: `${dateStr} @ ${timeStr.replace('.', ':')}`,
+                dateObj: unlockDate
+            };
+
+        } catch (e) {
+            console.error('Error parsing filename:', filename, e);
+            return {
+                isAvailable: true,
+                cleanName: filename,
+                dateObj: new Date(0)
+            };
+        }
     }
 
     function renderExplorer() {
@@ -204,6 +268,15 @@
             }
         });
 
+        // If no results
+        if (folders.size === 0 && files.length === 0) {
+            grid.innerHTML = `<div class="empty-state">
+                <h3>🔍 No Results Found</h3>
+                <p>${searchTerm ? `Try a different search term` : 'No documents or folders here'}</p>
+            </div>`;
+            return;
+        }
+
         // Render Folders
         Array.from(folders).sort().forEach(name => {
             const card = document.createElement('div');
@@ -225,10 +298,9 @@
                 </div>`;
             card.onclick = () => {
                 if (file.meta.isAvailable) {
-                    // Redirects to quizinterface.html with the Doc ID
                     window.location.href = `quizinterface.html?id=${file.id}`;
                 } else {
-                    alert(`Access Denied: This quiz unlocks on ${file.meta.unlockText}`);
+                    alert(`🔒 Access Denied\n\nThis quiz unlocks on:\n${file.meta.unlockText}`);
                 }
             };
             grid.appendChild(card);
