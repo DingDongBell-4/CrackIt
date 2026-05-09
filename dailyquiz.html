@@ -88,7 +88,12 @@
 
 <div class="container">
     <div class="control-ribbon">
-        <input type="text" id="search-input" placeholder="🔍 Search documents or folders..." onkeyup="renderExplorer()">
+        <div style="flex: 2; min-width: 200px; position: relative;">
+            <input type="text" id="search-input" placeholder="🔍 Search documents or folders..." 
+            onkeyup="showAutocompleteSuggestions(this.value); renderExplorer();"
+            onblur="hideAutocompleteSuggestions()">
+            <div id="autocomplete-list" style="position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;max-height:280px;overflow-y:auto;display:none;z-index:100;"></div>
+        </div>
         
         <select id="status-filter" onchange="renderExplorer()">
             <option value="all">All Status</option>
@@ -102,6 +107,8 @@
             <option value="date-new">Date (Newest)</option>
             <option value="date-old">Date (Oldest)</option>
         </select>
+        
+        <button onclick="clearCache()" style="padding: 10px 15px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">🔄 Refresh</button>
     </div>
 
     <div class="breadcrumb-nav">
@@ -121,21 +128,142 @@
     
     let allData = [];
     let currentPath = [];
+    let subjectIndex = [];
+    
+    const CACHE_KEY = 'quizData';
+    const CACHE_TIME_KEY = 'quizDataTime';
+    const CACHE_DURATION = 3600000; // 1 hour
 
     async function initExplorer() {
         const grid = document.getElementById('explorer-grid');
+        const CACHE_KEY = 'quizData';
+        const CACHE_TIME_KEY = 'quizDataTime';
+        const CACHE_DURATION = 3600000;
+        
         try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            const cacheTime = localStorage.getItem(CACHE_TIME_KEY);
+            const now = Date.now();
+            
+            if (cached && cacheTime) {
+                const cacheAge = now - parseInt(cacheTime);
+                if (cacheAge < CACHE_DURATION) {
+                    console.log('✓ Loading from cache');
+                    allData = JSON.parse(cached);
+                    buildSubjectIndex();
+                    renderExplorer();
+                    refreshDataInBackground();
+                    return;
+                }
+            }
+            
+            console.log('Fetching fresh data...');
             const res = await fetch(SCRIPT_URL);
             if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
             allData = await res.json();
             if (!Array.isArray(allData) || allData.length === 0) {
                 grid.innerHTML = `<div class="empty-state"><h3>📭 No Documents Found</h3></div>`;
             } else {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(allData));
+                localStorage.setItem(CACHE_TIME_KEY, now.toString());
+                buildSubjectIndex();
                 renderExplorer();
             }
         } catch (e) { 
             grid.innerHTML = `<div style="grid-column: 1/-1; background: #ffe3e3; color: #b91c1c; padding: 20px; border-radius: 10px;"><h3>❌ Connection Failed</h3><p>${e.message}</p></div>`;
         }
+    }
+    
+    function refreshDataInBackground() {
+        fetch(SCRIPT_URL)
+            .then(res => res.json())
+            .then(data => {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+                localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+                allData = data;
+                buildSubjectIndex();
+            })
+            .catch(err => console.error('Background refresh failed:', err));
+    }
+    
+    function buildSubjectIndex() {
+        subjectIndex = [...new Set(
+            allData.map(item => getLockStatus(item.name).cleanName)
+        )].sort();
+    }
+    
+    function clearCache() {
+        localStorage.removeItem(CACHE_KEY);
+        localStorage.removeItem(CACHE_TIME_KEY);
+        console.log('✓ Cache cleared');
+        location.reload();
+    }
+
+    function formatTimeRemaining(unlockDate) {
+        const now = new Date();
+        const diff = unlockDate - now;
+        if (diff <= 0) return 'Available now!';
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        if (days > 0) return `${days}d ${hours}h`;
+        else if (hours > 0) return `${hours}h ${mins}m`;
+        else return `${mins} min`;
+    }
+    
+    function getAutocompleteSuggestions(query) {
+        if (!query || query.length < 2) return [];
+        return subjectIndex.filter(name => 
+            name.toLowerCase().includes(query.toLowerCase())
+        ).slice(0, 7);
+    }
+    
+    function showAutocompleteSuggestions(query) {
+        const list = document.getElementById('autocomplete-list');
+        const suggestions = getAutocompleteSuggestions(query);
+        
+        if (!suggestions.length || !query) {
+            list.style.display = 'none';
+            renderExplorer();
+            return;
+        }
+        
+        list.innerHTML = suggestions.map(s => `
+            <div style="padding:12px 15px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.2s;"
+            onmouseover="this.style.background='var(--border)'"
+            onmouseout="this.style.background='transparent'"
+            onclick="selectSuggestion('${s.replace(/'/g, "\\'")}')">
+                🔍 ${s}
+            </div>
+        `).join('');
+        list.style.display = 'block';
+    }
+    
+    function hideAutocompleteSuggestions() {
+        setTimeout(() => {
+            document.getElementById('autocomplete-list').style.display = 'none';
+        }, 200);
+    }
+    
+    function selectSuggestion(suggestion) {
+        document.getElementById('search-input').value = suggestion;
+        document.getElementById('autocomplete-list').style.display = 'none';
+        renderExplorer();
+    }
+    
+    const getFavorites = () => JSON.parse(localStorage.getItem('favorites') || '[]');
+    const isFavorited = (quizId) => getFavorites().includes(quizId);
+    
+    function toggleFavorite(e, quizId) {
+        e.stopPropagation();
+        let favorites = getFavorites();
+        if (favorites.includes(quizId)) {
+            favorites = favorites.filter(id => id !== quizId);
+        } else {
+            favorites.push(quizId);
+        }
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+        renderExplorer();
     }
 
     /**
@@ -290,14 +418,31 @@
         files.forEach(file => {
             const card = document.createElement('div');
             card.className = `card file-card ${file.meta.isAvailable ? '' : 'locked'}`;
+            const isFav = isFavorited(file.id);
+            const timeRemaining = file.meta.isAvailable ? 'Available' : formatTimeRemaining(file.meta.dateObj);
+            
             card.innerHTML = `
-                <span style="font-size:2rem">${file.meta.isAvailable ? '📄' : '🔒'}</span>
+                <div style="position: relative; margin-bottom: 10px;">
+                    <span style="font-size:2rem">${file.meta.isAvailable ? '📄' : '🔒'}</span>
+                    <button onclick="toggleFavorite(event, '${file.id}')" 
+                    style="position:absolute;top:0;right:0;background:none;border:none;font-size:20px;cursor:pointer;opacity:${isFav ? '1' : '0.3'};transition:opacity 0.2s;"
+                    onmouseover="this.style.opacity='1'"
+                    onmouseout="this.style.opacity='${isFav ? '1' : '0.3'}'">
+                        ${isFav ? '⭐' : '☆'}
+                    </button>
+                </div>
                 <h3 style="margin: 15px 0 5px 0; font-size: 1.1rem;">${file.meta.cleanName}</h3>
                 <div class="time-badge" style="color:${file.meta.isAvailable ? 'var(--success)' : 'var(--accent-red)'}">
-                    ${file.meta.isAvailable ? '✅ Available' : '📅 Opens: ' + file.meta.unlockText}
-                </div>`;
+                    ${file.meta.isAvailable ? '✅ ' + timeRemaining : '⏱️ ' + timeRemaining}
+                </div>
+                ${!file.meta.isAvailable ? `<p style="font-size: 11px; color: var(--text); opacity: 0.6; margin-top: 6px;">${file.meta.unlockText}</p>` : ''}`;
+            
             card.onclick = () => {
                 if (file.meta.isAvailable) {
+                    localStorage.setItem('recently-viewed', JSON.stringify([
+                        file.id,
+                        ...JSON.parse(localStorage.getItem('recently-viewed') || '[]').slice(0, 4)
+                    ]));
                     window.location.href = `quizinterface.html?id=${file.id}`;
                 } else {
                     alert(`🔒 Access Denied\n\nThis quiz unlocks on:\n${file.meta.unlockText}`);
@@ -309,19 +454,39 @@
 
     function goBack() { currentPath.pop(); renderExplorer(); }
     function goHome() { currentPath = []; renderExplorer(); }
+    
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme-preference');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+        document.body.setAttribute('data-theme', theme);
+        document.getElementById('theme-btn').innerText = theme === 'dark' ? '☀️ Day Mode' : '🌙 Night Mode';
+    }
+    
     function toggleTheme() {
         const body = document.body;
         const currentTheme = body.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         body.setAttribute('data-theme', newTheme);
         document.getElementById('theme-btn').innerText = newTheme === 'dark' ? '☀️ Day Mode' : '🌙 Night Mode';
+        localStorage.setItem('theme-preference', newTheme);
+        console.log(`✓ Theme saved: ${newTheme}`);
     }
+    
     function toggleFS() {
         if (!document.fullscreenElement) document.documentElement.requestFullscreen();
         else if (document.exitFullscreen) document.exitFullscreen();
     }
 
-    window.onload = initExplorer;
+    window.onload = () => {
+        initTheme();
+        initExplorer();
+        setInterval(() => {
+            document.querySelectorAll('.file-card.locked .time-badge').forEach((badge, idx) => {
+                if (idx === 0) renderExplorer();
+            });
+        }, 60000);
+    };
 </script>
 </body>
 </html>
