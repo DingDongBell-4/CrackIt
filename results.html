@@ -6,10 +6,15 @@
     <title>Test Results - Review Portal</title>
     
     <script>
-      window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] } };
+      window.MathJax = { 
+        tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] },
+        svg: { fontCache: 'global' }
+      };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         :root { 
@@ -123,7 +128,155 @@
         
         .action-btn:active { transform: scale(0.98); }
         .action-btn.secondary { background: var(--border); color: var(--text); }
+        .action-btn.success { background: var(--success); }
         .action-btn:hover { opacity: 0.9; }
+
+        /* Detailed Stats Section */
+        .detailed-stats {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.05);
+        }
+
+        .stats-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .stat-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-label-text {
+            font-size: 0.9rem;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* Share Card Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal.show { display: block; }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--text);
+        }
+
+        .close-modal:hover { color: var(--primary); }
+
+        /* Result Card for Sharing */
+        #result-card {
+            background: linear-gradient(135deg, var(--primary) 0%, #5b9ef5 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        #result-card h3 { margin: 0 0 10px 0; font-size: 1.3rem; }
+        #result-card .score-display { font-size: 3rem; font-weight: bold; margin: 15px 0; }
+        #result-card p { margin: 8px 0; font-size: 0.95rem; }
+
+        .result-card-details {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+
+        #qrcode {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        #qrcode img {
+            max-width: 150px;
+            height: auto;
+        }
+
+        .share-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .share-btn {
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--card-bg);
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text);
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .share-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .share-btn:active { transform: scale(0.95); }
 
         /* Filter Bar */
         .filter-section {
@@ -184,6 +337,7 @@
             font-weight: 600;
             margin-bottom: 15px;
             color: var(--text);
+            word-break: break-word;
         }
         
         .opt { 
@@ -197,6 +351,7 @@
             align-items: center;
             background: rgba(0,0,0,0.02);
             gap: 10px;
+            word-break: break-word;
         }
         
         .opt-correct { 
@@ -217,11 +372,20 @@
             padding: 0 !important;
             display: flex;
             align-items: center;
+            word-break: break-word;
         }
 
         .MathJax {
-            max-width: 100%;
+            display: inline-block !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+            word-break: break-word;
+        }
+
+        .math-block {
             overflow-x: auto;
+            padding: 10px 0;
+            margin: 10px 0;
         }
 
         .explanation-box {
@@ -231,6 +395,7 @@
             border-radius: 8px;
             border-left: 5px solid var(--primary);
             font-size: 0.95rem;
+            word-break: break-word;
         }
 
         [data-theme="dark"] .explanation-box {
@@ -305,8 +470,10 @@
         @media print {
             body { padding: 0; margin: 0; background: white; }
             .container { max-width: 100%; }
-            .action-buttons, .filter-section, #results-container .action-btn { display: none; }
+            .action-buttons, .filter-section { display: none; }
             .review-card { page-break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
+            #result-card { page-break-inside: avoid; }
+            .detailed-stats { page-break-inside: avoid; }
         }
 
         /* Mobile Responsive */
@@ -335,6 +502,13 @@
             table { font-size: 0.8rem !important; }
             tr:first-child td, tr:first-child th { padding: 8px !important; font-size: 0.75rem !important; }
             td, th { padding: 6px 8px !important; }
+
+            .stat-row { grid-template-columns: 1fr; }
+
+            .modal-content { padding: 20px; }
+            .share-options { grid-template-columns: 1fr; }
+
+            #result-card .score-display { font-size: 2.5rem; }
         }
 
         @media (max-width: 480px) {
@@ -348,14 +522,21 @@
             .stat-val { font-size: 1.2em; }
             .stat-label { font-size: 0.65em; }
             
-            .action-buttons { gap: 6px; }
-            .action-btn { padding: 9px 14px; font-size: 0.8rem; flex: 1; min-width: 0; }
+            .action-buttons { gap: 6px; flex-direction: column; }
+            .action-btn { padding: 10px 14px; font-size: 0.8rem; }
             
             .filter-btn { padding: 6px 10px; font-size: 0.7rem; }
             
             .review-card { padding: 14px; }
             .q-text { font-size: 0.95rem; }
             .opt { padding: 10px; font-size: 0.85rem; }
+
+            .stat-row { grid-template-columns: 1fr; }
+            .detailed-stats { padding: 15px; }
+
+            .modal-content { width: 95%; padding: 15px; }
+            #result-card { padding: 20px; }
+            #result-card .score-display { font-size: 2rem; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -391,9 +572,77 @@
         </div>
 
         <div class="action-buttons">
+            <button class="action-btn success" onclick="shareAsImage()">📸 Share as Photo</button>
             <button class="action-btn" onclick="exportPDF()">📥 Download PDF</button>
             <button class="action-btn secondary" onclick="printResults()">🖨️ Print</button>
-            <button class="action-btn secondary" onclick="window.location.href='index.html'">← Back</button>
+            <button class="action-btn secondary" onclick="retryExam()">🔄 Retry</button>
+        </div>
+    </div>
+
+    <!-- Detailed Statistics Section (for printing) -->
+    <div class="detailed-stats" id="stats-for-print">
+        <div class="stats-title">📊 Detailed Statistics</div>
+        
+        <div class="stat-row">
+            <div class="stat-item">
+                <span class="stat-label-text">Accuracy Rate</span>
+                <span class="stat-value" id="accuracy-rate">0%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label-text">Time Spent</span>
+                <span class="stat-value" id="time-spent">00:00</span>
+            </div>
+        </div>
+        
+        <div class="stat-row">
+            <div class="stat-item">
+                <span class="stat-label-text">Avg Time/Question</span>
+                <span class="stat-value" id="avg-time">0s</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label-text">Questions Visited</span>
+                <span class="stat-value" id="visited-count">0</span>
+            </div>
+        </div>
+
+        <div class="stat-row">
+            <div class="stat-item">
+                <span class="stat-label-text">Marked for Review</span>
+                <span class="stat-value" id="marked-count">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label-text">Fastest Question</span>
+                <span class="stat-value" id="fastest-question">-</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="shareModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeShareModal()">&times;</span>
+            <h3 style="margin-top:0; text-align:center;">Share Your Results</h3>
+            
+            <div id="result-card">
+                <h3>My Test Results</h3>
+                <div class="score-display" id="share-score">0.00</div>
+                <p id="share-marks" style="font-size:1.1rem; margin:10px 0;">Correct: 0 | Wrong: 0</p>
+                
+                <div class="result-card-details">
+                    <p id="share-accuracy">Accuracy: 0%</p>
+                    <p id="share-time">Time Spent: 00:00</p>
+                    <p id="share-date" style="font-size:0.9rem; opacity:0.9;"></p>
+                </div>
+
+                <div id="qrcode"></div>
+            </div>
+
+            <div class="share-options">
+                <button class="share-btn" onclick="downloadResultAsImage()">📥 Download Photo</button>
+                <button class="share-btn" onclick="shareViaWhatsApp()">💬 WhatsApp</button>
+            </div>
+
+            <button class="action-btn" style="width:100%;" onclick="closeShareModal()">Close</button>
         </div>
     </div>
 
@@ -415,7 +664,7 @@
         let formatted = String(text);
 
         if (formatted.includes('<table')) {
-            formatted = formatted.replace(/<table/g, '<div class="table-wrapper"><table class="rendered-table"');
+            formatted = formatted.replace(/<table/g, '<div class="table-container"><table class="rendered-table"');
             formatted = formatted.replace(/<\/table>/g, '</table></div>');
         }
 
@@ -441,30 +690,120 @@
         });
     }
 
-    // --- PDF Export ---
+    // --- Share as Image ---
+    function shareAsImage() {
+        generateQRCode();
+        document.getElementById('shareModal').classList.add('show');
+    }
+
+    function closeShareModal() {
+        document.getElementById('shareModal').classList.remove('show');
+    }
+
+    function generateQRCode() {
+        const qrElement = document.getElementById('qrcode');
+        qrElement.innerHTML = '';
+        
+        const url = window.location.href;
+        new QRCode(qrElement, {
+            text: url,
+            width: 150,
+            height: 150,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
+
+    function downloadResultAsImage() {
+        const card = document.getElementById('result-card');
+        const cardClone = card.cloneNode(true);
+        
+        // Increase padding for better image
+        cardClone.style.padding = '40px';
+        cardClone.style.width = '400px';
+        cardClone.style.margin = '0 auto';
+        
+        // Create temporary container
+        const temp = document.createElement('div');
+        temp.style.position = 'fixed';
+        temp.style.left = '-9999px';
+        temp.appendChild(cardClone);
+        document.body.appendChild(temp);
+
+        html2canvas(cardClone, {
+            backgroundColor: null,
+            scale: 2,
+            logging: false
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = `${document.getElementById('test-display-name').innerText}_Results.png`;
+            link.click();
+            
+            document.body.removeChild(temp);
+        });
+    }
+
+    function shareViaWhatsApp() {
+        const score = document.getElementById('final-score').innerText;
+        const correct = document.getElementById('stat-correct').innerText;
+        const wrong = document.getElementById('stat-wrong').innerText;
+        const accuracy = document.getElementById('accuracy-rate').innerText;
+        const testName = document.getElementById('test-display-name').innerText;
+
+        const message = `📝 ${testName}%0A%0A📊 Score: ${score}%0A✓ Correct: ${correct}%0A✗ Wrong: ${wrong}%0A📈 Accuracy: ${accuracy}%0A%0ACreated with CrackIt Exam Portal`;
+        const whatsappUrl = `https://wa.me/?text=${message}`;
+        
+        window.open(whatsappUrl, '_blank');
+    }
+
+    // --- Retry Exam ---
+    function retryExam() {
+        if(confirm("Are you sure you want to retake this test? Your current progress will be reset.")) {
+            const fileId = localStorage.getItem('file_id');
+            const meta = JSON.parse(localStorage.getItem('test_meta') || "{}");
+            
+            if(fileId) {
+                const params = `id=${fileId}&name=${encodeURIComponent(meta.name || 'Test')}&time=${meta.totalTime ? Math.floor(meta.totalTime/60) : 60}&pos=${meta.pos || 1}&neg=${meta.neg || 0}`;
+                window.location.href = `exam-portal.html?${params}`;
+            } else {
+                alert('Unable to find test details. Please go back to the dashboard.');
+                window.location.href = 'index.html';
+            }
+        }
+    }
+
+    // --- PDF Export (Improved) ---
     function exportPDF() {
         const element = document.querySelector('.container');
         const opt = {
             margin: 10,
             filename: `${document.getElementById('test-display-name').innerText}_Results.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        // Hide filter and action buttons temporarily
         const filterSection = document.querySelector('.filter-section');
         const actionButtons = document.querySelector('.action-buttons');
         filterSection.style.display = 'none';
         actionButtons.style.display = 'none';
 
-        html2pdf().set(opt).from(element).save().then(() => {
+        // Clone element to avoid modifying original
+        const clone = element.cloneNode(true);
+        
+        html2pdf().set(opt).from(clone).save().then(() => {
             filterSection.style.display = 'flex';
             actionButtons.style.display = 'flex';
+        }).catch(() => {
+            filterSection.style.display = 'flex';
+            actionButtons.style.display = 'flex';
+            alert('PDF export completed');
         });
     }
 
-    // --- Print ---
+    // --- Print (with detailed stats) ---
     function printResults() {
         const filterSection = document.querySelector('.filter-section');
         const actionButtons = document.querySelector('.action-buttons');
@@ -483,6 +822,7 @@
         const userAnswers = JSON.parse(localStorage.getItem('last_answers') || "[]");
         const testStatus = JSON.parse(localStorage.getItem('last_status') || "[]");
         const meta = JSON.parse(localStorage.getItem('test_meta') || "{}");
+        const timePerQuestion = JSON.parse(localStorage.getItem('time_per_question') || "{}");
 
         if (!questions.length) {
             document.body.innerHTML = '<div style="text-align:center; padding:100px 20px;"><h2>No test data found.</h2><button onclick="window.location.href=\'index.html\'" class="action-btn">Go to Dashboard</button></div>';
@@ -490,9 +830,12 @@
         }
 
         document.getElementById('test-display-name').innerText = meta.name || "Test Result";
+        document.getElementById('share-date').innerText = `Created on ${new Date().toLocaleDateString()}`;
 
-        let correctC = 0, wrongC = 0, skipC = 0, unvisC = 0;
+        let correctC = 0, wrongC = 0, skipC = 0, unvisC = 0, markedC = 0, visitedC = 0;
         let reviewHtml = "";
+        let timeTaken = 0;
+        let questionTimings = [];
 
         questions.forEach((q, i) => {
             const uAns = userAnswers[i];
@@ -503,15 +846,20 @@
             
             let status = "";
             if (qStat === 0) { status = "unvisited"; unvisC++; }
-            else if (!isAns) { status = "skipped"; skipC++; }
-            else if (isCorrect) { status = "correct"; correctC++; }
-            else { status = "wrong"; wrongC++; }
+            else if (!isAns) { status = "skipped"; skipC++; visitedC++; }
+            else if (isCorrect) { status = "correct"; correctC++; visitedC++; }
+            else { status = "wrong"; wrongC++; visitedC++; }
+
+            if (qStat === 3) markedC++;
+
+            const qTime = timePerQuestion[i] || 0;
+            timeTaken += qTime;
+            if (qTime > 0) questionTimings.push({ q: i+1, time: qTime });
 
             let cardBorder = (status === "correct") ? "correct-border" : (status === "wrong" ? "wrong-border" : "skipped-border");
             let badgeCol = (status === "correct") ? "var(--success)" : (status === "wrong" ? "var(--danger)" : "var(--warning)");
             if (status === "unvisited") badgeCol = "#6c757d";
 
-            // Option rendering WITHOUT letter labels (a, b, c, d)
             let optionsHtml = q.options.map((opt, idx) => {
                 const char = String.fromCharCode(97 + idx);
                 let cls = "opt";
@@ -528,7 +876,7 @@
                     <div>${optionsHtml}</div>
                     <div class="explanation-box">
                         <strong style="color:var(--primary); display:block; margin-bottom:8px;">Explanation:</strong>
-                        ${formatText(q.explanation || "No explanation available.")}
+                        <div class="math-block">${formatText(q.explanation || "No explanation available.")}</div>
                     </div>
                 </div>`;
         });
@@ -538,28 +886,61 @@
         const n = parseFloat(meta.neg) || 0;
         const score = (correctC * p) - (wrongC * n);
 
+        // Calculate statistics
+        const accuracy = visitedC > 0 ? ((correctC / visitedC) * 100).toFixed(1) : 0;
+        const avgTime = visitedC > 0 ? (timeTaken / visitedC).toFixed(0) : 0;
+        const fastestQ = questionTimings.length > 0 ? `Q${questionTimings.reduce((a, b) => a.time < b.time ? a : b).q}` : '-';
+
         // Update UI
         document.getElementById('final-score').innerText = score.toFixed(2);
+        document.getElementById('share-score').innerText = score.toFixed(2);
         document.getElementById('marks-info').innerText = `Correct: +${p} | Wrong: -${n}`;
         document.getElementById('stat-correct').innerText = correctC;
         document.getElementById('stat-wrong').innerText = wrongC;
         document.getElementById('stat-skipped').innerText = skipC;
         document.getElementById('stat-unvisit').innerText = unvisC;
         
+        document.getElementById('accuracy-rate').innerText = `${accuracy}%`;
+        document.getElementById('time-spent').innerText = formatTime(timeTaken);
+        document.getElementById('avg-time').innerText = `${avgTime}s`;
+        document.getElementById('visited-count').innerText = visitedC;
+        document.getElementById('marked-count').innerText = markedC;
+        document.getElementById('fastest-question').innerText = fastestQ;
+        
+        document.getElementById('share-marks').innerText = `Correct: ${correctC} | Wrong: ${wrongC}`;
+        document.getElementById('share-accuracy').innerText = `Accuracy: ${accuracy}%`;
+        document.getElementById('share-time').innerText = `Time Spent: ${formatTime(timeTaken)}`;
+        
         const reviewList = document.getElementById('review-list');
         reviewList.innerHTML = reviewHtml;
 
+        // Trigger MathJax rendering
         if (window.MathJax && MathJax.typesetPromise) {
             MathJax.typesetPromise([reviewList]).catch((err) => console.log('MathJax error:', err));
         }
     }
 
-    function toggleTheme() {
-        const current = document.documentElement.getAttribute('data-theme');
-        document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
-    window.onload = loadResults;
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme');
+        const newTheme = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+    }
+
+    // Apply saved theme
+    window.addEventListener('load', () => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+        loadResults();
+    });
 </script>
 </body>
 </html>

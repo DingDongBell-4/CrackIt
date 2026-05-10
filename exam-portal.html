@@ -92,7 +92,22 @@
             font-variant-numeric: tabular-nums; 
             font-size: 0.95rem;
             white-space: nowrap;
+            transition: 0.3s;
         }
+
+        #timer.warning { 
+            background: var(--warning); 
+            color: #000; 
+            animation: pulse 1s infinite;
+        }
+
+        #timer.critical { 
+            background: var(--danger); 
+            color: #fff; 
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
         
         #test-title-ui { 
             font-weight: bold; 
@@ -112,6 +127,8 @@
             margin-bottom: 20px; 
             color: var(--text-main); 
             font-weight: 500;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
         
         .options-grid { 
@@ -132,11 +149,32 @@
             cursor: pointer; 
             transition: all 0.2s; 
             background: var(--card-bg);
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
         
         .option-item:active { transform: scale(0.98); }
         .option-item:hover { border-color: var(--primary); background: rgba(58, 134, 255, 0.05); }
         .option-item.selected { border-color: var(--primary); background: rgba(58, 134, 255, 0.1); font-weight: 600; color: var(--primary); }
+
+        /* --- Save Indicator --- */
+        #save-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 16px;
+            background: var(--success);
+            color: white;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        #save-indicator.show { opacity: 1; }
 
         /* --- TABLE STYLING --- */
         .table-container { 
@@ -223,6 +261,8 @@
             background: #eee; 
             color: #555;
             transition: 0.15s;
+            -webkit-user-select: none;
+            user-select: none;
         }
         
         .q-num:active { transform: scale(0.9); }
@@ -243,6 +283,9 @@
             cursor: pointer;
             font-size: 0.85rem;
             white-space: nowrap;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* Overlay */
@@ -266,6 +309,9 @@
             font-weight: bold; 
             transition: 0.2s; 
             font-size: 0.9rem;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         
         .btn-primary { background: var(--primary); color: white; }
@@ -309,13 +355,17 @@
         }
 
         @media (max-width: 768px) {
-            .top-bar { padding: 10px 12px; gap: 8px; }
-            #test-title-ui { font-size: 0.9rem; }
+            .top-bar { padding: 10px 12px; gap: 8px; flex-wrap: wrap; }
+            #test-title-ui { font-size: 0.9rem; flex-basis: 100%; order: -1; }
             #timer { padding: 6px 10px; font-size: 0.85rem; }
             
             .question-area { padding: 18px; min-height: auto; }
             .question-text { font-size: 1.15rem; }
-            .option-item { font-size: 0.95rem; padding: 12px; }
+            .option-item { 
+                font-size: 0.95rem; 
+                padding: 12px; 
+                -webkit-touch-callout: none;
+            }
             
             table { font-size: 0.85rem !important; }
             tr:first-child td, tr:first-child th { padding: 10px 10px !important; font-size: 0.8rem !important; }
@@ -326,6 +376,8 @@
             
             .action-buttons { grid-template-columns: repeat(2, 1fr); }
             .btn { padding: 10px 12px; font-size: 0.85rem; }
+
+            #save-indicator { bottom: 15px; right: 15px; font-size: 0.75rem; padding: 10px 14px; }
         }
 
         @media (max-width: 480px) {
@@ -335,13 +387,19 @@
             
             .question-area { padding: 15px; }
             .question-text { font-size: 1.05rem; margin-bottom: 15px; }
-            .option-item { font-size: 0.9rem; padding: 11px; }
+            .option-item { 
+                font-size: 0.9rem; 
+                padding: 11px; 
+                -webkit-touch-callout: none;
+            }
             
             #palette-container { grid-template-columns: repeat(5, 1fr); gap: 6px; }
             .q-num { font-size: 0.75rem; }
             
-            .action-buttons { gap: 6px; }
+            .action-buttons { gap: 6px; grid-template-columns: repeat(2, 1fr); }
             .btn { padding: 9px 10px; font-size: 0.8rem; }
+
+            #save-indicator { bottom: 10px; right: 10px; font-size: 0.7rem; padding: 8px 12px; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -352,6 +410,13 @@
 <body>
 
 <div id="overlay" onclick="toggleNavigator()"></div>
+
+<!-- Time Warning Modal - Auto closes after 3 seconds -->
+<div id="time-warning" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--card-bg); padding:30px; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.2); z-index:2500; text-align:center; border:2px solid var(--warning); pointer-events:none;">
+    <div style="font-size:2.5rem; color:var(--warning); margin-bottom:15px; font-weight:bold;">⏰</div>
+    <h3 id="warning-title" style="margin:0 0 10px 0; color:var(--text-main);">5 Minutes Remaining!</h3>
+    <p id="warning-msg" style="margin:0; color:var(--text-muted); font-size:0.95rem;">Hurry up and complete your test.</p>
+</div>
 
 <div class="top-bar">
     <div class="top-bar-left">
@@ -401,6 +466,9 @@
     </div>
 </div>
 
+<!-- Auto-save Indicator -->
+<div id="save-indicator">💾 Auto-saved</div>
+
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwaDjgR34EZ6e1IrlEkGkdMM8EhZY1-lkVPIsBttYfU-pTLII0gYvJbArhXjyBv2GrZhA/exec";
     
@@ -416,6 +484,12 @@
     let status = []; 
     let currentIndex = 0;
     let timeLeft = testDuration * 60;
+    let timerInterval = null;
+    let autoSaveInterval = null;
+    let warningShown5Min = false;
+    let warningShown1Min = false;
+    let questionStartTime = {};
+    let timePerQuestion = {};
 
     window.onbeforeunload = function() { return "Progress will be lost!"; };
 
@@ -426,9 +500,53 @@
         overlay.classList.toggle('active');
     }
 
+    function showTimeWarning(minutes) {
+        const warningDiv = document.getElementById('time-warning');
+        const title = document.getElementById('warning-title');
+        const msg = document.getElementById('warning-msg');
+        
+        if (minutes === 5) {
+            title.innerText = '5 Minutes Remaining!';
+            msg.innerText = 'Hurry up and complete your test.';
+        } else if (minutes === 1) {
+            title.innerText = '1 Minute Remaining!';
+            msg.innerText = 'Finish up quickly!';
+        }
+        warningDiv.style.display = 'block';
+        
+        // Auto close after 3 seconds (doesn't stop timer)
+        setTimeout(() => {
+            warningDiv.style.display = 'none';
+        }, 3000);
+    }
+
+    function autoSave() {
+        localStorage.setItem('last_questions', JSON.stringify(questions));
+        localStorage.setItem('last_answers', JSON.stringify(answers));
+        localStorage.setItem('last_status', JSON.stringify(status));
+        localStorage.setItem('test_meta', JSON.stringify({ name: testName, pos: posMark, neg: negMark }));
+        localStorage.setItem('time_per_question', JSON.stringify(timePerQuestion));
+        
+        showSaveIndicator();
+    }
+
+    function showSaveIndicator() {
+        const indicator = document.getElementById('save-indicator');
+        indicator.classList.add('show');
+        setTimeout(() => {
+            indicator.classList.remove('show');
+        }, 2000);
+    }
+
     async function init() {
         document.getElementById('test-title-ui').innerText = testName;
         document.getElementById('marking-info').innerText = `+${posMark} / -${negMark}`;
+        
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
         if (!fileId) { document.getElementById('status-text').innerText = "Error: No ID."; return; }
 
         try {
@@ -466,6 +584,7 @@
         });
         answers = Array(questions.length).fill(null);
         status = Array(questions.length).fill(0);
+        timePerQuestion = {};
     }
 
     function cleanFormat(html) {
@@ -489,7 +608,15 @@
         document.getElementById('loading-screen').classList.add('hidden');
         document.getElementById('main-ui').classList.remove('hidden');
         renderQuestion();
+        questionStartTime[0] = Date.now();
         startTimer();
+        startAutoSave();
+    }
+
+    function startAutoSave() {
+        autoSaveInterval = setInterval(() => {
+            autoSave();
+        }, 30000);
     }
 
     function renderQuestion() {
@@ -511,14 +638,38 @@
         if(window.MathJax) MathJax.typesetPromise();
     }
 
-    function selectOpt(char) { answers[currentIndex] = char; status[currentIndex] = 2; renderQuestion(); }
-    function markReview() { status[currentIndex] = 3; nav(1); }
-    function clearAns() { answers[currentIndex] = null; status[currentIndex] = 1; renderQuestion(); }
+    function selectOpt(char) { 
+        answers[currentIndex] = char; 
+        status[currentIndex] = 2; 
+        recordQuestionTime();
+        renderQuestion(); 
+    }
+
+    function recordQuestionTime() {
+        if (questionStartTime[currentIndex]) {
+            const duration = (Date.now() - questionStartTime[currentIndex]) / 1000;
+            timePerQuestion[currentIndex] = duration;
+        }
+    }
+
+    function markReview() { 
+        recordQuestionTime();
+        status[currentIndex] = 3; 
+        nav(1); 
+    }
+
+    function clearAns() { 
+        answers[currentIndex] = null; 
+        status[currentIndex] = 1; 
+        renderQuestion(); 
+    }
 
     function nav(step) {
         let next = currentIndex + step;
         if(next >= 0 && next < questions.length) {
+            recordQuestionTime();
             currentIndex = next;
+            questionStartTime[currentIndex] = Date.now();
             renderQuestion();
             window.scrollTo(0,0);
             if(window.innerWidth <= 1024) {
@@ -540,30 +691,78 @@
         }).join('');
     }
 
-    function jump(i) { currentIndex = i; renderQuestion(); nav(0); }
+    function jump(i) { 
+        recordQuestionTime();
+        currentIndex = i; 
+        questionStartTime[currentIndex] = Date.now();
+        renderQuestion(); 
+        nav(0); 
+    }
 
     function startTimer() {
-        const timerObj = setInterval(() => {
-            if(timeLeft <= 0) { clearInterval(timerObj); finishTest(true); }
+        timerInterval = setInterval(() => {
+            if(timeLeft <= 0) { 
+                clearInterval(timerInterval); 
+                finishTest(true); 
+            }
+
+            if(timeLeft === 300 && !warningShown5Min) {
+                warningShown5Min = true;
+                showTimeWarning(5);
+            }
+
+            if(timeLeft === 60 && !warningShown1Min) {
+                warningShown1Min = true;
+                showTimeWarning(1);
+            }
+
             let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
-            document.getElementById('timer').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            const timerEl = document.getElementById('timer');
+            timerEl.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            
+            if(timeLeft <= 60) {
+                timerEl.classList.add('critical');
+                timerEl.classList.remove('warning');
+            } else if(timeLeft <= 300) {
+                timerEl.classList.add('warning');
+                timerEl.classList.remove('critical');
+            } else {
+                timerEl.classList.remove('warning', 'critical');
+            }
+
             timeLeft--;
         }, 1000);
     }
 
     function finishTest(auto = false) {
         if(!auto && !confirm("Confirm Submission?")) return;
+        
         window.onbeforeunload = null;
+        clearInterval(timerInterval);
+        clearInterval(autoSaveInterval);
+        recordQuestionTime();
+
         localStorage.setItem('last_questions', JSON.stringify(questions));
         localStorage.setItem('last_answers', JSON.stringify(answers));
         localStorage.setItem('last_status', JSON.stringify(status));
-        localStorage.setItem('test_meta', JSON.stringify({ name: testName, pos: posMark, neg: negMark }));
+        localStorage.setItem('test_meta', JSON.stringify({ 
+            name: testName, 
+            pos: posMark, 
+            neg: negMark,
+            totalTime: testDuration * 60,
+            timeRemaining: timeLeft
+        }));
+        localStorage.setItem('time_per_question', JSON.stringify(timePerQuestion));
+        localStorage.setItem('file_id', fileId);
+        
         window.location.href = "results.html";
     }
 
     function toggleTheme() {
         const current = document.documentElement.getAttribute('data-theme');
-        document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+        const newTheme = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
     }
 
     window.onload = init;
