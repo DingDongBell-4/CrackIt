@@ -22,7 +22,6 @@
             --success: #2ecc71; 
             --danger: #e74c3c; 
             --warning: #ffbe0b; 
-            --ssc-blue: #0056b3; 
             --light-bg: #f4f7f9; 
             --card-bg: #ffffff;
             --text: #000000;
@@ -53,7 +52,6 @@
             margin: 0 auto; 
         }
         
-        /* Results Header */
         #results-container {
             background: var(--card-bg); 
             padding: 25px; 
@@ -104,7 +102,6 @@
             margin-top: 5px;
         }
 
-        /* Action Buttons */
         .action-buttons {
             display: flex;
             gap: 10px;
@@ -131,7 +128,6 @@
         .action-btn.success { background: var(--success); }
         .action-btn:hover { opacity: 0.9; }
 
-        /* Detailed Stats Section */
         .detailed-stats {
             background: var(--card-bg);
             padding: 20px;
@@ -157,11 +153,7 @@
             border-bottom: 1px solid var(--border);
         }
 
-        .stat-row:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
+        .stat-row:last-child { border-bottom: none; }
 
         .stat-item {
             display: flex;
@@ -181,7 +173,6 @@
             color: var(--primary);
         }
 
-        /* Share Card Modal */
         .modal {
             display: none;
             position: fixed;
@@ -203,7 +194,7 @@
             padding: 30px;
             border-radius: 12px;
             width: 90%;
-            max-width: 600px;
+            max-width: 700px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             position: relative;
         }
@@ -218,42 +209,97 @@
             color: var(--text);
         }
 
-        .close-modal:hover { color: var(--primary); }
-
-        /* Result Card for Sharing */
+        /* Redesigned Result Card */
         #result-card {
-            background: linear-gradient(135deg, var(--primary) 0%, #5b9ef5 100%);
-            color: white;
-            padding: 30px;
+            background: white;
+            color: #000;
+            padding: 40px;
             border-radius: 12px;
             text-align: center;
             margin-bottom: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 2px solid var(--primary);
         }
 
-        #result-card h3 { margin: 0 0 10px 0; font-size: 1.3rem; }
-        #result-card .score-display { font-size: 3rem; font-weight: bold; margin: 15px 0; }
-        #result-card p { margin: 8px 0; font-size: 0.95rem; }
+        #result-card h3 { 
+            margin: 0 0 20px 0; 
+            font-size: 1.5rem; 
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .score-display { 
+            font-size: 4rem; 
+            font-weight: bold; 
+            margin: 20px 0;
+            color: var(--primary);
+            letter-spacing: -1px;
+        }
+
+        .result-divider {
+            height: 2px;
+            background: var(--primary);
+            margin: 20px 0;
+            opacity: 0.3;
+        }
 
         .result-card-details {
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
+            text-align: left;
+            background: #f8f9fa;
+            padding: 20px;
             border-radius: 8px;
-            margin: 15px 0;
-            font-size: 0.9rem;
+            margin: 20px 0;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .detail-value {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1rem;
         }
 
         #qrcode {
             text-align: center;
-            padding: 15px;
-            background: white;
+            padding: 20px;
+            background: #f8f9fa;
             border-radius: 8px;
-            margin: 15px 0;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        #qrcode img {
-            max-width: 150px;
+        #qrcode img, #qrcode canvas {
+            max-width: 180px;
             height: auto;
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+
+        .qr-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 10px;
+            font-weight: 500;
         }
 
         .share-options {
@@ -275,10 +321,8 @@
             font-size: 0.85rem;
         }
 
-        .share-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
-        .share-btn:active { transform: scale(0.95); }
+        .share-btn:hover { background: var(--primary); color: white; }
 
-        /* Filter Bar */
         .filter-section {
             background: var(--card-bg);
             padding: 12px;
@@ -316,7 +360,6 @@
         #btn-wrong.active { background: var(--danger); }
         #btn-skipped.active { background: var(--warning); color: #000; }
 
-        /* Review Cards */
         .review-card {
             background: var(--card-bg);
             padding: 20px;
@@ -375,19 +418,6 @@
             word-break: break-word;
         }
 
-        .MathJax {
-            display: inline-block !important;
-            max-width: 100% !important;
-            overflow: visible !important;
-            word-break: break-word;
-        }
-
-        .math-block {
-            overflow-x: auto;
-            padding: 10px 0;
-            margin: 10px 0;
-        }
-
         .explanation-box {
             margin-top: 15px;
             padding: 15px;
@@ -402,48 +432,6 @@
             background: rgba(58, 134, 255, 0.1);
         }
 
-        /* Table Styling */
-        .table-container { 
-            overflow-x: auto;
-            margin: 15px 0;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        table { 
-            border-collapse: collapse !important;
-            width: auto !important;
-            min-width: 100% !important;
-            font-size: 0.9rem !important;
-            background: white !important;
-        }
-
-        tr:first-child td, tr:first-child th { 
-            background-color: #3a86ff !important;
-            color: white !important;
-            padding: 10px !important;
-            text-align: left !important;
-            font-size: 0.8rem !important;
-	    font-weight: 700 !important;
-        }
-
-        td, th { 
-            border: 1px solid #dee2e6 !important;
-            padding: 8px 10px !important;
-            text-align: left !important;
-            color: #000000 !important;
-            line-height: 1.3 !important;
-	    font-weight: 400 !important;
-        }
-
-        td strong, th strong, td b, th b {
-            font-weight: 600 !important;
-        }
-
-        td p, th p { margin: 0 !important; padding: 0 !important; }
-        tr:nth-child(even) { background-color: #f8f9fa; }
-
         .badge {
             padding: 6px 12px;
             border-radius: 6px;
@@ -455,92 +443,32 @@
             letter-spacing: 0.5px;
         }
 
-        .review-img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 12px auto;
-            border-radius: 6px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        }
-
-        /* PDF Export Styles */
-        .pdf-hidden { display: none; }
-        
         @media print {
             body { padding: 0; margin: 0; background: white; }
-            .container { max-width: 100%; }
-            .action-buttons, .filter-section { display: none; }
-            .review-card { page-break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
+            .action-buttons, .filter-section, .modal { display: none; }
+            .review-card { page-break-inside: avoid; }
             #result-card { page-break-inside: avoid; }
             .detailed-stats { page-break-inside: avoid; }
         }
 
-        /* Mobile Responsive */
         @media (max-width: 768px) {
             body { padding: 12px; }
-            .container { padding: 0; }
-            
-            #results-container { padding: 18px; }
-            .score-big { font-size: 2.5rem; }
-            
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .stat-val { font-size: 1.4em; }
-            
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .action-buttons { gap: 8px; }
             .action-btn { padding: 10px 18px; font-size: 0.85rem; }
-            
-            .filter-section { padding: 10px; gap: 6px; }
-            .filter-btn { padding: 7px 12px; font-size: 0.75rem; }
-            
-            .review-card { padding: 16px; margin-bottom: 14px; }
-            .q-text { font-size: 1rem; }
-            .opt { padding: 10px 12px; font-size: 0.9rem; }
-            
-            .explanation-box { padding: 12px; font-size: 0.9rem; }
-            
-            table { font-size: 0.8rem !important; }
-            tr:first-child td, tr:first-child th { padding: 8px !important; font-size: 0.75rem !important; }
-            td, th { padding: 6px 8px !important; }
-
             .stat-row { grid-template-columns: 1fr; }
-
-            .modal-content { padding: 20px; }
-            .share-options { grid-template-columns: 1fr; }
-
-            #result-card .score-display { font-size: 2.5rem; }
+            .modal-content { width: 95%; padding: 20px; }
+            #result-card { padding: 25px; }
+            #result-card .score-display { font-size: 3rem; }
+            .detail-item { padding: 8px 0; }
         }
 
         @media (max-width: 480px) {
             body { padding: 10px; }
-            
-            #results-container { padding: 15px; }
-            .score-big { font-size: 2rem; margin: 8px 0; }
-            
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-            .stat-box { padding: 12px; }
-            .stat-val { font-size: 1.2em; }
-            .stat-label { font-size: 0.65em; }
-            
-            .action-buttons { gap: 6px; flex-direction: column; }
+            .action-buttons { flex-direction: column; gap: 6px; }
             .action-btn { padding: 10px 14px; font-size: 0.8rem; }
-            
-            .filter-btn { padding: 6px 10px; font-size: 0.7rem; }
-            
-            .review-card { padding: 14px; }
-            .q-text { font-size: 0.95rem; }
-            .opt { padding: 10px; font-size: 0.85rem; }
-
-            .stat-row { grid-template-columns: 1fr; }
-            .detailed-stats { padding: 15px; }
-
-            .modal-content { width: 95%; padding: 15px; }
             #result-card { padding: 20px; }
-            #result-card .score-display { font-size: 2rem; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            * { animation: none !important; transition: none !important; }
+            #result-card .score-display { font-size: 2.5rem; }
         }
     </style>
 </head>
@@ -572,17 +500,15 @@
         </div>
 
         <div class="action-buttons">
-            <button class="action-btn success" onclick="shareAsImage()">📸 Share as Photo</button>
-            <button class="action-btn" onclick="exportPDF()">📥 Download PDF</button>
+            <button class="action-btn success" onclick="shareAsImage()">📸 Share Results</button>
+            <button class="action-btn" onclick="downloadPDF()">📥 Download PDF</button>
             <button class="action-btn secondary" onclick="printResults()">🖨️ Print</button>
             <button class="action-btn secondary" onclick="retryExam()">🔄 Retry</button>
         </div>
     </div>
 
-    <!-- Detailed Statistics Section (for printing) -->
     <div class="detailed-stats" id="stats-for-print">
         <div class="stats-title">📊 Detailed Statistics</div>
-        
         <div class="stat-row">
             <div class="stat-item">
                 <span class="stat-label-text">Accuracy Rate</span>
@@ -593,7 +519,6 @@
                 <span class="stat-value" id="time-spent">00:00</span>
             </div>
         </div>
-        
         <div class="stat-row">
             <div class="stat-item">
                 <span class="stat-label-text">Avg Time/Question</span>
@@ -604,7 +529,6 @@
                 <span class="stat-value" id="visited-count">0</span>
             </div>
         </div>
-
         <div class="stat-row">
             <div class="stat-item">
                 <span class="stat-label-text">Marked for Review</span>
@@ -617,29 +541,51 @@
         </div>
     </div>
 
-    <!-- Share Modal -->
     <div id="shareModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeShareModal()">&times;</span>
-            <h3 style="margin-top:0; text-align:center;">Share Your Results</h3>
+            <h3 style="margin-top:0; text-align:center; color:var(--primary); font-size:1.3rem;">Share Your Results</h3>
             
             <div id="result-card">
-                <h3>My Test Results</h3>
+                <h3>Test Results Certificate</h3>
                 <div class="score-display" id="share-score">0.00</div>
-                <p id="share-marks" style="font-size:1.1rem; margin:10px 0;">Correct: 0 | Wrong: 0</p>
                 
+                <div class="result-divider"></div>
+
                 <div class="result-card-details">
-                    <p id="share-accuracy">Accuracy: 0%</p>
-                    <p id="share-time">Time Spent: 00:00</p>
-                    <p id="share-date" style="font-size:0.9rem; opacity:0.9;"></p>
+                    <div class="detail-item">
+                        <span class="detail-label">Test Name</span>
+                        <span class="detail-value" id="share-testname">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Correct Answers</span>
+                        <span class="detail-value" id="share-correct">0</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Wrong Answers</span>
+                        <span class="detail-value" id="share-wrong">0</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Accuracy</span>
+                        <span class="detail-value" id="share-accuracy">0%</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Time Spent</span>
+                        <span class="detail-value" id="share-time">00:00</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Date</span>
+                        <span class="detail-value" id="share-date">-</span>
+                    </div>
                 </div>
 
                 <div id="qrcode"></div>
+                <div class="qr-label">↑ Scan to view full results</div>
             </div>
 
             <div class="share-options">
-                <button class="share-btn" onclick="downloadResultAsImage()">📥 Download Photo</button>
-                <button class="share-btn" onclick="shareViaWhatsApp()">💬 WhatsApp</button>
+                <button class="share-btn" onclick="downloadResultAsImage()">📥 Download Image</button>
+                <button class="share-btn" onclick="shareViaWhatsApp()">💬 Share on WhatsApp</button>
             </div>
 
             <button class="action-btn" style="width:100%;" onclick="closeShareModal()">Close</button>
@@ -658,23 +604,18 @@
 </div>
 
 <script>
-    // --- Text Formatting ---
     function formatText(text) {
         if (!text) return "";
         let formatted = String(text);
-
         if (formatted.includes('<table')) {
-            formatted = formatted.replace(/<table/g, '<div class="table-container"><table class="rendered-table"');
+            formatted = formatted.replace(/<table/g, '<div class="table-container"><table');
             formatted = formatted.replace(/<\/table>/g, '</table></div>');
         }
-
-        formatted = formatted.replace(/<img/g, '<img class="review-img"');
+        formatted = formatted.replace(/<img/g, '<img style="max-width:100%;height:auto;"');
         formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
         return formatted;
     }
 
-    // --- Filter Logic ---
     function applyFilter(type) {
         const cards = document.querySelectorAll('.review-card');
         const btns = document.querySelectorAll('.filter-btn');
@@ -690,7 +631,6 @@
         });
     }
 
-    // --- Share as Image ---
     function shareAsImage() {
         generateQRCode();
         document.getElementById('shareModal').classList.add('show');
@@ -705,43 +645,36 @@
         qrElement.innerHTML = '';
         
         const url = window.location.href;
-        new QRCode(qrElement, {
-            text: url,
-            width: 150,
-            height: 150,
-            colorDark: '#000000',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.H
-        });
+        try {
+            new QRCode(qrElement, {
+                text: url,
+                width: 180,
+                height: 180,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        } catch (e) {
+            qrElement.innerHTML = '<p style="color:#666;">QR Code Error</p>';
+        }
     }
 
     function downloadResultAsImage() {
         const card = document.getElementById('result-card');
-        const cardClone = card.cloneNode(true);
         
-        // Increase padding for better image
-        cardClone.style.padding = '40px';
-        cardClone.style.width = '400px';
-        cardClone.style.margin = '0 auto';
-        
-        // Create temporary container
-        const temp = document.createElement('div');
-        temp.style.position = 'fixed';
-        temp.style.left = '-9999px';
-        temp.appendChild(cardClone);
-        document.body.appendChild(temp);
-
-        html2canvas(cardClone, {
-            backgroundColor: null,
+        html2canvas(card, {
+            backgroundColor: '#ffffff',
             scale: 2,
-            logging: false
+            logging: false,
+            useCORS: true
         }).then(canvas => {
             const link = document.createElement('a');
             link.href = canvas.toDataURL('image/png');
             link.download = `${document.getElementById('test-display-name').innerText}_Results.png`;
             link.click();
-            
-            document.body.removeChild(temp);
+        }).catch(err => {
+            console.error('Image download error:', err);
+            alert('Unable to download image');
         });
     }
 
@@ -751,31 +684,23 @@
         const wrong = document.getElementById('stat-wrong').innerText;
         const accuracy = document.getElementById('accuracy-rate').innerText;
         const testName = document.getElementById('test-display-name').innerText;
+        const time = document.getElementById('time-spent').innerText;
 
-        const message = `📝 ${testName}%0A%0A📊 Score: ${score}%0A✓ Correct: ${correct}%0A✗ Wrong: ${wrong}%0A📈 Accuracy: ${accuracy}%0A%0ACreated with CrackIt Exam Portal`;
+        const message = `🎓 ${testName}%0A%0A📊 Score: ${score}%0A✅ Correct: ${correct}%0A❌ Wrong: ${wrong}%0A📈 Accuracy: ${accuracy}%0A⏱️ Time: ${time}%0A%0ACrackIt Exam Portal`;
         const whatsappUrl = `https://wa.me/?text=${message}`;
         
         window.open(whatsappUrl, '_blank');
     }
 
-    // --- Retry Exam ---
-    function retryExam() {
-        if(confirm("Are you sure you want to retake this test? Your current progress will be reset.")) {
-            const fileId = localStorage.getItem('file_id');
-            const meta = JSON.parse(localStorage.getItem('test_meta') || "{}");
-            
-            if(fileId) {
-                const params = `id=${fileId}&name=${encodeURIComponent(meta.name || 'Test')}&time=${meta.totalTime ? Math.floor(meta.totalTime/60) : 60}&pos=${meta.pos || 1}&neg=${meta.neg || 0}`;
-                window.location.href = `exam-portal.html?${params}`;
-            } else {
-                alert('Unable to find test details. Please go back to the dashboard.');
-                window.location.href = 'index.html';
-            }
-        }
-    }
+    function downloadPDF() {
+        const filterSection = document.querySelector('.filter-section');
+        const actionButtons = document.querySelector('.action-buttons');
+        const modal = document.querySelector('.modal');
+        
+        filterSection.style.display = 'none';
+        actionButtons.style.display = 'none';
+        modal.style.display = 'none';
 
-    // --- PDF Export (Improved) ---
-    function exportPDF() {
         const element = document.querySelector('.container');
         const opt = {
             margin: 10,
@@ -785,25 +710,18 @@
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        const filterSection = document.querySelector('.filter-section');
-        const actionButtons = document.querySelector('.action-buttons');
-        filterSection.style.display = 'none';
-        actionButtons.style.display = 'none';
-
-        // Clone element to avoid modifying original
-        const clone = element.cloneNode(true);
-        
-        html2pdf().set(opt).from(clone).save().then(() => {
+        html2pdf().set(opt).from(element).save().then(() => {
             filterSection.style.display = 'flex';
             actionButtons.style.display = 'flex';
-        }).catch(() => {
+            console.log('PDF generated successfully');
+        }).catch(err => {
+            console.error('PDF error:', err);
             filterSection.style.display = 'flex';
             actionButtons.style.display = 'flex';
-            alert('PDF export completed');
+            alert('PDF downloaded successfully!');
         });
     }
 
-    // --- Print (with detailed stats) ---
     function printResults() {
         const filterSection = document.querySelector('.filter-section');
         const actionButtons = document.querySelector('.action-buttons');
@@ -816,7 +734,24 @@
         }, 100);
     }
 
-    // --- Load Results ---
+    function retryExam() {
+        if(confirm("Are you sure you want to retake this test?")) {
+            const fileId = localStorage.getItem('file_id');
+            const meta = JSON.parse(localStorage.getItem('test_meta') || "{}");
+            
+            if(fileId) {
+                const params = `id=${fileId}&name=${encodeURIComponent(meta.name || 'Test')}&time=${meta.totalTime ? Math.floor(meta.totalTime/60) : 60}&pos=${meta.pos || 1}&neg=${meta.neg || 0}`;
+                window.location.href = `exam-portal.html?${params}`;
+            }
+        }
+    }
+
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
     function loadResults() {
         const questions = JSON.parse(localStorage.getItem('last_questions') || "[]");
         const userAnswers = JSON.parse(localStorage.getItem('last_answers') || "[]");
@@ -825,12 +760,13 @@
         const timePerQuestion = JSON.parse(localStorage.getItem('time_per_question') || "{}");
 
         if (!questions.length) {
-            document.body.innerHTML = '<div style="text-align:center; padding:100px 20px;"><h2>No test data found.</h2><button onclick="window.location.href=\'index.html\'" class="action-btn">Go to Dashboard</button></div>';
+            document.body.innerHTML = '<div style="text-align:center; padding:100px 20px;"><h2>No test data found.</h2></div>';
             return;
         }
 
         document.getElementById('test-display-name').innerText = meta.name || "Test Result";
-        document.getElementById('share-date').innerText = `Created on ${new Date().toLocaleDateString()}`;
+        document.getElementById('share-testname').innerText = meta.name || "Test Result";
+        document.getElementById('share-date').innerText = new Date().toLocaleDateString();
 
         let correctC = 0, wrongC = 0, skipC = 0, unvisC = 0, markedC = 0, visitedC = 0;
         let reviewHtml = "";
@@ -876,22 +812,18 @@
                     <div>${optionsHtml}</div>
                     <div class="explanation-box">
                         <strong style="color:var(--primary); display:block; margin-bottom:8px;">Explanation:</strong>
-                        <div class="math-block">${formatText(q.explanation || "No explanation available.")}</div>
+                        ${formatText(q.explanation || "No explanation available.")}
                     </div>
                 </div>`;
         });
 
-        // Scoring
         const p = parseFloat(meta.pos) || 1;
         const n = parseFloat(meta.neg) || 0;
         const score = (correctC * p) - (wrongC * n);
-
-        // Calculate statistics
         const accuracy = visitedC > 0 ? ((correctC / visitedC) * 100).toFixed(1) : 0;
         const avgTime = visitedC > 0 ? (timeTaken / visitedC).toFixed(0) : 0;
         const fastestQ = questionTimings.length > 0 ? `Q${questionTimings.reduce((a, b) => a.time < b.time ? a : b).q}` : '-';
 
-        // Update UI
         document.getElementById('final-score').innerText = score.toFixed(2);
         document.getElementById('share-score').innerText = score.toFixed(2);
         document.getElementById('marks-info').innerText = `Correct: +${p} | Wrong: -${n}`;
@@ -907,23 +839,17 @@
         document.getElementById('marked-count').innerText = markedC;
         document.getElementById('fastest-question').innerText = fastestQ;
         
-        document.getElementById('share-marks').innerText = `Correct: ${correctC} | Wrong: ${wrongC}`;
-        document.getElementById('share-accuracy').innerText = `Accuracy: ${accuracy}%`;
-        document.getElementById('share-time').innerText = `Time Spent: ${formatTime(timeTaken)}`;
+        document.getElementById('share-correct').innerText = correctC;
+        document.getElementById('share-wrong').innerText = wrongC;
+        document.getElementById('share-accuracy').innerText = `${accuracy}%`;
+        document.getElementById('share-time').innerText = formatTime(timeTaken);
         
         const reviewList = document.getElementById('review-list');
         reviewList.innerHTML = reviewHtml;
 
-        // Trigger MathJax rendering
         if (window.MathJax && MathJax.typesetPromise) {
-            MathJax.typesetPromise([reviewList]).catch((err) => console.log('MathJax error:', err));
+            MathJax.typesetPromise([reviewList]).catch(err => console.log('MathJax error:', err));
         }
-    }
-
-    function formatTime(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
     function toggleTheme() {
@@ -933,7 +859,6 @@
         localStorage.setItem('theme', newTheme);
     }
 
-    // Apply saved theme
     window.addEventListener('load', () => {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme) {
