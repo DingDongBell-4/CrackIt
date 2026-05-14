@@ -12,9 +12,9 @@
       };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         :root { 
@@ -194,7 +194,7 @@
             padding: 30px;
             border-radius: 12px;
             width: 90%;
-            max-width: 700px;
+            max-width: 600px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             position: relative;
         }
@@ -209,97 +209,107 @@
             color: var(--text);
         }
 
-        /* Redesigned Result Card */
         #result-card {
-            background: white;
-            color: #000;
-            padding: 40px;
-            border-radius: 12px;
+            background: #ffffff;
+            border: 3px solid var(--primary);
+            border-radius: 16px;
+            padding: 40px 30px;
             text-align: center;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border: 2px solid var(--primary);
+            margin: 20px 0;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        #result-card h3 { 
-            margin: 0 0 20px 0; 
-            font-size: 1.5rem; 
+        #result-card h2 {
             color: var(--primary);
+            font-size: 1.8rem;
+            margin: 0 0 10px 0;
             font-weight: 700;
         }
 
-        .score-display { 
-            font-size: 4rem; 
-            font-weight: bold; 
-            margin: 20px 0;
-            color: var(--primary);
-            letter-spacing: -1px;
-        }
-
-        .result-divider {
-            height: 2px;
-            background: var(--primary);
-            margin: 20px 0;
-            opacity: 0.3;
-        }
-
-        .result-card-details {
-            text-align: left;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-
-        .detail-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .detail-item:last-child {
-            border-bottom: none;
-        }
-
-        .detail-label {
-            font-weight: 600;
-            color: #333;
+        #result-card .test-name {
+            color: #636e72;
             font-size: 0.95rem;
+            margin-bottom: 20px;
+            font-weight: 500;
         }
 
-        .detail-value {
-            font-weight: bold;
+        #result-card .score-display {
+            background: linear-gradient(135deg, var(--primary), #5b9ef5);
+            color: white;
+            font-size: 4rem;
+            font-weight: 900;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(58, 134, 255, 0.3);
+        }
+
+        #result-card .score-label {
+            color: #636e72;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .result-stat-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .result-stat-item.correct { border-left-color: var(--success); }
+        .result-stat-item.wrong { border-left-color: var(--danger); }
+        .result-stat-item.accuracy { border-left-color: var(--warning); }
+
+        .result-stat-label {
+            font-size: 0.8rem;
+            color: #636e72;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .result-stat-value {
+            font-size: 1.6rem;
+            font-weight: 700;
             color: var(--primary);
-            font-size: 1rem;
+        }
+
+        .result-stat-item.correct .result-stat-value { color: var(--success); }
+        .result-stat-item.wrong .result-stat-value { color: var(--danger); }
+        .result-stat-item.accuracy .result-stat-value { color: var(--warning); }
+
+        #result-card .footer-info {
+            color: #95a5a6;
+            font-size: 0.85rem;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dfe6e9;
         }
 
         #qrcode {
             text-align: center;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
             margin: 20px 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
-        #qrcode img, #qrcode canvas {
-            max-width: 180px;
-            height: auto;
+        #qrcode canvas {
             background: white;
             padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-        }
-
-        .qr-label {
-            font-size: 0.85rem;
-            color: #666;
-            margin-top: 10px;
-            font-weight: 500;
+            border-radius: 8px;
+            border: 2px solid var(--primary);
         }
 
         .share-options {
@@ -443,32 +453,589 @@
             letter-spacing: 0.5px;
         }
 
-        @media print {
-            body { padding: 0; margin: 0; background: white; }
-            .action-buttons, .filter-section, .modal { display: none; }
-            .review-card { page-break-inside: avoid; }
-            #result-card { page-break-inside: avoid; }
-            .detailed-stats { page-break-inside: avoid; }
+        /* Table Styling */
+        .table-container {
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+            font-size: 0.9rem !important;
+            background: white !important;
+        }
+
+        tr:first-child td, tr:first-child th {
+            background-color: #3a86ff !important;
+            color: white !important;
+            padding: 12px 15px !important;
+            text-align: left !important;
+            font-size: 0.9rem !important;
+            font-weight: 700 !important;
+            border: 1px solid #3a86ff !important;
+        }
+
+        td, th {
+            border: 1px solid #dee2e6 !important;
+            padding: 10px 12px !important;
+            text-align: left !important;
+            color: #000000 !important;
+            line-height: 1.3 !important;
+            font-weight: 400 !important;
+        }
+
+        td strong, th strong, td b, th b {
+            font-weight: 600 !important;
+            color: #000000 !important;
+        }
+
+        [data-theme="dark"] td strong, [data-theme="dark"] td b {
+            color: #ffffff !important;
+        }
+
+        td p, th p {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa !important;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0 !important;
+        }
+
+        [data-theme="dark"] tr:nth-child(even) {
+            background-color: #252525 !important;
+        }
+
+        [data-theme="dark"] tr:hover {
+            background-color: #2a2a2a !important;
+        }
+
+        [data-theme="dark"] td, [data-theme="dark"] th {
+            color: #f5f6fa !important;
+            border-color: #333333 !important;
+        }
+
+        [data-theme="dark"] table {
+            background: #1e1e1e !important;
         }
 
         @media (max-width: 768px) {
-            body { padding: 12px; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .action-buttons { gap: 8px; }
-            .action-btn { padding: 10px 18px; font-size: 0.85rem; }
-            .stat-row { grid-template-columns: 1fr; }
-            .modal-content { width: 95%; padding: 20px; }
-            #result-card { padding: 25px; }
-            #result-card .score-display { font-size: 3rem; }
-            .detail-item { padding: 8px 0; }
+            .table-container {
+                margin: 12px 0;
+                border-radius: 6px;
+            }
+
+            table {
+                font-size: 0.8rem !important;
+            }
+
+            tr:first-child td, tr:first-child th {
+                padding: 8px 10px !important;
+                font-size: 0.75rem !important;
+            }
+
+            td, th {
+                padding: 8px 10px !important;
+                font-size: 0.8rem !important;
+            }
         }
 
         @media (max-width: 480px) {
+            .table-container {
+                margin: 10px 0;
+                border-radius: 5px;
+            }
+
+            table {
+                font-size: 0.75rem !important;
+            }
+
+            tr:first-child td, tr:first-child th {
+                padding: 6px 8px !important;
+                font-size: 0.7rem !important;
+            }
+
+            td, th {
+                padding: 6px 8px !important;
+                font-size: 0.7rem !important;
+            }
+        }
+
+        #pdf-content {
+            display: none;
+        }
+
+        @media print {
+            body { 
+                padding: 0; 
+                margin: 0; 
+                background: white; 
+            }
+            .container { 
+                max-width: 100%; 
+                margin: 0; 
+                padding: 0;
+            }
+            .action-buttons, .filter-section, .modal { 
+                display: none !important; 
+            }
+            #results-container {
+                padding: 20px;
+                margin: 0;
+                border-radius: 0;
+                box-shadow: none;
+            }
+            .review-card { 
+                page-break-inside: avoid; 
+                margin-bottom: 15px;
+            }
+            .detailed-stats { 
+                page-break-inside: avoid; 
+            }
+        }
+
+        @media (max-width: 768px) {
             body { padding: 10px; }
-            .action-buttons { flex-direction: column; gap: 6px; }
-            .action-btn { padding: 10px 14px; font-size: 0.8rem; }
-            #result-card { padding: 20px; }
-            #result-card .score-display { font-size: 2.5rem; }
+            .container { max-width: 100%; }
+            
+            #results-container {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .score-big { 
+                font-size: 2.5rem; 
+                margin: 10px 0;
+            }
+            
+            .stats-grid { 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 10px;
+            }
+            
+            .stat-box { 
+                padding: 12px; 
+                border-radius: 8px;
+            }
+            
+            .stat-val { 
+                font-size: 1.3em; 
+            }
+            
+            .stat-label { 
+                font-size: 0.65em; 
+            }
+            
+            .action-buttons { 
+                gap: 6px; 
+                margin: 15px 0;
+            }
+            
+            .action-btn { 
+                padding: 10px 14px; 
+                font-size: 0.8rem; 
+                flex: 1;
+                min-width: 0;
+            }
+            
+            .detailed-stats {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .stats-title {
+                font-size: 1rem;
+                margin-bottom: 12px;
+            }
+            
+            .stat-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                margin-bottom: 10px;
+                padding-bottom: 10px;
+            }
+            
+            .stat-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 0;
+            }
+            
+            .stat-label-text {
+                font-size: 0.8rem;
+            }
+            
+            .stat-value {
+                font-size: 0.95rem;
+            }
+            
+            .filter-section {
+                padding: 10px;
+                gap: 6px;
+                margin-bottom: 15px;
+            }
+            
+            .filter-section span {
+                font-size: 0.8rem;
+            }
+            
+            .filter-btn { 
+                padding: 6px 10px;
+                font-size: 0.7rem;
+            }
+            
+            .review-card {
+                padding: 15px;
+                margin-bottom: 12px;
+                border-radius: 10px;
+            }
+            
+            .q-text { 
+                font-size: 1rem;
+                margin-bottom: 12px;
+            }
+            
+            .opt { 
+                padding: 10px 12px;
+                font-size: 0.9rem;
+                margin: 6px 0;
+                gap: 8px;
+            }
+            
+            .badge {
+                padding: 5px 10px;
+                font-size: 0.65rem;
+                margin-bottom: 8px;
+            }
+            
+            .explanation-box {
+                padding: 12px;
+                font-size: 0.9rem;
+                margin-top: 12px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+                margin: 20px auto;
+            }
+            
+            #result-card {
+                padding: 25px 15px;
+                margin: 15px auto;
+                max-width: 100%;
+            }
+            
+            #result-card h2 {
+                font-size: 1.4rem;
+                margin-bottom: 8px;
+            }
+            
+            #result-card .test-name {
+                font-size: 0.9rem;
+                margin-bottom: 15px;
+            }
+            
+            #result-card .score-display {
+                font-size: 2.8rem;
+                padding: 20px;
+                margin: 15px 0;
+            }
+            
+            #result-card .score-label {
+                font-size: 0.8rem;
+                margin-top: 8px;
+            }
+            
+            .result-stats {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                margin: 15px 0;
+            }
+            
+            .result-stat-item {
+                padding: 12px;
+                border-radius: 6px;
+            }
+            
+            .result-stat-label {
+                font-size: 0.75rem;
+                margin-bottom: 4px;
+            }
+            
+            .result-stat-value {
+                font-size: 1.4rem;
+            }
+            
+            #qrcode {
+                margin: 15px 0;
+            }
+            
+            #qrcode canvas {
+                width: 120px !important;
+                height: 120px !important;
+                padding: 8px;
+            }
+            
+            .share-options {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                margin-bottom: 12px;
+            }
+            
+            .share-btn {
+                padding: 10px 12px;
+                font-size: 0.8rem;
+            }
+            
+            #result-card .footer-info {
+                font-size: 0.8rem;
+                margin-top: 15px;
+                padding-top: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 8px; }
+            
+            #results-container {
+                padding: 12px;
+                margin-bottom: 15px;
+                border-radius: 10px;
+            }
+            
+            h2 {
+                font-size: 1.3rem;
+                margin: 0 0 8px 0;
+            }
+            
+            .score-big { 
+                font-size: 2rem; 
+                margin: 8px 0;
+            }
+            
+            p {
+                font-size: 0.85rem;
+                margin: 5px 0;
+            }
+            
+            .stats-grid { 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 8px;
+            }
+            
+            .stat-box { 
+                padding: 10px;
+            }
+            
+            .stat-val { 
+                font-size: 1.2em; 
+            }
+            
+            .stat-label { 
+                font-size: 0.6em; 
+                margin-top: 3px;
+            }
+            
+            .action-buttons { 
+                gap: 5px; 
+                margin: 12px 0;
+                flex-direction: column;
+            }
+            
+            .action-btn { 
+                padding: 10px 12px; 
+                font-size: 0.75rem;
+                width: 100%;
+            }
+            
+            .detailed-stats {
+                padding: 12px;
+                margin-bottom: 15px;
+                border-radius: 8px;
+            }
+            
+            .stats-title {
+                font-size: 0.9rem;
+                margin-bottom: 10px;
+            }
+            
+            .stat-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                margin-bottom: 8px;
+                padding-bottom: 8px;
+            }
+            
+            .stat-item {
+                padding: 6px 0;
+            }
+            
+            .stat-label-text {
+                font-size: 0.75rem;
+            }
+            
+            .stat-value {
+                font-size: 0.9rem;
+            }
+            
+            .filter-section {
+                padding: 8px;
+                gap: 5px;
+                margin-bottom: 12px;
+            }
+            
+            .filter-section span {
+                display: none;
+            }
+            
+            .filter-btn { 
+                padding: 5px 8px;
+                font-size: 0.65rem;
+                flex: 1;
+                min-width: 0;
+            }
+            
+            .review-card {
+                padding: 12px;
+                margin-bottom: 10px;
+                border-radius: 8px;
+            }
+            
+            .q-text { 
+                font-size: 0.95rem;
+                margin-bottom: 10px;
+            }
+            
+            .opt { 
+                padding: 9px 10px;
+                font-size: 0.85rem;
+                margin: 5px 0;
+                gap: 6px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .opt div {
+                width: 100% !important;
+            }
+            
+            .badge {
+                padding: 4px 8px;
+                font-size: 0.6rem;
+                margin-bottom: 6px;
+            }
+            
+            .explanation-box {
+                padding: 10px;
+                font-size: 0.85rem;
+                margin-top: 10px;
+                border-left-width: 4px;
+            }
+            
+            .modal-content {
+                width: 98%;
+                padding: 15px;
+                margin: 15px auto;
+                border-radius: 10px;
+            }
+            
+            .close-modal {
+                right: 10px;
+                top: 10px;
+                font-size: 24px;
+            }
+            
+            #result-card {
+                padding: 20px 12px;
+                margin: 12px auto;
+                border-radius: 12px;
+                border-width: 2px;
+            }
+            
+            #result-card h2 {
+                font-size: 1.2rem;
+                margin-bottom: 6px;
+            }
+            
+            #result-card .test-name {
+                font-size: 0.8rem;
+                margin-bottom: 12px;
+            }
+            
+            #result-card .score-display {
+                font-size: 2.2rem;
+                padding: 15px;
+                margin: 12px 0;
+                border-radius: 10px;
+            }
+            
+            #result-card .score-label {
+                font-size: 0.75rem;
+                margin-top: 6px;
+            }
+            
+            .result-stats {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                margin: 12px 0;
+            }
+            
+            .result-stat-item {
+                padding: 10px;
+                border-radius: 6px;
+                border-left-width: 3px;
+            }
+            
+            .result-stat-label {
+                font-size: 0.7rem;
+                margin-bottom: 3px;
+            }
+            
+            .result-stat-value {
+                font-size: 1.3rem;
+            }
+            
+            #qrcode {
+                margin: 12px 0;
+                padding: 10px;
+                background: #f8f9fa;
+                border-radius: 6px;
+            }
+            
+            #qrcode canvas {
+                width: 100px !important;
+                height: 100px !important;
+                padding: 5px;
+            }
+            
+            .share-options {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+            
+            .share-btn {
+                padding: 9px 10px;
+                font-size: 0.75rem;
+                width: 100%;
+            }
+            
+            #result-card .footer-info {
+                font-size: 0.75rem;
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top-width: 1px;
+            }
         }
     </style>
 </head>
@@ -500,8 +1067,8 @@
         </div>
 
         <div class="action-buttons">
-            <button class="action-btn success" onclick="shareAsImage()">📸 Share Results</button>
-            <button class="action-btn" onclick="downloadPDF()">📥 Download PDF</button>
+            <button class="action-btn success" onclick="shareAsImage()">📸 Share as Photo</button>
+            <button class="action-btn" onclick="generatePDF()">📥 Download PDF</button>
             <button class="action-btn secondary" onclick="printResults()">🖨️ Print</button>
             <button class="action-btn secondary" onclick="retryExam()">🔄 Retry</button>
         </div>
@@ -541,51 +1108,48 @@
         </div>
     </div>
 
+    <!-- Share Modal -->
     <div id="shareModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeShareModal()">&times;</span>
-            <h3 style="margin-top:0; text-align:center; color:var(--primary); font-size:1.3rem;">Share Your Results</h3>
+            <h3 style="margin-top:0; text-align:center; color:var(--primary);">Share Your Results</h3>
             
             <div id="result-card">
-                <h3>Test Results Certificate</h3>
-                <div class="score-display" id="share-score">0.00</div>
+                <h2 id="share-test-name">Test Results</h2>
+                <p class="test-name" id="share-date-text">Created today</p>
                 
-                <div class="result-divider"></div>
+                <div class="score-display" id="share-score">0.00</div>
+                <p class="score-label" id="share-marks">Correct: 0 | Wrong: 0</p>
 
-                <div class="result-card-details">
-                    <div class="detail-item">
-                        <span class="detail-label">Test Name</span>
-                        <span class="detail-value" id="share-testname">-</span>
+                <div class="result-stats">
+                    <div class="result-stat-item correct">
+                        <div class="result-stat-label">Correct</div>
+                        <div class="result-stat-value" id="share-correct-count">0</div>
                     </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Correct Answers</span>
-                        <span class="detail-value" id="share-correct">0</span>
+                    <div class="result-stat-item wrong">
+                        <div class="result-stat-label">Wrong</div>
+                        <div class="result-stat-value" id="share-wrong-count">0</div>
                     </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Wrong Answers</span>
-                        <span class="detail-value" id="share-wrong">0</span>
+                    <div class="result-stat-item accuracy">
+                        <div class="result-stat-label">Accuracy</div>
+                        <div class="result-stat-value" id="share-accuracy">0%</div>
                     </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Accuracy</span>
-                        <span class="detail-value" id="share-accuracy">0%</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Time Spent</span>
-                        <span class="detail-value" id="share-time">00:00</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Date</span>
-                        <span class="detail-value" id="share-date">-</span>
+                    <div class="result-stat-item">
+                        <div class="result-stat-label" style="color:#636e72;">Time Spent</div>
+                        <div class="result-stat-value" style="color:#636e72;" id="share-time-text">00:00</div>
                     </div>
                 </div>
 
-                <div id="qrcode"></div>
-                <div class="qr-label">↑ Scan to view full results</div>
+                <div id="qrcode" style="padding:15px; background:#f8f9fa; border-radius:8px;"></div>
+
+                <div class="footer-info">
+                    <p style="margin: 0; font-size:0.8rem;">Created with CrackIt Exam Portal</p>
+                </div>
             </div>
 
             <div class="share-options">
-                <button class="share-btn" onclick="downloadResultAsImage()">📥 Download Image</button>
-                <button class="share-btn" onclick="shareViaWhatsApp()">💬 Share on WhatsApp</button>
+                <button class="share-btn" onclick="downloadResultAsImage()">📥 Download Photo</button>
+                <button class="share-btn" onclick="shareViaWhatsApp()">💬 WhatsApp</button>
             </div>
 
             <button class="action-btn" style="width:100%;" onclick="closeShareModal()">Close</button>
@@ -603,16 +1167,26 @@
     <div id="review-list"></div>
 </div>
 
+<!-- Hidden div for PDF generation -->
+<div id="pdf-content"></div>
+
 <script>
     function formatText(text) {
         if (!text) return "";
         let formatted = String(text);
+        
+        // Handle tables - wrap in container and preserve styling
         if (formatted.includes('<table')) {
-            formatted = formatted.replace(/<table/g, '<div class="table-container"><table');
-            formatted = formatted.replace(/<\/table>/g, '</table></div>');
+            formatted = formatted.replace(/<table/g, '<table class="styled-table"');
+            formatted = formatted.replace(/<table class="styled-table"([\s\S]*?)<\/table>/g, '<div class="table-container"><table class="styled-table"$1</table></div>');
         }
-        formatted = formatted.replace(/<img/g, '<img style="max-width:100%;height:auto;"');
+        
+        // Handle images
+        formatted = formatted.replace(/<img/g, '<img style="max-width:100%;height:auto;border-radius:6px;margin:10px 0;"');
+        
+        // Handle bold text
         formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        
         return formatted;
     }
 
@@ -644,18 +1218,28 @@
         const qrElement = document.getElementById('qrcode');
         qrElement.innerHTML = '';
         
-        const url = window.location.href;
+        // Get the test parameters from localStorage
+        const fileId = localStorage.getItem('file_id');
+        const meta = JSON.parse(localStorage.getItem('test_meta') || "{}");
+        
+        // Build exam portal URL with all parameters
+        let testUrl = `exam-portal.html?id=${fileId}`;
+        testUrl += `&name=${encodeURIComponent(meta.name || 'Test')}`;
+        testUrl += `&time=${meta.totalTime ? Math.floor(meta.totalTime/60) : 60}`;
+        testUrl += `&pos=${meta.pos || 1}`;
+        testUrl += `&neg=${meta.neg || 0}`;
+        
         try {
             new QRCode(qrElement, {
-                text: url,
-                width: 180,
-                height: 180,
+                text: testUrl,
+                width: 150,
+                height: 150,
                 colorDark: '#000000',
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.H
             });
         } catch (e) {
-            qrElement.innerHTML = '<p style="color:#666;">QR Code Error</p>';
+            qrElement.innerHTML = '<p style="color:var(--danger);">QR Code Error</p>';
         }
     }
 
@@ -684,41 +1268,161 @@
         const wrong = document.getElementById('stat-wrong').innerText;
         const accuracy = document.getElementById('accuracy-rate').innerText;
         const testName = document.getElementById('test-display-name').innerText;
-        const time = document.getElementById('time-spent').innerText;
 
-        const message = `🎓 ${testName}%0A%0A📊 Score: ${score}%0A✅ Correct: ${correct}%0A❌ Wrong: ${wrong}%0A📈 Accuracy: ${accuracy}%0A⏱️ Time: ${time}%0A%0ACrackIt Exam Portal`;
+        const message = `📝 ${testName}%0A%0A📊 Score: ${score}%0A✓ Correct: ${correct}%0A✗ Wrong: ${wrong}%0A📈 Accuracy: ${accuracy}%0A%0ACreated with CrackIt Exam Portal`;
         const whatsappUrl = `https://wa.me/?text=${message}`;
         
         window.open(whatsappUrl, '_blank');
     }
 
-    function downloadPDF() {
-        const filterSection = document.querySelector('.filter-section');
-        const actionButtons = document.querySelector('.action-buttons');
-        const modal = document.querySelector('.modal');
+    function generatePDF() {
+        const { jsPDF } = window.jspdf;
+        const testName = document.getElementById('test-display-name').innerText;
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
         
-        filterSection.style.display = 'none';
-        actionButtons.style.display = 'none';
-        modal.style.display = 'none';
-
-        const element = document.querySelector('.container');
-        const opt = {
-            margin: 10,
-            filename: `${document.getElementById('test-display-name').innerText}_Results.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().set(opt).from(element).save().then(() => {
-            filterSection.style.display = 'flex';
-            actionButtons.style.display = 'flex';
-            console.log('PDF generated successfully');
+        // Page 1: Summary with all stats and detailed stats
+        const summaryContainer = document.querySelector('#results-container').cloneNode(true);
+        const detailedStats = document.querySelector('#stats-for-print').cloneNode(true);
+        
+        // Create a temporary container for Page 1
+        const page1Container = document.createElement('div');
+        page1Container.style.position = 'fixed';
+        page1Container.style.left = '-9999px';
+        page1Container.style.top = '-9999px';
+        page1Container.style.width = '950px';
+        page1Container.style.background = 'white';
+        page1Container.style.padding = '20px';
+        
+        // Remove action buttons from summary
+        const actionButtons = summaryContainer.querySelector('.action-buttons');
+        if (actionButtons) actionButtons.remove();
+        
+        page1Container.appendChild(summaryContainer);
+        page1Container.appendChild(detailedStats);
+        document.body.appendChild(page1Container);
+        
+        // Render Page 1
+        html2canvas(page1Container, {
+            backgroundColor: '#ffffff',
+            scale: 2,
+            logging: false,
+            useCORS: true,
+            allowTaint: true,
+            width: 950,
+            windowHeight: 1200
+        }).then(canvas => {
+            const imgData = canvas.toDataURL('image/jpeg', 0.98);
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const imgWidth = pageWidth - 10;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            let heightLeft = imgHeight;
+            let position = 5;
+            
+            // Add first page image
+            pdf.addImage(imgData, 'JPEG', 5, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+            
+            // Handle page overflow for summary
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', 5, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+            
+            document.body.removeChild(page1Container);
+            
+            // Now process each question card on separate pages
+            const reviewCards = document.querySelectorAll('.review-card');
+            let cardIndex = 0;
+            
+            const processNextCard = () => {
+                if (cardIndex >= reviewCards.length) {
+                    // All cards processed, save PDF
+                    pdf.save(`${testName}_Results.pdf`);
+                    return;
+                }
+                
+                const card = reviewCards[cardIndex];
+                const cardClone = card.cloneNode(true);
+                
+                // Create container for this card
+                const cardContainer = document.createElement('div');
+                cardContainer.style.position = 'fixed';
+                cardContainer.style.left = '-9999px';
+                cardContainer.style.top = '-9999px';
+                cardContainer.style.width = '950px';
+                cardContainer.style.background = 'white';
+                cardContainer.style.padding = '20px';
+                cardContainer.style.fontFamily = "'Segoe UI', sans-serif";
+                cardContainer.appendChild(cardClone);
+                document.body.appendChild(cardContainer);
+                
+                // Render this card
+                html2canvas(cardContainer, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true,
+                    width: 950,
+                    windowHeight: 1200
+                }).then(cardCanvas => {
+                    const cardImgData = cardCanvas.toDataURL('image/jpeg', 0.98);
+                    
+                    // Add new page for this card
+                    pdf.addPage();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const imgWidth = pageWidth - 10;
+                    const imgHeight = (cardCanvas.height * imgWidth) / cardCanvas.width;
+                    
+                    let heightLeft = imgHeight;
+                    let position = 5;
+                    
+                    // Add card image to page
+                    pdf.addImage(cardImgData, 'JPEG', 5, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                    
+                    // Handle overflow for this card
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(cardImgData, 'JPEG', 5, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                    
+                    document.body.removeChild(cardContainer);
+                    cardIndex++;
+                    
+                    // Process next card
+                    processNextCard();
+                }).catch(err => {
+                    console.error('Card canvas error:', err);
+                    document.body.removeChild(cardContainer);
+                    cardIndex++;
+                    processNextCard();
+                });
+            };
+            
+            // Start processing cards
+            if (window.MathJax && MathJax.typesetPromise) {
+                processNextCard();
+            } else {
+                processNextCard();
+            }
         }).catch(err => {
-            console.error('PDF error:', err);
-            filterSection.style.display = 'flex';
-            actionButtons.style.display = 'flex';
-            alert('PDF downloaded successfully!');
+            console.error('Canvas error:', err);
+            if (document.body.contains(page1Container)) {
+                document.body.removeChild(page1Container);
+            }
+            alert('Error generating PDF. Please try again.');
         });
     }
 
@@ -765,8 +1469,8 @@
         }
 
         document.getElementById('test-display-name').innerText = meta.name || "Test Result";
-        document.getElementById('share-testname').innerText = meta.name || "Test Result";
-        document.getElementById('share-date').innerText = new Date().toLocaleDateString();
+        document.getElementById('share-test-name').innerText = meta.name || "Test Result";
+        document.getElementById('share-date-text').innerText = `Created on ${new Date().toLocaleDateString()}`;
 
         let correctC = 0, wrongC = 0, skipC = 0, unvisC = 0, markedC = 0, visitedC = 0;
         let reviewHtml = "";
@@ -839,10 +1543,11 @@
         document.getElementById('marked-count').innerText = markedC;
         document.getElementById('fastest-question').innerText = fastestQ;
         
-        document.getElementById('share-correct').innerText = correctC;
-        document.getElementById('share-wrong').innerText = wrongC;
+        document.getElementById('share-correct-count').innerText = correctC;
+        document.getElementById('share-wrong-count').innerText = wrongC;
         document.getElementById('share-accuracy').innerText = `${accuracy}%`;
-        document.getElementById('share-time').innerText = formatTime(timeTaken);
+        document.getElementById('share-time-text').innerText = formatTime(timeTaken);
+        document.getElementById('share-marks').innerText = `Correct: ${correctC} | Wrong: ${wrongC}`;
         
         const reviewList = document.getElementById('review-list');
         reviewList.innerHTML = reviewHtml;
