@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEET 2026 Rank Predictor - TN</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .logo {
+            max-width: 300px;
+            height: auto;
+            margin-bottom: 25px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .social-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-social {
+            display: inline-block;
+            padding: 12px 20px;
+            border: 2px solid white;
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-social:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+        
+        .btn-social.whatsapp {
+            border-color: #25D366;
+            color: #25D366;
+            background: rgba(37, 211, 102, 0.1);
+        }
+        
+        .btn-social.whatsapp:hover {
+            background: rgba(37, 211, 102, 0.25);
+            color: white;
+            border-color: #25D366;
+        }
+        
+        .btn-social.telegram {
+            border-color: #0088cc;
+            color: #0088cc;
+            background: rgba(0, 136, 204, 0.1);
+        }
+        
+        .btn-social.telegram:hover {
+            background: rgba(0, 136, 204, 0.25);
+            color: white;
+            border-color: #0088cc;
+        }
+        
+        .form-section {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        input[type="text"],
+        input[type="tel"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+        
+        input[type="text"]:focus,
+        input[type="tel"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+        
+        input.error {
+            border-color: #dc3545;
+            background-color: #fff5f5;
+        }
+        
+        .error-text {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+        
+        .error-text.show {
+            display: block;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-predict {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-predict:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-predict:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-reset {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-reset:hover {
+            background: #e0e0e0;
+        }
+        
+        .result-section {
+            display: none;
+            padding: 30px;
+            background: #f8f9ff;
+            border-top: 3px solid #667eea;
+        }
+        
+        .result-section.show {
+            display: block;
+        }
+        
+        .rank-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .rank-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .rank-card h3 {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .rank-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .college-section {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .college-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .college-list {
+            list-style: none;
+        }
+        
+        .college-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f8f9ff;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+        
+        .college-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .college-location {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .percentage-info {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+        
+        .percentage-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 5px solid #28a745;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 5px solid #f5c6cb;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .warning-message {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 5px solid #ffc107;
+            display: none;
+        }
+        
+        .warning-message.show {
+            display: block;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .note {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-top: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .download-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .btn-download-image {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .btn-download-image:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .download-note {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        #predictionCard {
+            padding: 30px;
+            background: white;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .card-title {
+            font-size: 28px;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .card-subtitle {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .card-content {
+            margin-bottom: 25px;
+        }
+
+        .card-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+
+        .card-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .card-value {
+            color: #667eea;
+        }
+
+        .card-rank-section {
+            background: #f8f9ff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .card-rank-title {
+            font-size: 13px;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .card-rank-value {
+            font-size: 36px;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .card-colleges {
+            background: white;
+            padding: 20px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .card-colleges-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .card-college-item {
+            padding: 6px 0;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .card-footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            font-size: 11px;
+            color: #999;
+        }
+
+        @media (max-width: 600px) {
+            .rank-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-section {
+                padding: 20px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+
+            .logo {
+                max-width: 150px;
+            }
+
+            #predictionCard {
+                padding: 20px;
+            }
+
+            .card-title {
+                font-size: 20px;
+            }
+
+            .card-rank-value {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://www.psrpinnaacle.com/wp-content/uploads/2024/09/psrpinnaacleclasses-logo.jpg" alt="PSR Pinnacle Classes Logo" class="logo">
+            <h1>NEET 2026</h1>
+            <p>Rank Predictor - Tamil Nadu</p>
+            
+            <div class="social-buttons">
+                <a href="https://chat.whatsapp.com/YOUR_WHATSAPP_GROUP_LINK" target="_blank" class="btn-social whatsapp">
+                    💬 Join WhatsApp Group
+                </a>
+                <a href="https://t.me/neetpreparationsa" target="_blank" class="btn-social telegram">
+                    📱 Join Telegram Group
+                </a>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <form id="neetForm">
+                <div class="form-group">
+                    <label for="studentName">Student Name *</label>
+                    <input type="text" id="studentName" placeholder="Enter your full name" required>
+                    <div class="error-text" id="nameError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phoneNumber">Phone Number *</label>
+                    <input type="tel" id="phoneNumber" placeholder="10-digit phone number" maxlength="10" required>
+                    <div class="error-text" id="phoneError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="district">District *</label>
+                    <select id="district" required>
+                        <option value="">-- Select District --</option>
+                        <option value="Ariyalur">Ariyalur</option>
+                        <option value="Chengalpattu">Chengalpattu</option>
+                        <option value="Chennai">Chennai</option>
+                        <option value="Coimbatore">Coimbatore</option>
+                        <option value="Cuddalore">Cuddalore</option>
+                        <option value="Dharmapuri">Dharmapuri</option>
+                        <option value="Dindigul">Dindigul</option>
+                        <option value="Erode">Erode</option>
+                        <option value="Kallakurichi">Kallakurichi</option>
+                        <option value="Kanchipuram">Kanchipuram</option>
+                        <option value="Kanniyakumari">Kanniyakumari</option>
+                        <option value="Karur">Karur</option>
+                        <option value="Krishnagiri">Krishnagiri</option>
+                        <option value="Madurai">Madurai</option>
+                        <option value="Mayiladuthurai">Mayiladuthurai</option>
+                        <option value="Nagapattinam">Nagapattinam</option>
+                        <option value="Namakkal">Namakkal</option>
+                        <option value="Nilgiris">Nilgiris</option>
+                        <option value="Perambalur">Perambalur</option>
+                        <option value="Ramanathapuram">Ramanathapuram</option>
+                        <option value="Ranipet">Ranipet</option>
+                        <option value="Salem">Salem</option>
+                        <option value="Sivaganga">Sivaganga</option>
+                        <option value="Tenkasi">Tenkasi</option>
+                        <option value="Thanjavur">Thanjavur</option>
+                        <option value="Theni">Theni</option>
+                        <option value="Thoothukudi">Thoothukudi</option>
+                        <option value="Tirupathur">Tirupathur</option>
+                        <option value="Tiruppur">Tiruppur</option>
+                        <option value="Tiruvannamalai">Tiruvannamalai</option>
+                        <option value="Tiruvarur">Tiruvarur</option>
+                        <option value="Tiruchirappalli">Tiruchirappalli</option>
+                        <option value="Udagamandalam">Udagamandalam</option>
+                        <option value="Vellore">Vellore</option>
+                        <option value="Villupuram">Villupuram</option>
+                        <option value="Virudhunagar">Virudhunagar</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="category">Category *</label>
+                    <select id="category" required>
+                        <option value="">Select Category</option>
+                        <option value="General">General</option>
+                        <option value="OBC">OBC</option>
+                        <option value="SC">SC</option>
+                        <option value="ST">ST</option>
+                        <option value="PWD">PWD</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="expectedMarks">Expected Marks (out of 720) *</label>
+                    <input type="number" id="expectedMarks" placeholder="Enter marks between 0-720" min="0" max="720" required>
+                    <div class="error-text" id="marksError"></div>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn-predict" id="submitBtn">Predict Rank & College</button>
+                    <button type="reset" class="btn-reset">Clear</button>
+                </div>
+            </form>
+            
+            <div class="loading" id="loadingSection">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px; color: #667eea; font-weight: 600;">Submitting your data...</p>
+            </div>
+            
+            <div class="error-message" id="errorMessage"></div>
+            <div class="warning-message" id="warningMessage"></div>
+            
+            <div id="resultSection" class="result-section">
+                <div class="percentage-info">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 8px;">Score Percentage</div>
+                    <div class="percentage-value"><span id="percentage">0</span>%</div>
+                    <div style="font-size: 12px; color: #666; margin-top: 8px;">Marks: <span id="expectedMarksDisplay">0</span>/720</div>
+                </div>
+                
+                <div class="rank-cards">
+                    <div class="rank-card">
+                        <h3>All India Rank</h3>
+                        <div class="rank-value" id="aiRank">--</div>
+                    </div>
+                    <div class="rank-card">
+                        <h3>Tamil Nadu Rank</h3>
+                        <div class="rank-value" id="tnRank">--</div>
+                    </div>
+                </div>
+                
+                <div class="college-section">
+                    <h3>💉 Expected Government Medical Colleges</h3>
+                    <ul class="college-list" id="collegeList">
+                    </ul>
+                </div>
+                
+                <div class="success-message">
+                    ✓ Your data has been submitted securely. Good luck with your NEET exam!
+                </div>
+                
+                <div class="note">
+                    <strong>Note:</strong> This is an approximate prediction based on previous year cutoffs. Actual admission depends on choice filling, document verification, and official merit list. For accurate information, refer to official TN NEET counselling portal.
+                </div>
+
+                <div class="download-section">
+                    <button class="btn-download-image" onclick="downloadPredictionImage()">📥 Download as Image</button>
+                    <div class="download-note">Save your prediction as PNG image</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Card for Image Download -->
+    <div id="predictionCard" style="display: none;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://www.psrpinnaacle.com/wp-content/uploads/2024/09/psrpinnaacleclasses-logo.jpg" alt="PSR Pinnacle Classes" style="max-width: 180px; height: auto;">
+        </div>
+        
+        <div class="card-header">
+            <div class="card-title">NEET 2026 Prediction</div>
+            <div class="card-subtitle">Tamil Nadu Rank Prediction</div>
+        </div>
+
+        <div class="card-content">
+            <div class="card-field">
+                <span class="card-label">Student Name:</span>
+                <span class="card-value" id="card-name">--</span>
+            </div>
+            <div class="card-field">
+                <span class="card-label">Phone:</span>
+                <span class="card-value" id="card-phone">--</span>
+            </div>
+            <div class="card-field">
+                <span class="card-label">District:</span>
+                <span class="card-value" id="card-district">--</span>
+            </div>
+            <div class="card-field">
+                <span class="card-label">Category:</span>
+                <span class="card-value" id="card-category">--</span>
+            </div>
+            <div class="card-field">
+                <span class="card-label">Expected Marks:</span>
+                <span class="card-value" id="card-marks">--</span>
+            </div>
+            <div class="card-field">
+                <span class="card-label">Score Percentage:</span>
+                <span class="card-value" id="card-percentage">--%</span>
+            </div>
+        </div>
+
+        <div class="card-rank-section">
+            <div class="card-rank-title">All India Rank</div>
+            <div class="card-rank-value" id="card-airank">--</div>
+        </div>
+
+        <div class="card-rank-section">
+            <div class="card-rank-title">Tamil Nadu Rank</div>
+            <div class="card-rank-value" id="card-tnrank">--</div>
+        </div>
+
+        <div class="card-colleges">
+            <div class="card-colleges-title">Expected Government Medical Colleges:</div>
+            <div id="card-colleges-list"></div>
+        </div>
+
+        <div class="card-footer">
+            Generated: <span id="card-date"></span><br>
+            NEET 2026 Rank Predictor - Tamil Nadu
+        </div>
+    </div>
+    
+    <script>
+        // REPLACE THIS WITH YOUR GOOGLE APPS SCRIPT URL
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2UUHo2jrhWA__zCP5AQu0laiDrOHCjGbNLkOJ9INBzcFPhS2MpczbZIQr6leuR05v1w/exec';
+        
+        // Tamil Nadu Medical Colleges Data (Extended list)
+        const tnColleges = [
+            { name: 'Madras Medical College', cutoff: 680, location: 'Chennai' },
+            { name: 'Stanley Medical College', cutoff: 660, location: 'Chennai' },
+            { name: 'Government Kilpauk Medical College', cutoff: 650, location: 'Chennai' },
+            { name: 'Government Medical College, Coimbatore', cutoff: 620, location: 'Coimbatore' },
+            { name: 'Government Medical College, Madurai', cutoff: 610, location: 'Madurai' },
+            { name: 'Government Vellore Medical College', cutoff: 600, location: 'Vellore' },
+            { name: 'Government Chengalpattu Medical College', cutoff: 590, location: 'Chengalpattu' },
+            { name: 'Government Medical College, Tirunelveli', cutoff: 580, location: 'Tirunelveli' },
+            { name: 'Government Medical College, Krishnagiri', cutoff: 570, location: 'Krishnagiri' },
+            { name: 'Government Medical College, Karur', cutoff: 560, location: 'Karur' },
+            { name: 'Government Medical College, Ariyalur', cutoff: 550, location: 'Ariyalur' },
+            { name: 'Government Medical College, Villupuram', cutoff: 540, location: 'Villupuram' },
+            { name: 'Government Medical College, Thanjavur', cutoff: 530, location: 'Thanjavur' },
+            { name: 'Government Medical College, Salem', cutoff: 520, location: 'Salem' },
+            { name: 'Government Medical College, Tiruppur', cutoff: 510, location: 'Tiruppur' }
+        ];
+        
+        // Form validation helper functions
+        function validateName(name) {
+            return name.trim().length >= 2;
+        }
+        
+        function validatePhone(phone) {
+            const phoneRegex = /^[0-9]{10}$/;
+            return phoneRegex.test(phone);
+        }
+        
+        function validateMarks(marks) {
+            const num = parseInt(marks);
+            return !isNaN(num) && num >= 0 && num <= 720;
+        }
+        
+        function showFieldError(fieldId, errorId, message) {
+            const field = document.getElementById(fieldId);
+            const errorEl = document.getElementById(errorId);
+            field.classList.add('error');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+        }
+        
+        function clearFieldError(fieldId, errorId) {
+            const field = document.getElementById(fieldId);
+            const errorEl = document.getElementById(errorId);
+            field.classList.remove('error');
+            errorEl.classList.remove('show');
+        }
+        
+        // Student Form Submission
+        const form = document.getElementById('neetForm');
+        const resultSection = document.getElementById('resultSection');
+        const loadingSection = document.getElementById('loadingSection');
+        const errorMessage = document.getElementById('errorMessage');
+        const warningMessage = document.getElementById('warningMessage');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Clear previous errors
+            document.querySelectorAll('.error-text').forEach(el => el.classList.remove('show'));
+            document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+            errorMessage.classList.remove('show');
+            warningMessage.classList.remove('show');
+            
+            // Get values
+            const studentName = document.getElementById('studentName').value.trim();
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const district = document.getElementById('district').value.trim();
+            const category = document.getElementById('category').value;
+            const expectedMarks = document.getElementById('expectedMarks').value;
+            
+            // Validation
+            let hasError = false;
+            
+            if (!validateName(studentName)) {
+                showFieldError('studentName', 'nameError', 'Please enter a valid name (min 2 characters)');
+                hasError = true;
+            } else {
+                clearFieldError('studentName', 'nameError');
+            }
+            
+            if (!validatePhone(phoneNumber)) {
+                showFieldError('phoneNumber', 'phoneError', 'Please enter a valid 10-digit phone number');
+                hasError = true;
+            } else {
+                clearFieldError('phoneNumber', 'phoneError');
+            }
+            
+            if (!validateMarks(expectedMarks)) {
+                showFieldError('expectedMarks', 'marksError', 'Please enter marks between 0 and 720');
+                hasError = true;
+            } else {
+                clearFieldError('expectedMarks', 'marksError');
+            }
+            
+            if (hasError) return;
+            
+            const expectedMarksNum = parseInt(expectedMarks);
+            const percentage = ((expectedMarksNum / 720) * 100).toFixed(2);
+            const aiRank = predictAIRank(expectedMarksNum, category);
+            const tnRank = predictTNRank(expectedMarksNum, category);
+            const expectedColleges = getExpectedColleges(expectedMarksNum);
+            
+            // Show loading
+            loadingSection.classList.add('show');
+            submitBtn.disabled = true;
+            
+            // Prepare data for Google Sheets
+            const data = {
+                studentName,
+                phoneNumber,
+                district,
+                category,
+                expectedMarks: expectedMarksNum,
+                percentage,
+                aiRank,
+                tnRank,
+                expectedColleges: expectedColleges.map(c => c.name).join(', '),
+                timestamp: new Date().toLocaleString('en-IN')
+            };
+            
+            // Send to Google Apps Script with proper error handling
+            submitToGoogleSheets(data)
+                .then(success => {
+                    // Display results whether submission succeeded or not
+                    displayResults(expectedMarksNum, percentage, aiRank, tnRank, expectedColleges, studentName, phoneNumber, district, category);
+                    
+                    // Show warning if submission failed but still display results
+                    if (!success) {
+                        warningMessage.innerHTML = '⚠️ <strong>Note:</strong> Data submission to Google Sheets may have failed. Your results are shown above, but please try submitting again or contact support.';
+                        warningMessage.classList.add('show');
+                    } else {
+                        errorMessage.classList.remove('show');
+                    }
+                })
+                .catch(error => {
+                    // Display results anyway with warning
+                    displayResults(expectedMarksNum, percentage, aiRank, tnRank, expectedColleges, studentName, phoneNumber, district, category);
+                    warningMessage.innerHTML = '⚠️ <strong>Note:</strong> Could not submit data to Google Sheets. Your results are shown above.';
+                    warningMessage.classList.add('show');
+                    console.error('Submission error:', error);
+                })
+                .finally(() => {
+                    loadingSection.classList.remove('show');
+                    submitBtn.disabled = false;
+                });
+        });
+        
+        // Google Sheets submission with proper error handling
+// Google Sheets submission with fixed CORS handling
+function submitToGoogleSheets(data) {
+    return fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+            // Changed from application/json to text/plain
+            'Content-Type': 'text/plain;charset=utf-8' 
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (response.ok || response.status === 0) {
+            return true;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+    })
+    .catch(error => {
+        console.error('Submission error:', error);
+        return false;
+    });
+}
+        
+        function displayResults(expectedMarks, percentage, aiRank, tnRank, expectedColleges, studentName, phoneNumber, district, category) {
+            // Update results display
+            document.getElementById('percentage').textContent = percentage;
+            document.getElementById('aiRank').textContent = aiRank.toLocaleString('en-IN');
+            document.getElementById('tnRank').textContent = tnRank.toLocaleString('en-IN');
+            document.getElementById('expectedMarksDisplay').textContent = expectedMarks;
+            
+            // Populate card data
+            document.getElementById('card-name').textContent = studentName;
+            document.getElementById('card-phone').textContent = phoneNumber;
+            document.getElementById('card-district').textContent = district;
+            document.getElementById('card-category').textContent = category;
+            document.getElementById('card-marks').textContent = expectedMarks;
+            document.getElementById('card-percentage').textContent = percentage + '%';
+            document.getElementById('card-airank').textContent = aiRank.toLocaleString('en-IN');
+            document.getElementById('card-tnrank').textContent = tnRank.toLocaleString('en-IN');
+            document.getElementById('card-date').textContent = new Date().toLocaleString('en-IN');
+            
+            // Populate colleges in card
+            const collegesListDiv = document.getElementById('card-colleges-list');
+            collegesListDiv.innerHTML = '';
+            if (expectedColleges.length === 0) {
+                collegesListDiv.innerHTML = '<div class="card-college-item">Not eligible yet. Keep working hard!</div>';
+            } else {
+                expectedColleges.forEach(college => {
+                    const div = document.createElement('div');
+                    div.className = 'card-college-item';
+                    div.textContent = '✓ ' + college.name + ' (' + college.location + ')';
+                    collegesListDiv.appendChild(div);
+                });
+            }
+            
+            displayColleges(expectedColleges);
+            resultSection.classList.add('show');
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Improved rank prediction algorithm
+        function predictAIRank(marks, category) {
+            if (marks < 50) {
+                return 1500000; // Approximate total NEET takers
+            }
+            
+            // Calculate percentile (marks / 720 * 100)
+            const percentile = (marks / 720) * 100;
+            
+            // Approximately 1.5 million candidates take NEET
+            // Rank is inversely proportional to percentile
+            const totalCandidates = 1500000;
+            let estimatedRank = Math.round((100 - percentile) / 100 * totalCandidates);
+            
+            // Ensure rank is at least 1
+            if (estimatedRank < 1) {
+                estimatedRank = 1;
+            }
+            
+            // Note: Category doesn't affect rank in NEET, only in counselling
+            // Category cutoffs are applied during counselling, not in rank calculation
+            return estimatedRank;
+        }
+        
+        function predictTNRank(marks, category) {
+            if (marks < 50) {
+                return 180000; // Approximate total TN NEET takers
+            }
+            
+            const percentile = (marks / 720) * 100;
+            
+            // Approximately 180,000 candidates from TN
+            const tnCandidates = 180000;
+            let estimatedRank = Math.round((100 - percentile) / 100 * tnCandidates);
+            
+            if (estimatedRank < 1) {
+                estimatedRank = 1;
+            }
+            
+            return estimatedRank;
+        }
+        
+        function getExpectedColleges(marks) {
+            // Filter colleges where marks >= cutoff, return up to 5
+            return tnColleges
+                .filter(college => marks >= college.cutoff)
+                .sort((a, b) => b.cutoff - a.cutoff)
+                .slice(0, 5);
+        }
+        
+        function displayColleges(colleges) {
+            const collegeList = document.getElementById('collegeList');
+            collegeList.innerHTML = '';
+            
+            if (colleges.length === 0) {
+                collegeList.innerHTML = '<li class="college-item"><div class="college-name">Based on your marks, you may need to secure higher marks to get into government medical colleges. Keep working hard! 💪</div></li>';
+            } else {
+                colleges.forEach(college => {
+                    const li = document.createElement('li');
+                    li.className = 'college-item';
+                    li.innerHTML = `<div class="college-name">✓ ${college.name}</div><div class="college-location">📍 ${college.location}</div>`;
+                    collegeList.appendChild(li);
+                });
+            }
+        }
+        
+        function downloadPredictionImage() {
+            const card = document.getElementById('predictionCard');
+            
+            // Show card temporarily for screenshot
+            card.style.display = 'block';
+            
+            // Use html2canvas to convert to image
+            html2canvas(card, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                logging: false,
+                useCORS: true,
+                allowTaint: true
+            }).then(canvas => {
+                // Hide card after screenshot
+                card.style.display = 'none';
+                
+                // Convert to image and download
+                const link = document.createElement('a');
+                const studentName = document.getElementById('card-name').textContent.replace(/\s+/g, '_');
+                link.href = canvas.toDataURL('image/png');
+                link.download = `NEET_2026_Prediction_${studentName}_${new Date().toISOString().split('T')[0]}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }).catch(error => {
+                card.style.display = 'none';
+                alert('Error generating image: ' + error.message);
+            });
+        }
+        
+        document.querySelector('.btn-reset').addEventListener('click', function() {
+            resultSection.classList.remove('show');
+            errorMessage.classList.remove('show');
+            warningMessage.classList.remove('show');
+        });
+    </script>
+</body>
+</html>
