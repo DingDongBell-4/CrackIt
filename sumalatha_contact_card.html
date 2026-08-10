@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sumalatha | PSR Pinnacle Classes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
+body{min-height:100vh;display:flex;justify-content:center;align-items:center;background:linear-gradient(135deg,#eef2ff,#f8fafc);padding:20px}
+.card{width:100%;max-width:420px;background:#fff;border-radius:25px;padding:30px 25px;text-align:center;box-shadow:0 15px 40px rgba(0,0,0,.12)}
+.logo{width:100px;height:100px;margin:0 auto 15px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;overflow:hidden;border:3px solid #e2e8f0}
+.logo img{width:100%;height:100%;object-fit:contain}.logo-text{font-size:20px;font-weight:bold;color:#1e3a8a}
+h1{font-size:28px;color:#111827;margin-bottom:5px}.designation{font-size:16px;font-weight:600;color:#475569;margin-bottom:5px}
+.company{font-size:18px;font-weight:bold;color:#1d4ed8;margin-bottom:25px}
+.contact-info{background:#f8fafc;padding:15px;border-radius:15px;margin-bottom:20px}.contact-info p{margin:8px 0;color:#334155;font-size:15px}
+.buttons{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}.btn{display:flex;justify-content:center;align-items:center;gap:8px;min-height:52px;padding:12px;border-radius:12px;text-decoration:none;font-size:15px;font-weight:bold;border:none;cursor:pointer;transition:.2s}.btn:hover{transform:translateY(-2px)}
+.call{background:#16a34a;color:#fff}.whatsapp{background:#25d366;color:#fff}.website{background:#2563eb;color:#fff}.save{background:#111827;color:#fff}
+.qr-section{margin-top:25px;padding-top:20px;border-top:1px solid #e5e7eb}.qr-title{font-weight:bold;color:#334155;margin-bottom:12px}
+#qrcode{display:flex;justify-content:center;align-items:center}#qrcode img{border:8px solid white;border-radius:8px}
+.share-text{margin-top:12px;font-size:13px;color:#64748b;line-height:1.5}.footer{margin-top:22px;font-size:12px;color:#94a3b8}
+@media(max-width:380px){.buttons{grid-template-columns:1fr}.card{padding:25px 18px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo"><div class="logo-text">PSR</div></div>
+
+  <h1>Sumalatha</h1>
+  <div class="designation">CEO</div>
+  <div class="company">PSR Pinnacle Classes</div>
+
+  <div class="contact-info">
+    <p>📞 +91 79818 95604</p>
+    <p>🌐 psrpinnaacle.com</p>
+  </div>
+
+  <div class="buttons">
+    <a class="btn call" href="tel:+917981895604">📞 Call</a>
+    <a class="btn whatsapp" href="https://wa.me/917981895604" target="_blank">💬 WhatsApp</a>
+    <a class="btn website" href="https://www.psrpinnaacle.com/" target="_blank">🌐 Website</a>
+    <button class="btn save" onclick="saveContact()">👤 Save Contact</button>
+  </div>
+
+  <div class="qr-section">
+    <div class="qr-title">Scan to Open Contact Card</div>
+    <div id="qrcode"></div>
+    <div class="share-text">Scan this QR code to open this digital contact card and save the contact.</div>
+  </div>
+
+  <div class="footer">PSR Pinnacle Classes</div>
+</div>
+
+<script>
+function saveContact(){
+  const vcard = `BEGIN:VCARD
+VERSION:3.0
+FN:Sumalatha
+N:Sumalatha;;;;
+ORG:PSR Pinnacle Classes
+TITLE:CEO
+TEL;TYPE=CELL:+917981895604
+URL:https://www.psrpinnaacle.com/
+END:VCARD`;
+
+  const blob = new Blob([vcard], {type:"text/vcard;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "Sumalatha-PSR-Pinnacle-Classes.vcf";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+const contactCardURL = "https://www.psrpinnaacle.com/contact.html";
+
+new QRCode(document.getElementById("qrcode"), {
+  text: contactCardURL,
+  width:180,
+  height:180,
+  correctLevel:QRCode.CorrectLevel.H
+});
+</script>
+</body>
+</html>
