@@ -1,0 +1,2401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Question Picker + Formatter</title>
+<script>window.MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']],processEscapes:true},options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'tex2jax_process'}};</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+/* ══════════════════════════════════
+   PICKER UI STYLES
+══════════════════════════════════ */
+:root{
+  --bg:#f5f6fa;--surface:#fff;--surface2:#f0f2f8;--text:#1a1a2e;--text2:#5a5f7a;
+  --primary:#4f6ef7;--primary-lt:#e8ecfe;--success:#16a34a;--border:#e2e5f0;--rl:14px;
+}
+[data-theme=dark]{
+  --bg:#0f1117;--surface:#1a1d2e;--surface2:#242840;--text:#e8eaf6;--text2:#8b90b0;
+  --primary:#6b86f8;--primary-lt:#1e2456;--success:#4ade80;--border:#2e3260;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.6;min-height:100vh}
+
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:11px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200;gap:8px;flex-wrap:wrap}
+.topbar-title{font-weight:700;font-size:1rem;color:var(--primary)}
+.topbar-r{display:flex;gap:6px;align-items:center}
+
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:20px;border:none;font-size:.82rem;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn-ghost{background:var(--surface2);color:var(--text2)}.btn-ghost:hover{color:var(--text)}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{opacity:.88}
+.btn-green{background:#dcfce7;color:#15803d}[data-theme=dark] .btn-green{background:#14532d;color:#86efac}
+.btn-orange{background:#fff7ed;color:#c2410c}[data-theme=dark] .btn-orange{background:#431407;color:#fb923c}
+.btn-indigo{background:#ede9fe;color:#4f46e5}[data-theme=dark] .btn-indigo{background:#2e1065;color:#a78bfa}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* UPLOAD */
+#upload-screen{display:flex;align-items:center;justify-content:center;min-height:82vh;padding:24px}
+.ucard{background:var(--surface);border:2px dashed var(--border);border-radius:var(--rl);padding:56px 36px;text-align:center;max-width:460px;width:100%}
+.ucard h2{font-size:1.25rem;font-weight:700;margin-bottom:6px}
+.ucard p{color:var(--text2);font-size:.88rem;margin-bottom:22px}
+.ucard input[type=file]{display:none}
+.upl-icon{font-size:44px;margin-bottom:14px}
+#loader{display:none;margin:14px auto;width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#status-msg{margin-top:10px;font-size:.83rem;color:var(--text2)}
+
+/* PICKER */
+#picker-screen{display:none;padding:16px 20px;max-width:1060px;margin:0 auto}
+.toolbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:11px 15px;display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-bottom:15px;position:sticky;top:99px;z-index:90}
+.tbl-l{display:flex;gap:7px;flex-wrap:wrap;align-items:center;flex:1}
+.search-box{flex:1;min-width:150px;max-width:270px;padding:7px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.88rem;outline:none}
+.search-box:focus{border-color:var(--primary)}
+.sel-count{font-size:.82rem;color:var(--text2);white-space:nowrap}.sel-count strong{color:var(--primary)}
+.dl-grp{display:flex;gap:6px;flex-wrap:wrap}
+.q-grid{display:grid;gap:10px}
+.q-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rl);padding:15px 17px;cursor:pointer;transition:border-color .15s,background .15s;display:flex;gap:12px;align-items:flex-start}
+.q-card:hover,.q-card.selected{border-color:var(--primary);background:var(--primary-lt)}
+.q-card.selected .q-cb{background:var(--primary);border-color:var(--primary);color:#fff}
+.q-cb{width:20px;height:20px;min-width:20px;border:2px solid var(--border);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;margin-top:3px;transition:.15s}
+.q-body{flex:1;min-width:0}
+.q-num{font-size:.7rem;font-weight:700;color:var(--primary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+.q-text{font-size:.93rem;line-height:1.55}
+.q-text img{max-width:100%;height:auto;border-radius:5px;margin:5px 0;display:block}
+.q-text table{border-collapse:collapse;width:100%;margin:6px 0;font-size:.82rem;text-align:left}
+.q-text td,.q-text th{border:1px solid var(--border);padding:3px 7px;text-align:left}
+.q-text tr:first-child td,.q-text tr:first-child th{background:var(--primary);color:#fff;font-weight:600;text-align:left}
+.q-opts{margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+.q-opt{font-size:.82rem;color:var(--text2)}.q-opt b{color:var(--text)}.q-opt.ans{color:var(--success);font-weight:600}
+.empty{text-align:center;padding:50px 20px;color:var(--text2)}
+
+/* TOAST */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:20px;font-size:.88rem;font-weight:600;opacity:0;transition:.3s;pointer-events:none;z-index:9999;white-space:nowrap}
+#toast.show{opacity:1}
+
+@media(max-width:560px){.toolbar{top:130px}.q-opts{grid-template-columns:1fr}#picker-screen{padding:10px}.dl-grp .btn{padding:6px 10px;font-size:.76rem}.title-bar{top:48px}}
+
+/* ARRANGE SCREEN */
+#arrange-screen{display:none;}
+.arrange-wrap{max-width:1000px;margin:0 auto;padding:18px 20px 60px}
+.arrange-hint{font-size:.85rem;color:var(--text2);margin-bottom:16px;background:var(--surface2);padding:10px 14px;border-radius:10px}
+.cat-pick-wrap{display:flex;align-items:center;gap:6px;background:var(--primary-lt);border:1px solid var(--primary);border-radius:10px;padding:5px 10px;flex-wrap:wrap}
+.cat-pick-label{font-size:.78rem;font-weight:700;color:var(--primary);white-space:nowrap}
+.cat-pick-select{font-size:.82rem;padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer}
+.cat-pick-custom{font-size:.82rem;padding:4px 8px;border-radius:7px;border:1px solid var(--primary);background:var(--surface);color:var(--text);width:140px}
+.shuffle-toggle{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:#fff;cursor:pointer;user-select:none;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.12)}
+.shuffle-toggle input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#22d3ee}
+.arrange-section{margin-bottom:22px}
+.arrange-section-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--primary)}
+.arrange-section-head h3{font-size:.95rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.03em}
+.arrange-section-count{font-size:.78rem;color:var(--text2);background:var(--surface2);padding:2px 9px;border-radius:10px}
+.arrange-list{display:flex;flex-direction:column;gap:8px}
+
+.arrange-card{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;transition:.15s;position:relative}
+.arrange-card.dragging{opacity:.4}
+.arrange-card.drag-over{border-color:var(--primary)}
+.arrange-card.drop-before::before{content:'';position:absolute;left:8px;right:8px;top:-5px;height:3px;background:var(--primary);border-radius:3px}
+.arrange-card.drop-after::after{content:'';position:absolute;left:8px;right:8px;bottom:-5px;height:3px;background:var(--primary);border-radius:3px}
+.drag-handle{cursor:grab;font-size:1.1rem;color:var(--text2);padding:2px 4px;user-select:none;flex-shrink:0;margin-top:2px}
+.drag-handle:active{cursor:grabbing}
+.arrange-body{flex:1;min-width:0}
+.arrange-top-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
+.arrange-num{font-size:.7rem;font-weight:700;color:var(--primary);text-transform:uppercase}
+.arrange-controls{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.tag-select{font-size:.78rem;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;max-width:140px}
+.arrange-text{font-size:.9rem;line-height:1.5;margin-bottom:4px}
+.arrange-text table{border-collapse:collapse;font-size:.8rem;margin:4px 0;text-align:left}
+.arrange-text td,.arrange-text th{border:1px solid var(--border);padding:3px 6px;text-align:left}
+
+/* DUPLICATE PANEL */
+#dup-panel{max-width:1000px;margin:0 auto;padding:0 20px 10px}
+/* ── List indent fix ──
+   The global *{margin:0;padding:0} reset strips browser-default list indents.
+   Re-apply them explicitly for every area that displays question HTML so
+   bullets/numbers are indented inside the card, not flush with the left edge. */
+.q-text ul,.q-text ol,
+.arrange-text ul,.arrange-text ol,
+.dup-q ul,.dup-q ol,
+.review-list ul,.review-list ol,
+#review-list ul,#review-list ol,
+.meta-exp-content ul,.meta-exp-content ol{
+  margin:4px 0 4px 0;
+  padding-left:1.6em;  /* marker sits inside the box, not in the card margin */
+  list-style-position:outside;
+}
+.q-text ul,.arrange-text ul,.dup-q ul,#review-list ul,.meta-exp-content ul{list-style-type:disc}
+.q-text ol,.arrange-text ol,.dup-q ol,#review-list ol,.meta-exp-content ol{list-style-type:decimal}
+.q-text li,.arrange-text li,.dup-q li,#review-list li,.meta-exp-content li{
+  margin-bottom:2px;
+  line-height:1.5;
+}
+.q-text ul ul,.q-text ol ol,.q-text ul ol,.q-text ol ul{
+  margin:2px 0;
+  padding-left:1.4em;
+}
+
+.dup-pair{background:#fff7ed;border:1.5px solid #fb923c;border-radius:12px;padding:14px 16px;margin-bottom:10px}
+[data-theme=dark] .dup-pair{background:#431407;border-color:#9a3412}
+.dup-pair-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;font-size:.78rem;font-weight:700;color:#c2410c;gap:8px;flex-wrap:wrap}
+[data-theme=dark] .dup-pair-head{color:#fb923c}
+.dup-pair-body{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dup-q{font-size:.85rem;background:var(--surface);padding:12px 14px;border-radius:8px;line-height:1.5;border:1px solid var(--border)}
+.dup-q-num{font-weight:700;font-size:.78rem;color:var(--primary);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.dup-q-text{font-weight:600;margin-bottom:6px;line-height:1.45}
+.dup-q-opts{margin:4px 0 6px 0;display:grid;gap:2px}
+.dup-q-opt{font-size:.8rem;color:var(--text2);padding:1px 0}
+.dup-q-opt.is-ans{color:#15803d;font-weight:700}
+.dup-q-ans{font-size:.8rem;font-weight:700;color:#15803d;margin-top:4px;padding-top:4px;border-top:1px solid var(--border)}
+.dup-dismiss-btn{background:#dc2626;color:#fff;border:none;padding:5px 12px;border-radius:14px;font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.dup-dismiss-btn:hover{opacity:.85}
+@media(max-width:640px){.dup-pair-body{grid-template-columns:1fr}}
+
+.picked-badge{font-size:.82rem;color:var(--text2);background:var(--surface2);padding:6px 12px;border-radius:16px;white-space:nowrap}
+.picked-badge strong{color:var(--primary)}
+
+.title-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:10px;position:sticky;top:51px;z-index:95;flex-wrap:wrap}
+.title-bar label{font-size:.85rem;font-weight:600;color:var(--text2);white-space:nowrap}
+.title-bar input{flex:1;min-width:200px;max-width:520px;padding:7px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.9rem;outline:none}
+.title-bar input:focus{border-color:var(--primary)}
+
+.src-label{max-width:1060px;margin:0 auto 10px;padding:0 4px;font-size:.82rem;color:var(--text2);font-weight:600}
+.src-label .file-pill{background:var(--primary-lt);color:var(--primary);padding:3px 10px;border-radius:12px;font-weight:700;margin-right:6px}
+
+/* DELETE BUTTON on cards */
+.q-del-btn{background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text2);padding:2px 6px;border-radius:6px;line-height:1;flex-shrink:0;transition:.15s}
+.q-del-btn:hover{background:#fee2e2;color:#dc2626}
+[data-theme=dark] .q-del-btn:hover{background:#450a0a;color:#f87171}
+.q-card{position:relative}
+.q-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+
+/* REVIEW MODAL */
+#review-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:20px}
+#review-overlay.show{display:flex}
+#review-modal{background:var(--surface);border-radius:var(--rl);max-width:900px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+.review-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:.95rem}
+.review-tabs{display:flex;flex-wrap:wrap;gap:4px;padding:10px 16px 0;border-bottom:1px solid var(--border);background:var(--surface2)}
+.review-tab{padding:6px 14px;border-radius:20px 20px 0 0;border:1px solid var(--border);border-bottom:none;font-size:.8rem;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--text2);transition:.15s;white-space:nowrap}
+.review-tab.active{background:var(--surface);color:var(--primary);border-color:var(--primary)}
+.review-tab .tab-count{font-size:.72rem;background:var(--border);color:var(--text2);border-radius:10px;padding:1px 6px;margin-left:4px}
+.review-tab.active .tab-count{background:var(--primary-lt);color:var(--primary)}
+#review-list{overflow-y:auto;padding:16px 20px;gap:10px}
+.review-src-tag{font-size:.68rem;font-weight:700;color:var(--primary);background:var(--primary-lt);padding:2px 8px;border-radius:10px;margin-left:6px;text-transform:none}
+.review-topic-tag{font-size:.68rem;font-weight:700;color:#b45309;background:#fef3c7;padding:2px 8px;border-radius:10px;margin-left:4px}
+
+/* ══════════════════════════════════
+   FORMATTER OUTPUT STYLES (from Question_Paper_Formatter)
+   Only visible in formatter-screen / print
+   Font controlled via CSS vars --fmt-font-family / --fmt-font-size
+══════════════════════════════════ */
+#formatter-screen{display:none;--fmt-font-family:"Times New Roman",Times,serif;--fmt-font-size:11pt;}
+
+.output-container,.answer-key-container,.explanation-pdf-container{
+  font-family:var(--fmt-font-family);
+  font-size:var(--fmt-font-size) !important;
+  line-height:1.25;
+  color:#000;
+  max-width:900px;
+  margin:0 auto;
+  background:#fff;
+  padding:4px 8px;
+  /* Use column layout on the container itself so the logo/title
+     can span both columns with column-span:all */
+  column-count:2;
+  column-gap:14px;
+  column-rule:1px solid #ccc;
+}
+/* Answer key and explanation don't need two columns on the container */
+.answer-key-container,.explanation-pdf-container{
+  column-count:1 !important;
+  column-rule:none !important;
+}
+
+/* Logo + title span the full width (both columns) */
+.logo-header{
+  column-span:all !important;
+  width:100%;
+  text-align:center;
+  margin:0 0 4px 0;
+  padding:0;
+  break-before:avoid !important;
+  break-after:avoid !important;
+  break-inside:avoid !important;
+}
+.logo-header img{
+  width:100%;
+  max-width:100%;
+  height:auto;
+  display:block;
+  margin:0 auto;
+  object-fit:contain;
+}
+.doc-title{
+  column-span:all !important;
+  font-family:var(--fmt-font-family);
+  font-size:calc(var(--fmt-font-size) + 5pt);
+  font-weight:bold;
+  text-decoration:underline;
+  text-align:center;
+  margin-top:2px;
+  margin-bottom:6px;
+  break-before:avoid !important;
+  break-after:avoid !important;
+  break-inside:avoid !important;
+}
+
+/* question-bank and explanation-bank now just control their own items,
+   not the outer column layout (which is on the container) */
+.question-bank{counter-reset:question-counter;}
+.explanation-bank{}
+
+.question-item{display:block;width:100%;font-size:var(--fmt-font-size);margin-bottom:0;break-inside:avoid-column !important;page-break-inside:avoid !important;clear:both;}
+.explanation-item{display:block;width:100%;margin-top:1px;margin-bottom:1px;padding:0;border:none;break-inside:auto !important;page-break-inside:auto !important;}
+
+/* Fix: HR inside multi-column explanation bank spans across columns by default.
+   Force it to stay within its column only. */
+.explanation-bank hr,.explanation-item hr,.meta-exp-content hr,.solution-meta-box hr{
+  display:block;
+  width:80%;
+  border:none;
+  border-top:1px solid #aaa;
+  margin:2px 0;
+  column-span:none !important;
+  break-before:avoid !important;
+  break-after:avoid !important;
+}
+
+.question-text{font-family:var(--fmt-font-family);font-size:var(--fmt-font-size) !important;font-weight:bold;margin-top:5px;margin-bottom:1px;display:block;clear:both;}
+.question-content{display:inline;}
+.question-text::before{counter-increment:question-counter;content:counter(question-counter)". ";display:inline;}
+
+.section-header-item{break-inside:avoid-column !important;page-break-inside:avoid !important;}
+.section-header{font-family:var(--fmt-font-family);font-size:var(--fmt-font-size);font-weight:bold;text-transform:uppercase;letter-spacing:.02em;background:#e2e8f0;padding:2px 6px;margin:4px 0 2px 0;border-left:3px solid #1a1a2e;break-after:avoid-column !important;}
+
+.solution-meta-box{padding:0;margin:0;font-family:var(--fmt-font-family);font-size:var(--fmt-font-size) !important;display:block;break-inside:auto !important;}
+.meta-prefix-inline{font-weight:bold;display:inline;margin-right:3px;}
+.meta-exp-content{display:inline;color:#000;break-inside:auto !important;}
+.meta-exp-content>*:first-child{display:inline !important;}
+
+.ak-grid{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;}
+.ak-cell{border:1px solid #000;padding:2px 5px;font-family:var(--fmt-font-family);font-size:var(--fmt-font-size) !important;text-align:center;min-width:46px;box-sizing:border-box;}
+.ak-num{font-weight:bold;border-bottom:1px solid #000;padding-bottom:1px;margin-bottom:1px;}
+
+.options-block{display:block;width:100%;margin-top:1px;margin-bottom:4px;}
+.options-block::after{content:"";clear:both;display:table;}
+.print-opt-box{display:block;box-sizing:border-box;padding-right:6px;padding-bottom:1px;float:left;vertical-align:top;}
+
+.layout-1x4 .print-opt-box{width:25% !important;}
+.layout-2x2 .print-opt-box{width:50% !important;}
+.layout-2x2 .print-opt-box:nth-child(2n+1){clear:left !important;}
+.layout-4x1 .print-opt-box{width:100% !important;clear:both !important;padding-right:0;}
+
+.layout-hybrid-ab .print-opt-box:nth-child(1),
+.layout-hybrid-ab .print-opt-box:nth-child(2){width:50% !important;}
+.layout-hybrid-ab .print-opt-box:nth-child(2){padding-right:0;}
+.layout-hybrid-ab .print-opt-box:nth-child(3),
+.layout-hybrid-ab .print-opt-box:nth-child(4){width:100% !important;clear:both !important;padding-right:0;}
+
+.layout-hybrid-bc .print-opt-box:nth-child(1){width:100% !important;clear:both !important;padding-right:0;}
+.layout-hybrid-bc .print-opt-box:nth-child(2),
+.layout-hybrid-bc .print-opt-box:nth-child(3){width:50% !important;}
+.layout-hybrid-bc .print-opt-box:nth-child(3){padding-right:0;}
+.layout-hybrid-bc .print-opt-box:nth-child(4){width:100% !important;clear:both !important;padding-right:0;}
+
+.layout-hybrid-cd .print-opt-box:nth-child(1),
+.layout-hybrid-cd .print-opt-box:nth-child(2){width:100% !important;clear:both !important;padding-right:0;}
+.layout-hybrid-cd .print-opt-box:nth-child(3),
+.layout-hybrid-cd .print-opt-box:nth-child(4){width:50% !important;}
+.layout-hybrid-cd .print-opt-box:nth-child(4){padding-right:0;}
+
+.opt-flex-container{display:flex !important;align-items:flex-start !important;}
+.opt-lbl{width:calc(2em + 4px) !important;flex-shrink:0 !important;white-space:nowrap !important;font-family:var(--fmt-font-family);font-size:var(--fmt-font-size) !important;}
+.opt-val{flex-grow:1 !important;font-family:var(--fmt-font-family);font-size:var(--fmt-font-size) !important;}
+/* Text-only options: keep on one line for compact 1x4/2x2 layouts */
+.opt-val:not(.has-img){white-space:nowrap !important;overflow:visible !important;}
+/* Image options: allow natural wrapping and full-width display */
+.opt-val.has-img{white-space:normal !important;}
+.layout-4x1 .opt-val{white-space:normal !important;}
+
+/* Image wrapper inside options — every image on its own line, full box width */
+.opt-img-wrap{display:block;width:100%;margin:3px 0;}
+.opt-img-wrap img{max-width:100%;max-height:140px;height:auto;display:block;border-radius:4px;}
+
+/* Picker/review/dup cards: image options stack vertically */
+.q-opt.has-img,.dup-q-opt.has-img{
+  display:block;
+  width:100%;
+}
+.q-opts:has(.has-img){grid-template-columns:1fr !important;}
+.dup-q-opts:has(.has-img){grid-template-columns:1fr !important;}
+
+/* opt-img-wrap inside picker cards */
+.q-opt .opt-img-wrap img,
+.dup-q-opt .opt-img-wrap img{
+  max-height:100px;
+  max-width:100%;
+  height:auto;
+  display:block;
+  border-radius:3px;
+  margin-top:3px;
+}
+
+#formatter-screen table{border-collapse:collapse;margin:1px 0 !important;font-family:var(--fmt-font-family);font-size:var(--fmt-font-size) !important;width:auto !important;max-width:100% !important;break-inside:auto !important;text-align:left !important;}
+#formatter-screen table tr{height:auto !important;break-inside:avoid !important;}
+#formatter-screen table,#formatter-screen th,#formatter-screen td{border:1px solid black !important;padding:0 3px !important;line-height:1.1 !important;text-align:left !important;}
+#formatter-screen th{font-weight:bold;text-align:left !important;}
+#formatter-screen img{max-width:100%;height:auto;display:block;margin:1px 0;break-inside:avoid !important;}
+
+/* ── Watermark ── */
+#watermark-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  overflow:hidden;
+}
+#watermark-overlay img{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%) rotate(var(--wm-rotation,0deg));
+  width:70%;
+  max-width:600px;
+  height:auto;
+  opacity:0.12;
+  user-select:none;
+  pointer-events:none;
+  transition:transform .3s,opacity .3s;
+}
+@media print{
+  #watermark-overlay[style*="display: block"],
+  #watermark-overlay[style*="display:block"]{display:block !important;position:fixed;inset:0;z-index:0;pointer-events:none;}
+}
+
+/* ── Answer key & explanation start on a new page ── */
+.answer-key-container{
+  break-before:page !important;
+  page-break-before:always !important;
+}
+.explanation-pdf-container{
+  break-before:page !important;
+  page-break-before:always !important;
+}
+
+/* ── List indent inside the printed formatter output ──
+   The global *{margin:0;padding:0} reset strips browser list indents.
+   Re-apply for every area that renders question HTML. */
+.output-container ul,.output-container ol,
+.answer-key-container ul,.answer-key-container ol,
+.explanation-pdf-container ul,.explanation-pdf-container ol,
+.question-item ul,.question-item ol,
+.explanation-item ul,.explanation-item ol,
+.question-text ul,.question-text ol,
+.opt-val ul,.opt-val ol,
+.solution-meta-box ul,.solution-meta-box ol,
+.meta-exp-content ul,.meta-exp-content ol,
+#formatter-screen ul,#formatter-screen ol{
+  margin:3px 0;
+  padding-left:1.5em;
+  list-style-position:outside;
+}
+.output-container ul,#formatter-screen ul,.question-item ul,.opt-val ul,.meta-exp-content ul{list-style-type:disc}
+.output-container ol,#formatter-screen ol,.question-item ol,.opt-val ol,.meta-exp-content ol{list-style-type:decimal}
+.output-container li,#formatter-screen li,.question-item li,.explanation-item li,.opt-val li,.meta-exp-content li{
+  margin-bottom:1px;
+  line-height:1.4;
+}
+/* Nested lists step in further */
+.output-container ul ul,.output-container ul ol,
+.output-container ol ul,.output-container ol ol,
+#formatter-screen ul ul,#formatter-screen ol ol{
+  padding-left:1.2em;
+  margin:1px 0;
+}
+@media print{
+  /* Watermark prints on every page via position:fixed — only active when src is set */
+  #watermark-overlay[style*="display: block"],
+  #watermark-overlay[style*="display:block"]{display:block !important;position:fixed;inset:0;z-index:0;pointer-events:none;}
+}
+
+/* ── Logo upload button ── */
+.logo-upload-btn{
+  background:#f0fdf4;color:#166534;border:1px dashed #86efac;
+  padding:5px 12px;border-radius:8px;font-size:.75rem;font-weight:600;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+}
+.logo-upload-btn:hover{background:#dcfce7}
+[data-theme=dark] .logo-upload-btn{background:#14532d;color:#86efac;border-color:#166534}
+.font-ctrl{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);padding:5px 10px;border-radius:20px}
+.font-ctrl label{font-size:.72rem;color:#cbd5e1;font-weight:600;white-space:nowrap}
+.font-ctrl select{padding:4px 8px;border-radius:8px;border:none;font-size:.78rem;background:#fff;color:#1a1a2e;cursor:pointer}
+.font-ctrl .size-btn{background:#334155;color:#fff;border:none;width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1}
+.font-ctrl .size-btn:hover{background:#475569}
+.font-ctrl .size-val{font-size:.78rem;color:#fff;font-weight:700;min-width:32px;text-align:center}
+
+/* Formatter nav bar */
+.fmt-bar{background:#1e293b;color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:200;}
+.fmt-bar-title{font-weight:700;font-size:.95rem;}
+.fmt-bar-btns{display:flex;gap:8px;flex-wrap:wrap;}
+.fmt-btn{padding:7px 16px;border-radius:20px;border:none;font-size:.82rem;font-weight:700;cursor:pointer;transition:.15s;}
+.fmt-btn-back{background:#475569;color:#fff;}.fmt-btn-back:hover{background:#64748b;}
+.fmt-btn-q{background:#0284c7;color:#fff;}.fmt-btn-q:hover{background:#0369a1;}
+.fmt-btn-exp{background:#2563eb;color:#fff;}.fmt-btn-exp:hover{background:#1d4ed8;}
+.fmt-btn-all{background:#4f46e5;color:#fff;}.fmt-btn-all:hover{background:#4338ca;}
+.fmt-btn-xls{background:#16a34a;color:#fff;}.fmt-btn-xls:hover{background:#15803d;}
+
+/* Print rules */
+@media print{
+  .topbar,.toolbar,.fmt-bar,#upload-screen,#picker-screen,#toast,.title-bar,#arrange-screen,#dup-panel{display:none !important;}
+  body{margin:0;padding:0;background:#fff;}
+
+  /* Questions: 2-col on the container; logo+title span both cols via column-span:all */
+  body.print-q .output-container{display:block !important;column-count:2 !important;column-gap:14px !important;}
+  body.print-q .answer-key-container,body.print-q .explanation-pdf-container{display:none !important;}
+
+  body.print-exp .explanation-pdf-container{display:block !important;column-count:2 !important;column-gap:14px !important;}
+  body.print-exp .output-container,body.print-exp .answer-key-container{display:none !important;}
+
+  body.print-all .output-container,body.print-all .answer-key-container,body.print-all .explanation-pdf-container{display:block !important;}
+  body.print-all .output-container{column-count:2 !important;column-gap:14px !important;}
+  body.print-all .explanation-pdf-container{column-count:2 !important;column-gap:14px !important;}
+  body.print-all .answer-key-container{column-count:1 !important;column-rule:none !important;}
+
+  /* Logo: only on question paper */
+  body.print-exp .logo-header{display:none !important;}
+  .answer-key-container .logo-header,.explanation-pdf-container .logo-header{display:none !important;}
+
+  @page{size:A4;margin:8mm 8mm;}
+}
+</style>
+</head>
+<body class="tex2jax_process">
+
+<!-- TOP BAR (picker mode) -->
+<div class="topbar" id="picker-topbar">
+  <div class="topbar-title">📋 Question Picker + Formatter</div>
+  <div class="topbar-r">
+    <span class="picked-badge" id="picked-badge" style="display:none">🗂 <strong id="picked-count">0</strong> picked total</span>
+    <button class="btn btn-ghost" onclick="resetApp()" id="reload-btn" style="display:none">🔄 Start Over</button>
+    <button class="btn btn-ghost" onclick="toggleTheme()" id="theme-btn">🌙</button>
+  </div>
+</div>
+
+<!-- EXAM TITLE BAR (always visible once started) -->
+<div class="title-bar" id="title-bar" style="display:none">
+  <label for="exam-title-input">📝 Examination Title</label>
+  <input type="text" id="exam-title-input" placeholder="e.g. CIVIL ENGINEERING — MOCK TEST 1" oninput="onTitleInput()">
+</div>
+
+<!-- UPLOAD SCREEN -->
+<div id="upload-screen">
+  <div class="ucard">
+    <div class="upl-icon">📂</div>
+    <h2 id="upload-heading">Upload your question bank</h2>
+    <p id="upload-sub">Select a <strong>.docx</strong> file with Question: / (a)(b)(c)(d) / Ans: / Explanation: blocks</p>
+    <div id="exam-title-first-wrap" style="margin-bottom:18px">
+      <input type="text" id="exam-title-input-first" placeholder="Examination title (e.g. CIVIL ENGINEERING — MOCK TEST 1)" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.95rem;outline:none" oninput="onTitleInputFirst()">
+    </div>
+    <input type="file" id="file-input" accept=".docx">
+    <button class="btn btn-primary" onclick="document.getElementById('file-input').click()" id="browse-btn" style="font-size:1rem;padding:10px 24px">Browse .docx file</button>
+    <div id="loader"></div>
+    <p id="status-msg"></p>
+  </div>
+</div>
+
+<!-- PICKER SCREEN -->
+<div id="picker-screen">
+  <div class="toolbar">
+    <div class="tbl-l">
+      <input type="text" class="search-box" id="search-box" placeholder="Search this file's questions…" oninput="filterQuestions()">
+      <button class="btn btn-ghost" onclick="selectAll()">✅ All in file</button>
+      <button class="btn btn-ghost" onclick="deselectAll()">⬜ Clear file</button>
+      <span class="sel-count" id="sel-count"><strong>0</strong> selected here</span>
+    </div>
+    <div class="dl-grp">
+      <div class="cat-pick-wrap">
+        <label class="cat-pick-label">🏷 Tag picked as</label>
+        <select id="active-category-select" class="cat-pick-select" onchange="onActiveCategoryChange()">
+          <option value="">— None (untagged) —</option>
+          <option value="General">General</option>
+          <option value="Section A">Section A</option>
+          <option value="Section B">Section B</option>
+          <option value="Section C">Section C</option>
+          <option value="Theory">Theory</option>
+          <option value="Numerical">Numerical</option>
+          <option value="Conceptual">Conceptual</option>
+          <option value="__custom__">+ Custom…</option>
+        </select>
+        <input type="text" id="custom-category-input" class="cat-pick-custom" placeholder="Type category name…" style="display:none" onblur="applyCustomCategory()" onkeydown="if(event.key==='Enter')applyCustomCategory()">
+      </div>
+      <button class="btn btn-primary"  id="add-file-btn" onclick="addAnotherFile()">➕ Add Another File</button>
+      <button class="btn btn-ghost"   id="review-btn" onclick="openReview()">🗂 Review Picked (<span id="review-count">0</span>)</button>
+      <button class="btn btn-indigo" id="format-btn" onclick="openArrange()" disabled>🗃 Arrange &amp; Format</button>
+      <button class="btn btn-green"  id="dl-ans-btn"  onclick="exportExcel()"    disabled>📊 Answer Key Excel</button>
+    </div>
+  </div>
+  <p class="src-label" id="src-label"></p>
+  <div id="q-list" class="q-grid"></div>
+</div>
+
+<!-- REVIEW / DELETE PICKED QUESTIONS MODAL -->
+<div id="review-overlay">
+  <div id="review-modal">
+    <div class="review-head">
+      <span>🗂 Picked Questions — <strong id="review-modal-count">0</strong> total</span>
+      <button class="btn btn-ghost" onclick="closeReview()">✕ Close</button>
+    </div>
+    <div id="review-topic-tabs" class="review-tabs"></div>
+    <div id="review-list" class="q-grid"></div>
+  </div>
+</div>
+
+<!-- ARRANGE SCREEN: category tagging, drag-reorder, duplicate review, shuffle -->
+<div id="arrange-screen">
+  <div class="fmt-bar">
+    <span class="fmt-bar-title">🗃 Review &amp; Arrange</span>
+    <div class="fmt-bar-btns">
+      <button class="fmt-btn fmt-btn-back" onclick="backToPickerFromArrange()">← Back to Picker</button>
+      <button class="fmt-btn" id="dup-toggle-btn" style="background:#dc2626;color:#fff" onclick="toggleDupPanel()">⚠️ Duplicates (<span id="dup-count">0</span>)</button>
+      <label class="shuffle-toggle" title="When ON: questions are automatically sorted by size (large first, then compact) to fill pages efficiently — saves paper. When OFF: your picking order is preserved exactly.">
+        <input type="checkbox" id="shuffle-chk" onchange="onShuffleToggle()">
+        📐 Auto-arrange for page efficiency
+      </label>
+      <button class="fmt-btn fmt-btn-all" onclick="proceedToFormatter()">▶ Format &amp; Print</button>
+    </div>
+  </div>
+
+  <div id="dup-panel" style="display:none"></div>
+
+  <div class="arrange-wrap">
+    <p class="arrange-hint" id="arrange-hint">Drag the ⠿ handle to reorder questions. Use the category dropdown on each card to group questions by section — sections appear as headers in the printed paper.</p>
+    <div id="arrange-list" class="arrange-list"></div>
+  </div>
+</div>
+
+<!-- FORMATTER SCREEN -->
+<div id="formatter-screen">
+  <div class="fmt-bar">
+    <span class="fmt-bar-title">📄 Formatted Question Paper</span>
+    <div class="fmt-bar-btns">
+      <div class="font-ctrl">
+        <label for="font-family-select">Font</label>
+        <select id="font-family-select" onchange="applyFontFamily()">
+          <option value='"Times New Roman",Times,serif'>Times New Roman</option>
+          <option value='"Book Antiqua",Palatino,"Palatino Linotype",serif'>Book Antiqua</option>
+          <option value='Arial,Helvetica,sans-serif'>Arial</option>
+          <option value='Calibri,"Segoe UI",sans-serif'>Calibri</option>
+          <option value='Georgia,serif'>Georgia</option>
+          <option value='"Courier New",Courier,monospace'>Courier New</option>
+          <option value='Verdana,Geneva,sans-serif'>Verdana</option>
+          <option value='Garamond,"EB Garamond",serif'>Garamond</option>
+          <option value='Cambria,Georgia,serif'>Cambria</option>
+        </select>
+      </div>
+      <div class="font-ctrl">
+        <label>Size</label>
+        <button class="size-btn" onclick="adjustFontSize(-0.5)">−</button>
+        <span class="size-val" id="font-size-val">11pt</span>
+        <button class="size-btn" onclick="adjustFontSize(0.5)">+</button>
+      </div>
+      <button class="fmt-btn fmt-btn-back"  onclick="backToArrange()">← Back to Arrange</button>
+      <label class="logo-upload-btn" title="Change logo image">
+        🖼 Change Logo
+        <input type="file" accept="image/*" id="logo-file-input" style="display:none" onchange="changeLogo(this)">
+      </label>
+      <button class="fmt-btn" style="background:#374151;color:#fff;font-size:.75rem" onclick="toggleLogo()" id="logo-toggle-btn">👁 Hide Logo</button>
+      <div class="font-ctrl" style="gap:5px" title="Watermark: upload an image to show behind the question paper">
+        <label style="color:#94a3b8;font-size:.72rem;font-weight:600">💧 Watermark</label>
+        <label class="logo-upload-btn" style="padding:4px 9px;font-size:.72rem">
+          Upload
+          <input type="file" accept="image/*" id="wm-file-input" style="display:none" onchange="setWatermark(this)">
+        </label>
+        <button class="size-btn" id="wm-clear-btn" onclick="clearWatermark()" title="Remove watermark" style="display:none;background:#dc2626">✕</button>
+        <label style="color:#94a3b8;font-size:.72rem">Opacity</label>
+        <input type="range" id="wm-opacity" min="2" max="40" value="12" step="1"
+          style="width:60px;accent-color:#6366f1;cursor:pointer"
+          oninput="setWatermarkOpacity(this.value)" disabled>
+        <span id="wm-opacity-val" style="color:#fff;font-size:.72rem;min-width:24px">12%</span>
+        <label style="color:#94a3b8;font-size:.72rem">Rotation</label>
+        <input type="range" id="wm-rotation" min="-180" max="180" value="0" step="5"
+          style="width:60px;accent-color:#a78bfa;cursor:pointer"
+          oninput="setWatermarkRotation(this.value)" disabled>
+        <span id="wm-rotation-val" style="color:#fff;font-size:.72rem;min-width:28px">0°</span>
+      </div>
+      <button class="fmt-btn fmt-btn-q"     onclick="doPrint('q')">Print Questions PDF</button>
+      <button class="fmt-btn fmt-btn-exp"   onclick="doPrint('exp')">Print Explanations PDF</button>
+      <button class="fmt-btn fmt-btn-all"   onclick="doPrint('all')">Print Full Suite PDF</button>
+      <button class="fmt-btn fmt-btn-xls"   onclick="exportExcel()">Answer Key Excel</button>
+      <button class="fmt-btn" style="background:#1d4ed8;color:#fff" onclick="exportWordDoc(null,'all')">📥 Word — All (source format)</button>
+      <div id="topic-word-btns" style="display:inline-flex;gap:5px;flex-wrap:wrap"></div>
+    </div>
+  </div>
+
+  <!-- Watermark overlay — sits behind all content, shows on print -->
+  <div id="watermark-overlay"><img id="watermark-img" src="" alt=""></div>
+
+  <div class="output-container" id="outputContainer">
+    <div class="logo-header" id="logoHeader">
+      <img id="logoImg" src="data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAAAAAAAAAAAP/sABFEdWNreQABAAQAAAA8AAD/7gAmQWRvYmUAZMAAAAABAwAVBAMGCg0AAA/cAAAaJAAAJ5IAADgj/9sAhAAGBAQEBQQGBQUGCQYFBgkLCAYGCAsMCgoLCgoMEAwMDAwMDBAMDg8QDw4MExMUFBMTHBsbGxwfHx8fHx8fHx8fAQcHBw0MDRgQEBgaFREVGh8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx//wgARCABaAZsDAREAAhEBAxEB/8QA6wAAAgMBAQEAAAAAAAAAAAAAAAYDBAUCBwEBAQADAQEBAAAAAAAAAAAAAAACAwQFAQYQAAEEAQIFAgUDBAMAAAAAAAIAAQMEBRESECExExQyFSAiMzQGMDUWQFBCI3BBJBEAAgECAwMIBwYCCQUAAAAAAQIDABEhMRJBEwQQUWFxgZEyM6GxwdEiUnIgQpKiIxSTJDBQ4WKCwkNTBUDw8XM1EgAABQQDAQEAAAAAAAAAAAAQAREhMQAgQFAwYHBRYRMBAAICAAQFBQEAAwEAAAAAAQARITEQQVFh8HGBkaEgscHR8TBAUOFw/9oADAMBAAIRAxEAAAH1QCN5GAHT2YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAODJsqW9eXMuqglGTz3Qqt3sujfovxKt+DXuDp413cvRnQnUdWlG8OkW+/lJ1HXANWeVqu5uDfRi6KLtc71dn3xWnHdz35V1ONfS6Ydq9ozsWfSk7sLdi2WfJL+jOG/nvUdmSrOOrTaw5tHb1V1ZaNtejVaz5NNf3xB6fOxb6Z80tr5zZaxWZvYz5P0Gb1bjdZOz9pQp6x4DTnmdtHG82y/RHgO/Y+l6vnfMcv0g8Ae+rbPllvoczrz3Kupu1z68liaKPQObvXdWZc1Z3Xn7cfRS049SJ0MLNl0s+XV550ucDPk0rerPqU20La3fn7pXvnfS52tTdernv574Dz/qc7Nsq2Md/VfoUvI1NtXqPL6qdn7UPknC/kVvLPL8n0zvfxlyvoei6fngCnG7z/AD971bX8v8e+T4/qfQNPBx+lxqsoULIa1Vvzz27XPMuqsx9+GfZC1GWhXZND3F0UvPP2onQw/XuhXPcz6Nam1F6GB1wbpXvm/T5vw16LnLFsr++IPT523nvZsmrKuqHihfkoXw9Q5fUT8/aoRvZbedW8mi5+56fr+a8vyfS9PA37cDXby/NMv0lr2r4VfLfXNnyip0OfbrnpVWYuimD2LLl0pm/FpVWHnuhXYp7Ml2E4/fKsot2PWqbMn016L8bRRdrstQlWlGzCVG2ueMtOm1syaoBD6XPbMeuWPqH5jv8ALvp9Kmn16fUOP1U/P2lCjrADJdzfQtPBzIaakbY0vO8vf9B1cBDzd1jt53wXKul6Rq+csaMF+uyR7m2Vcl2E4JR49cvNGuzGvp6892Kbcyyvj3zQrsCnOMMo1pR1qbcm+qSPs3ntWcLUJ7FF0PviVvw367Nmi5Lx5rvPtXfrcN5P0bldNPz9qlG5nu5vaOxPLkw1JVHXDlLIr1+havn0qjs+tbPlx55Xj+nc9HGYbMQAAAobMckfbkZ7+fQu6M4VZwpzhchOnOFqMqko24yqy8d8Oz69AAAAw7akTpc7QrszYwh0Q6eunP3MubQnUdj68dL+SAYNW3z3P3gDfswNN3MQ8/b9U1/Nh5jk+ib7+Tv2YwAABL24mfLpW9WdmyaUrdi+vdem3Fup1qbcm6qbz3uPt6E8i6p+5++R6AAAByUpRW9WbF05tOi9myatCE5AAAAAAAAAAAAAAAMi2mCXkfsZPPbEZD2CUYJRsRlWlG3CVGyFqEoZeMebT9AAAAIyArFV5O96AvCga58PhbM0sFwwiQvgWBaNs0zPKJUGUXCyWgJSM6IDUF01yIDdKxXAAJCwTnQHBGRHwAAsiiRlglODormkdGYSEBKcHI1CabZUNYqkBCdAcnRXGUXTs7Kw2HJGAAdEpKfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/2gAIAQEAAQUC4EYCu+C7y7wppY3/ALcZMI2bUULSZk0eQumvJsIb1wUGYtMqmQrzEBO6ymSkqP8AyC0v5BaTfkNjWleitg6s5/af8gtL+QWkOftOVyx49b+QWl/ILS/kFpUs2MsiyWROo/v9hVc33JclkJKisZAoqOMyhWDnkeOHHZA7QjnZe+zs7SZOUcgpc7N3q8wzwrJ5J6yxmSeyn5KfPaH7/YV/KS1iB9RV3MHBY9/sKhlZbNhTenMfuCihOR46kQrYCsVB0B9Db635F9TjjrLwW8zM8dHiHry/7d8GPmean+QeuHBhJFkcf4j5Y3Ovkf21mlrlNKMuOw328cJnFhbXcgn/AHzIy9qnBT7lTAy6wKz/AOrKwf8AkyuZmeOnQxRWY/4+CzraTRfTVuLu5b2CNU8UFadS9Mv+4QwyTGOOygt4OXXg5dbrUdjbpO31vyL6mChilPwqasY2pJCs3qVHGBEd3wqa8GmvCprL/t9L7vYC7YK0wNZwzaY/8g+pHmrEcdq5PcPMx9uLI/tr1e/hsfa/8uG+3wIsTtux+Qmdnzefl+THFVHH4eTt3p5O1DiHja3mHje1l5O7RxZC9BZ/7iL6ayAEeS9ryKxdK3DaU3pzH7hgYNI5JAjD3jHr3jHqzNHLkWfdYH635F9TEXYKpe+0FYztbtMLk92p3qLs7PvNbzWMycsMuX/bmd2fy7a8u0m61gAIPyD1wYarJDWxdWA/yDrkf23GfYZSr49rDfb/AI/681V7kNHV7uUN5sh7RfRRzVLGZnZqUOPtzRzY63DHWF7WJrXrNZe9XlnGdyHNXRGDMWznvSFHk/fLqx2Ts2LSm9Ga+/xOngZL7GrBHI3hQKzFDENdtbA/V/IvqccLSKWdWMdUnL2PHo8HR2q2bnhIo3kk/j9tfx+2pAKM8Oe7H28fBaeMGAFboQ2lNjoJYYYRhit1IrUdajFXgqY+Cq7sztXxNeCcMVWGdW8fBaKbGQShDCEMU0QSxVKENV58VTmP2Kkp6sM8XsVJR4aoB2MVVnl9ipKti61eVTNrFnB/3YO0PbyX2FD0zThExmRljg33oub/AJF9TD04LJ+y49DhseziIi2Wnlgqe75Fe75BFlb5CrkfbwtL7zhk/v8AB/YfFbyNs7NMsu9nE2ZpmWWtyxLE25ZVkLtzy9+eV+7c8rfnlkLd4be/PK7du+Tvzv6NyoMsUkU9eU8raOuE0gM7u7iBGWOpFWQCwjn4zKTARmJ8c2JFR7E67E67E6xmKlOXLM70KcMzW+GRhme9hRIaPxY6eKtaC5VkLD2IIkFutIU9yP3WC7H7rkK9crExy1ldhglkmOWu15+5kOyr1euU8xy1kBbg+N2Z2krMQz4iJFjbonDh+cFRo2EBFv6e3jK9kq+IhgmlwlY5K+Ihglq42CurWOgsKziYrEoYKqJWsVDYlDBVWK3i4bMnsFdWMRDPKGCqiX6Dlonn0RW2XejQ2xFvOXnIJN0cdnIWoHyfbrvmqzV2zMPbPIRtNBlmGq2ZreLTvhYK9dsDk6eWIagZiDbFlgMGyMLocxdGtLmIwmtWgr1iy9UZJMnIx+72lSuhbjnt2nv1sy703zdVoDzAiU2ViBPmqvjx5eIoyy2+GtO74+B81brTZE4WPNVhjmzMUZgYyBNY7ZecvOXnLzk1vVNNqmfXi7J4k9d14zrxnXjOvGdCOgti78UZYSbxWxE3j2MVNLJFj8gVqti54mlwsxw4ygcBljt+ULCSFVgxdho6uHsiVfHZHue0Wxp38TcsTlBvrNgLXjyY6Q7cGNts9CpJXIcVGV7JYsppRxMzR5PG2LM/t1+A48ROMdjGWyKLD2BevX2Uo6OZggt4u1JNVxdiJW8POVuGNooZIt7+M68Z14zrxnTQJo/7v//aAAgBAgABBQL+6sOqaJbGW1ltZPEyINOBOt63remfg5ret63p1vW9b0xcADVdlFEgDVCPMw0TIw0Xa4bOSaJO3AA1RhpwaJdpCGvEY9V2UcenGPopJWBHZJ1vdQWeb8D+BkXwl8LKFd1Aeqj6h16pm5yddVIK/wAQbm5c5W4NyF+YxtzKTRd1RdOAv8vdRHrxj6O+iLY62xrZGjiDaD6ijQrRacCQrRaLREm4uhUK7SEdFEo+u7QjbnJ1lXqb/GJkeusnRlJ0j6R9T6qLpwH072Rkz8Y+kr8Njrtuib5GbQUaF1uW7g7fALouGq14wp5HTm7qFR9T6xvq0nWVRuj6R8m7rLXVom5ubMmNnT8icWddplEu0yeNkLfL2mRho3CLofUOtmZxXlmq8hm5dEfwC3DRbVt4P0WxbOAoS04iWiYk6EtE5aoi14PJqt78GPRMeid0yItU0jruumfRd113HTG7LuunN34xKVkHW71ihc0AMLH0RoWW1beBLcty3cH6NxdD8YgyLapG04AKkFALafKgFtPlQC2nyoRbT5f0RLRa6rto4mJM3Ay14Eh+AlotFomFEm4uh+Mm1bapGWiYflcflF+Tc0LpuaHpqhdM2v6WqaVb2Typ31/qRN2TyappHTyaoj1Qnomk0XddCei7roT0XddNJou6/wDxJ//aAAgBAwABBQL+6uWieVbnWq3OmkdMevCGLcvFZeKy8VkcbjwCsvFZeKyesyAdX8Vl4rLxWUlfTgZaLuppEZaJy5AeqdCWq7vDfzXdTPwM9EB68HlXdRHpxKRd1CevGTqmbVMC0RAm4VfglHVoB1Li/SD1fBIOjyrtoh0UiPp0TvyjWijdf5G/Jh5Rvwfm7cnkfkIartKTi7fN2kIacT6sy2ktCWhLV9f+1VVl1vdDI7Oq/qmf5d7re63uoPVJ6eAdJ/VKu4nLVSI+mmoi6j6Rr0v/AJSoekfV1H1PrJ0DopOvAuux0AvxPrE3Dey3snfn/wBqqp43JeOSGs+rqM9CWi0U0OrQepdsV2x4E/OVNGyYGZSo+g9DbRR9IlIyHqfN+266KR+TA6cHTcxYtF3HUi7jppHRde46A9eMnUOh9AHVbGRMzJuFX4LEmjIZSZeQSawXAG/2E+jeUy8pkz6qdvmcdeLjqnFMnbVMKYdODBotnBx1TgmZOyYdE4Mu2ydl22XbZODOu2yYNOMqjdH0jTlondB1VVTm4rvku+XCEdS8cV44rsDwjf8A2S+nhD6bHq+JydDqgfgZICRE+vzIifX5kTvr8yInXzfokOq6LemfiA6cKzqy/wAED/NvZb2W9lNNyh9UhNt4RE22f1fEL6PuUbrVOXNi5kyfkiZPyRdUTJ+X6WieNbHTRpm/qXDVMGi7bJg0TBonHVOGq7bJw1XbRBqu0nDVdtv+JP/aAAgBAgIGPwLq64j18BDyix3qKilyVotoWQwPGyIELJe5wex+V9FAQEBHrH//2gAIAQMCBj8C6G9iWNyJ1M9gwOC2fuvTYtxHxtp0LIn1r//aAAgBAQEGPwLk+JgKwueoGvC3dWIYf4TWDD+rixq/EPYnKJK/QiWMc5xNYzN2YeqvNf8AEawmbvr9QLKP7woIpMMhyU4qaKt4lzpAiglr515aemvLT01jGpHbWpMGHiTaOQrAgYD77V5aemvLT00BoTHrp5bXK5CvLT015aemvLT00I5l0E+FhlyIFUNqvnXlL6aCTIE1YBhUelQ2u+fRST2/UktYbLmjFLYPmpG2nkGJVSe6pC6hd3zVio3N8ttquMjX7bQNOoDVtx5Du1XdDnzNLKuTcgSMAyNjjsFFJABIuOG0cloU1KPvGvKX00gVA2pdWNA845GiRAdOZNeUvpoRMigWJuOQfUvrqTqHq5LL2msfiPTXhFao8CMxSnpFN9K+2oeo/YRvun4W6jTWzc6fsL1ipez1/ZikPiIx6xhUPUaR96RqANrc9JZtSvt6q4RjmUx9FcH1f5ahmG340NSSLk0ZPoriur2Gndco7au2ty3iiy+mh9a1K221h21PP/t2t7aeL5DcdvIU2FtHYKCfdDaew0QM5Dp99bxm0J93przj3VEOZKXqHI0d7a2Av2V557q3ok1YWtbn5F+pfXUnZ6qEcY1MdlWVbDrFZHvFZHvFCKQnVcXFaeZvbTfSPbUPUal3iB7AWvjXkJ+EUyiJVNsGAtjyQN0i/atRrL4eY15CfhFeQn4RXkp3Cpez11D9YrwivCO6pQngDHTUfTf11D1GlQItlFttIGAwwVR01wqfKpHqrg+r/LUVvMRdS+6uI4dvkZk7sa4rq9hqdTiCoBr+6p70NKRkXWo4uc6j2Vu3lQGS+oEjbWjY4K08nygmjJK4XSDnzmhLE4bUMbHaK4eX5jf0VFbYLHv5I/o9tL1DkkRMWZrDuryz3itcqWWx28g+pfXUnZ6qec5t8I6hRdzZVxJrzPQa8z0Gt4huhIxoHnf20/UvtqHqNSGW/wAQFrY197uphFqMhwFxagozOFGEeIAaesVY4EV4j314j30scjaoWwx2VL2eurjAjI15z95rzn7zXN01GkeKBRpNQ9RpHJa7KCca1qCW2Fqg/wAXsrg+r/LUP00SvgkxX2iuK6vYam6hW+XxR5/TUP1iii42sij/AL6a8v0ik3g0utmoAf6pHdnW8jS6nbcUZJEsozNxTxDGSFrr66IjOBzBrNe6oH51oL8OHRUaHTZmAOFPIviVgR3V9zuoRvp02JwHJ2j1030iou311N9NNq2Vt76+HxnKovrHrqTsqHqP2BMw/Tjy6W5NUifF8wwrwn8Ro2BB2G/JrOZRfWKWMZsbCvMT01409NMjYMpsaj/u3HppTJf4crUqDJRYci7y/wAOVumo4mvpi8NLEvhXK9aH6wRsoxLjq8TbaYx3+LO9WORreqSbeFTsrf8AxF76sTt5A0l7rhhUaOWtELLjSxJ4Vypo38LYGmMZb4s71rIKsc9OFZv31u5BdRlWb99K4LXU3GNbx7hjnY1m/fW8j1assTyNz2wqOUeF19X/AJo8OfEMU6qm+mnrHPYK1NnUQ5jfup2529WFQ9RqQSi+kC2yvAe81fd36yaCqLAZAUXiOlrjGvN9ArzfQKKmXA9A5NBzVF9YqH6xyz/VQ+pvttBwY8GZAuaTfht1964FTb1tWlrDkjhgNpZKkhnN5Y6/bcNmBszO2sm7hQ4bhvFbG2ZrJu4UsPDnEqDpAGdZN3Cv2/D+IAXtmTa9ZN3D+h3BwxvC/TzVZgUcZH3U0MlmDC2rbRC4Xq5rSo1MdgolseJcYD5R00FGyodKlsDkL1NqUrgMx9ghRc6hgK8tu415bdxry27jSyzLpiXGxzNSgC5wwHXUJMbW1jYeWYhGI1Z2NAMLHUcD9viI5zoJbBj10ESVWY5AVOJHCXbC9aUkVm5ga3zjUkRsoHR/bW+QaUlwYHp/treDiRBNbGlkj43fG/hvSTfuBw85UXFLJHxu9a/hBqI69zqjU6+bCv8A6XpPvoSDihDNYaqWSPjd8b+G9K3OL/0FjiK0kCRPkf2Gv02MJ+V/D+KtG6J6Rl31+u+P+3Hie01aNREu22LHtqy/9Rra6v8AMtLKrsSuw0X1Mt8bCt4rtqAI2bab75ba1qX/AEyu1bVvHdtVgNmygSzMBsreMzA2tYdFAlmYDZQdmKm1sK8x/RW8Z2BsBh0UCWZrbP6LZ+IVkn41rCwHyiUWqyqgH/sWsk/iLWSfxFrX6jem40cUnCxaiII2AsbfMTz1AZF3vETYCOE6rkZ2PNQmKP5m5aO3xB+a1cQzxvG3DWMkbeKxypILHXLGZFPQK4Vn1zycRq06VAJ09FNOVYFX3Rit8Wvmp49DRTR+ON88cq/bjil4WLdhtTAHG/TU83FNvEik0RyoPM6hUxlR4XgXW8bDHT0VIzQyR6E3uORXoIwrhcD/ADfl9GF8aRyu8ZuJMRNh4QctmNPGsMkm6tvioB036MzTcQwLIguQM7VKmP6Ue9J2EWvh31Oyajp4cSrCVGF9t/XX/HvpP6+reRqBdrDDTTMqshRtDo2YIriohxicMkOnQHC43W+2uHZ4zLxM+q0ce3SfFjUc2l7O5j02+IMNhFKggkaXRvHjFrqOmoljjeaWVdaxKMdPTfKo5grkSPutAHxBuYip2MUivw9tcVvixytauKURtBxMMRk0vbsO2o55MTug7916/eR8QqF8YuH0i1uYmkVuHd5imuRUyXnxOFQSBHf9yCY1UY4bKZdzI+6AacqPBfnpXU3VhcHrq3w9rBfXWSfxFrJP4i1kn8RayT+ItZL+MVs/EPsZ14z6PdXmN+X3V5rfl91ea35fdXmt+X3V5rfl91ab6uum4SLcycIzXQyi5S/Rka4VRokk4bUCjX0sGNRLaNHE6zOEvay7Ok1x51ADikVU6156innMY3cTRaUvtr/j7sv8rr3n+LmriF1LqfiN/HnbqapJJI4o2fALFfLpJo8VIEeHdaNLY43riILqA02+gGwdBqc6IIpJF0IFBYdOrVUt9EEckRj3cZZlLH72OVcFvjHo4S4st7nC16Easm9TiN+L3tbmp3VYrtbRPcq6d3iowOdV00Mx24WvUaNIu81HfNzx4C35a4mQECOaDcrzg1wBkKfymoNa+IIsK4kuQd9K0i25jXEz8QiSJLp3YIuRYWNQywqjboFdy9wpB6uauF8tWin30gS4HZWtUikXTZS10dDz6lzqCeF1lnSLcy7y/wAW296gu6mQcR+4m5uoVxzRuFPElNGJHhzB664g6YoxPAYwiE4HpvnUfDyY2jCNbqtX7OCSPcZJMb61U9FJis8Qj0frE4N89hnXAaiv8rvA/TqytU0sSxSLPbzb/AezOkjGSC2FX1leq3tBrzW/L7q81vy+6vNb8vurzW/L7q8xvy+6vEfR/W//2gAIAQEDAT8h4fKC1LfuV+JT/wB8/OH6Y/Snpefb/rtKByNvQlyeQrPqmX4IRTpK/wDGLe0VPsnhD8zQ/wA7fe5WHS4D7n6nVh8h0Lx9o8QKsNI6SEvVLfAeU8Z+08Z+0L3cCj+Z3Ki8FRAW4DbNSRZKfIOU8Z+08Z+02ggep84w9Lk1a0X7zxn7Txn7Txn7Q02OjN6N64NfClviq6ec/oxWYKywLq7jHNxnjDp5ys9HowW+hApo6QBsrOYTlEjrC4Y7pzcxXflMpf0pdeq+sJJYWPZgsq9tgD05xQLdEJkhQWo63yuaZW66PM9Hg+cVnTyOrGzio6eR1IgKtBlYTHwL0vyDlP7ME8rzbD6RX9g+5wGv1Eu6vlP6MLRVgbx58NHr9jFfYH4cKGYNmiB4d/T2mCsHSiXJbHJfKMNsY95451jw/qfRYulp9D43DR0a/Zy/B9HjHWfF+zxvhlRov1H2nhfUiFZjXFL6xGZZVKR/qbBk+ao+Kjk5TyDSP5mnPX4ek+LhlGFDnSq/SXafeLXtqeD9CVo0vV4zZl4vJ/iW059E/wDZwwhxwnkv2Yc5l3fLPuRG6B6d/AirNqoW02+U/j/3PI19meHdOBN0q9FifwP7ghLFaD7uMng+2cimvJLsOkfvniP8zxH+YhmAXjvy7RFbVJHhvWPD+pDsLBSlr14SIIaqkcmo2eZPNcgHoXfQUMHvx0EobCSXx/swCaWOH1n8wipS48qTSmdNVcexzM908D6keJEVyoK6w0B2XcfwOQT4qMM37JW/UTJ2/sJ+Z8XAMaadm467yD4PKIBaI9kJSd3eRgfLBxmdyNc+kzV2Hkpk+0Nb9YYl0aQsLx8/WU+NsTXk9qlBasebPWWeYK+HhO6eHdOAeUg6zSeCvzBqK60OXyXh7H7GCu4faggMlvue7KHi7Inc+PtO58faMLxyiaAdztVPvwAeH9SYXRKuRZ3vH5xRIDhBfNmYhQebiNsDfF99RECqkcIk/op/RRCSbXtbpHp1nxfsw87lBseEShSgyAgWjvo7xOKJ1Ct+s8L6kx3+Qq0vpB5nsXXkYnwIfFR4LuxgFXVcrh8PLxPqytL79b9tzqF+zM3rzpz+U7fx94mWkSxwPU8ow/KeX+IeycCDXmzBB+Q3jkzSUD8D1tIBXtYrL/HDL11Wvff5hAuEBcsesPHHJaWusrcyhqwTse5+5nDNQbPXhz+i+xgrufZhFXOz52ny8ZiqiqanYgco9xy5sqXX7Kfbfj/2eH9T6MgStPoB5b4bde0U+db4GIOruS0xKU6TnsV84J6BmdWzxP6xo3+v6Qa7Ie5Gub+DhEJKUtrfvLe6126McG7znlr8ukTPWo06rOJdDTXMmc5TzZRJ0Xu2sr7RkWkLb16EdlYUnZl1lbEq0DhC9gt6cKZZUvWO+5o85cnfHaXIU1bfrNKTg3FhKgHZj0Iq2wLLumSfwP6gjFltJXMZ/A/qU9uuFWZ6Rl2qQ17z+B/UBNQOwZ9OClOY+YyS/kzHzX9oYvSt3NbDyeFfMJYVfrWO0teKjhdX5ZzsJA9J9xPD+pG1lFV2XpPHX5nIy5IPvBYYwKCUlUsBw+c8T9c8b9ceBRTQPuHBl1C+eSeK9ePhOxPHOv1pgdCETe8AMMNzgTTWu8TOg0KPThlgOzYaK82DWB27rSPkzaoZaCidXIJminsAFoFEvnyCZorFSyAqu9+XCWvvFiBRZvkQvLp5xNf4I1520dX8dpcs9/kUyraUr44jt9V5xAlrtYUXoBbBKVIOR+caWBUxZ19nMdJm7qbDm9foQjqRXfaeLvxPF34ni78RObaY1NFdIvJigW68oZALVq35cWdjAMaIxjUlO+/1j4W5DCx63c30iWWCJ1odWZhF40RcS/VhI7efqjShWI3jePVDYGC7lOThExCOhKnHcVKgVQTOaTHMTdSpHbRx1RUqWTfyhmnt5Ty5DIMrOUrDsSyYYnIpx3FSpiCqqeZf+D4RNjPWcPXyke2h1nXkJmoOsq+yFzHP+pCWeL9iepViua816rt/5HQoHmHcbl/QqorJXTvA1Z2qq3dWQm8AvoV0hVc0UVrpjvDLZNgh+0qhWFe5qIXi71T50TG6mDVeiI3i71T50QYkFa1Rrc8J+kbIFClYV0hFtXeqfOj/AB7b1QnTe2mkscxlyg/YfsHHpOzBAZSFSEZugpWg47mGJbGQOUdWibaWOGzsqk/IUEy3blK/7BHUjNSrjVcQC853B5JtQFzLRHWv5HaJdRHV2kANhSiMZhJRy6VpCoYjOWDlXcobUKzaaKNwg64qIs5DbtcxnHXTTqukY4VHKAacvKc34TDlywXmiA5ATs501q4tc8fMFTLdCNaGfw1Vra5I0rWLSULZNCvWPEMLWyMX1h0WSLYZo7mOfSmDDkAMS7ApNxs9Z5R8OBQf0KW9iMYWQz1YoByYkDvqMRuyB79stdxgaQCxXIRvkxYr0jFuaGbyXZhwnNtTBqQqR1RtCNdlLele7hLCIyE3VkyG6ldZuuBZK+qsvPe0UhUhUhUhf+x50nuJ4DfG3mPaI8n0kjl+k/4c/wCHP+HP+HPPl1NLfYCJosYdm2C8Q+cuIeOzIkqinTOmLb3GE3evs+wgMoRHpQ5OcOmcsuc607xdYZuU9JLHlAyIXmh5tt7S7MAFatrpK1CvvxVdLkeUfWDSO7s2GtVMo0RQauY06EMh6xWDzhvtBGib1trE1dzQA6p5m/iuB3TyWsXnuKx1gXKVcbASuLlz3CdIPhuqpELN9YAAypgCh74nqdckMMXFHzvISp1YGDGGo9LWrRtjxAtvSLIOzClfQwC6AW4ZnwPlmQ3FVeNUVvDJ5JdchyPzQu3NiUBcpmrqjKjXTGLqmLLifXbMM3pN7xS6rRX2T3lrXC5QKUMQ9GVhUTSjByM1FHBFUJH8Of8ADn/Dn/DmhzPSKHM8O0Cud/8Abf/aAAgBAgMBPyHjX/ZNpB5wLlOxHp8AvccKZaW4LOHQlpaWiolpaWlvG06ygs4G2k3iC2p7mOPfgcMNZ3KGuHPanK64deV6ytxrXKdYAv6cq41+Had1j8zfOafUdMePoJp9KsmjFjrgTSm+WXJRXvwiRDrKm+sJsikHWZr+ja6LlS/SbI8KLS/SOK+hHJluxbO2nZSxAalA9uIykTw1gzKSkpNJtx2mk0YhgSrWbYWOkwuCcsYk86DLDdoLal8CXwYaRNvDdHg64MzH0eaoFztzsxbnOpiOhxUSsTwsOFy+DpwtLcCc0tcM5ptmyeicJyytrrNsGXg0l7CKUxSos/Wbzgc5GBi5dThDZ9BvmiNnVPInRBNn1M3BLKyvEDgtEmkXSLwXSKN9YrbiKOri7cGFRYrlwbSJ6pY3FTcXeE4CqzgrEMrgmU8XiZbmnhEMa4QHT4rJWU4KiWlpbibcd5p9YC4NMbg0rgTl0QDJpmUipykVOSZU5yE/x3LgBADZFxyqAaxFqem4GH6NZaWluFpA3xLc0+twSKIrXlFk0usfDpHwqyAwwjBVWQGGEx6+C9VVkDDD/IpG5wl0ou3/ACgYVBEYVEhIYVFIoqMFHCYVH/5If//aAAgBAwMBPyHjf/ZFtE5R60vAufBH2cBvfKd1ndY9RjFPC0yqd1ndYM2yvjus7rO6xDeRxVukvc8FXaaDFRwxl24K4SrxLC+HIT1HDoS3T6BQ1LdI6r6R4AlJzibcNX6L/rPSPo3TTwuXwuSckDXDrBNMzRlk6MLFy0rpGaIsTMVfQ/RFK5TrNyHC6kp1gK/o0dQDjQFHi1Y4FTusvl8UwqndZ3Wd1mmbvKXLY1N7qPOcsGRnBQTTGpMaTZOeEWFyjMYqpHRc5jK5RWGaOMcBfCgc/R4Li1x6y83wasoI8udqRUTsSDcr0lYVhGmJc7BOwRiKXc5JQ4RyTTNUvTZwYbmqLglKnuIiAgwdI+nA5WEEMVX4SKvprZA24Xnk34av0YBt4alndlvhVTuzKdJ2GdlhizUocPaBwPaClQUQxCCoenA1cCN8D2gMoKlhUPSK4QpXCAjnCJcRm5jqbOAosgscNWVkd+K84tw6nU7M7MB5cLLd2fA46Zt+tzUK+dR3fBjBGcOyYglzgCXOMJc2KIP+OhURUWlMUlwLnquBg3iGhT9BGU7pO6TukE5iKjLzJriYZIxdfWSXAMEuBZszd6wr3TE5DcBbumJ5rmfTKg73TE6Nw/xbQ+UYdeCa/wCSUGri0NQoODVwkauBgxSGof8AyS//2gAMAwEAAhEDEQAAEAK34AAAAAAAAAAAAAAAAAAAAAABX3Zztth9vdshjQlma58ETaWMQu05PCS2oW4qTDgHguONnBWVMHLaOfwSWydH/wAvDb4JTnCNN6hfBXrN6UrlIiWQ8plZeN19M1amGRd23Q+4Vn/25z3vx9DtkOkXMqRaIWp+L9slR7NpSAqAAAFkSAo3mUAAAR0FWwgBSSWgPAAAEhdCaX3cAAAQAyQAAAAAAAAAAAJNmASOewAAAATgCCCQQQCQCSASASQCSQAACSAQAAACCCQQASAAQCAAAAQSQACQAAAAAAAAAAAAAAAAAAAAAAAAAAD/2gAIAQEDAT8Q4b8HQS9lh9lr9yk8n6zpLB6kPe08rIx7lP8A1wMKOMiLQd1aINCVuueQ86+xOTGhG7uvdcWIx2L2hC7az1icGq5KfaqUDnDRHakhsWUvxiUXnP5oUnbzTTh0zBe08kABGW5/Bn/BmVb7k0uyv2RKzRKNjrW1ySK2AKmADKstHdsBTbWexWfwZ/wZpsxVC9ASccFRSJcM1eU/iz/gz/gzdTY2U6HK3JuuCC9MAGAIeJPzDAiK1qgeRedwsJDuHIV3QDrxt5HPNAlueC3YFOAz5QTNkaygGvKWXm20IgeyFki4Cxa30gzVQThh9IWJLpkU5kWuYhggAqugJfGWKhNWCdjEvIC270J3BOGT4jW9Q0S01mZViNL1LZaRLzBrDUNAGVYh/GiK4v2y2IC6fBuFakyVGqOiA4CkNCDXCqSwhWFRyFzxJ+Y7Z4rYiGVc+GXQL5PxKx/avzw9pwR3/UNPVM9u2sWt9GvtMD4Q6DaOTGppwOSFJscDCXLOsuF1i8kuK/NULkCxsvp9Y4WdZZ1iNv8AJxu2dZTrM8mnkkSigdzVT1bcGrfZgQQUvouJBAWFaUoXlYY29u3VXvvE1cm09ERwE2ukXuWKHRjtWUcxVa7rHBkfx1f2o7UzMpNRbf5H9nDWt6P51X73GtC4PQZv5MmYABdr9kYFg5mBmT3JcCEOxG19yZZCBu9+5R6xCaLM7DIgBxFhNkRgNg362lzwTp4UFBktGRTXDEa+0AwC7FquHjnRPhzqxEoIYFqrQEy3i6Qt58SRIkcbhqrV2G1OUQl2DXGqES0MTFYoDV1PGH4jRqCjFqwc9kyfAkSZsfPUbiqvfO6te75OcPEH2nhD8QMTAiEiekE1FgDUWJXYzxd+I8AFKQR64lXtVZAsA7HKNy5q6JH24Fc5vtAQWtsRqIVdFwvKquCZttUe7XyTwHom65UbfAjnUqxW/dbV+HPgyGeqelCntM1W4+48zLzIK4n8imJ6TbQT7H3D2geCuEuALsrMaVUG8nibu9eceugW+qU9WC0bn0aWOTBQhNsqi7NQ31MpoVZ7jLgFADlmHrnh8xDwTp4LBAtEqgtQOGU73eXwUUjhsdV8EvHV/FNli7lQ18z4lwi0C0baLeIULd907BhAHZKxzRejUV9svlfngEQo2Jq2N5K3P7OMxtZEKsXl0ITFOeatPlmVdxeZlPY+qJQVbIMj0Rnhn8zxz+YYPtw0pbOWnTgdRyAigMiJpni78x8YKRzD6yyGgQWi5oZah0TB1mfm4NRMQQAGqFdZoyPt7zAA9+EXgPRwwcBy7CwxdF9mFt5UXwAuY88Ayj7vsubm84y0vwEHJedz5XunDrT8Gwt3CJmxLgdJHMLvxAqlWSqpwDuDgpAq2phHbB/sOdTQ8gofOqORwoO2KYmLy+n9ww8smqoybTAo2BRdDMwxgqaap800fm94BZjHBKGYdXUImVdZmYv/ANcYq6w09x+J0SvOrp4b1IQoS5gj0n9ZAuy4LaGw+JiG6NQdvyD1rv0gityt2C9QbvSVFw3kE3Uj3TwJ+Z0YckGGmxzGsMpLOpEG1l55D6y84uNFoWran9CJUiAwU3PNLotJTmXzVL3o1PQZUvgk0xbs6IzKRFdGlvXHBAYJq8q7sgByQp0m8q8RnVd1dLXKB1gDksxVqy7KTZNQi5t6QorSUE4bxalV1IAph+RCkZtWYU4qxC2houY2u0VFtAc3gtyFzum9jRi5WKgtAt2toEIzaW0Wtqi22Esr7VUeY9SUOgNzVErJljH2uvPqCzvUUK2w8y8ErFANNcBKsoIqzSzlxC2JBlUUKJlXAS5WeCoxcA4FHdA8JklDbDyK0PggIx0ut7zJ6xe7+5PA+jElrML7nQ7zpDCaA0OxC2sHtgv7R9WY6iPy8AmEcaIkdi9cJwmxqz1MHKHTOiA6ASjqvsGkoJxo4txljI4aAnpKdBbyJg4C3kKHvPD+mVKnyf8AhGlhE4kK7tgneGUJv6giL5IzlgrgLjA4DsaGG6BbAvV9okijTB3aDCnV94UCAdqFWYQFS67L6ftCdDe1LqqEBUuuy/5wJkCwYVl0R4//ABHHhieGigDOfmOzvPKXpe6L8/8AAhdVsNefltOruIGpySmTRdncgoWSojGchOOkJ2ENY4FYXURBnIVfVjXopxHyJ5rUuIxi/vo5yxWsF29V7rliYARVF0XRqN4B3d1bVC/oXZ3KSFyC/QuHLhBZIU12cl8q+Uv32gmXAtiSMBAA5Vw4oNutA3CFMHb1VVPSB+vMYABlbPKhEsADQtArR5EHYchUo1feFBdWgC2g6EMswnZQhLBVmAHZXsAJWSqEFckKKCBZNO5KYqRwsKqNhTfWUacZZNYUrzCVZJHQi2GwpvrGBUFqFVWK93BldWlThRpT3CEVogXQtWZVTcR1O67Kqel/4A1GjCJ3GOEbQPzXr36Rt1ZCdLleqsGLl/G60w9ahDeGRel4PrKu8pV9dD0X2Y6CV2nqBad1/wAbl/7HqWCAJaqBrrGl6sysV0GL9VqMpeQQXlCXYOIsvgZLxESzRaZY7jZg/ZF+rrD2JZLdNqppWyy84chCc05qg11i57wyQoq1BwITmjNUGpvqfbVcA1V8GHL8dUQ2nlA+kTmrNUGoAABQYA/wG+PBNwOZ8/uoYXDAcTuMpvZp36D0UILL9GPY4mm3wWgCNuumco1F2kmN19AgGIuRHjsS1XGoBipCVQvNPMblCsUa1EeXnCmM6jNLexqDbZfOlaFow1zZeg1420Akvn1lr45xdq7QGLdsjgRXkmd8ou8gzWEEVlWY9pkSoMYc6DG8MVlEnNl57YYrzMBgNdLLlcpYNiBA8Bc3GG4UTppiCLz4VQ5kCmwCE0WYY6GSwWpy1XeUVAsa6OajfJBrMeb3OioFLQYY3C9pyPClhoS1bb1kIi1tV7gcoyVnGDA73qPa8hlkBvLBldkYPcmpAXYeezCxrBtk8TinnEKyoU5VE2pi9kHx5pnmo+riNQg1DaFxpcKNyQMC4FBeYRBL5UPO9SvvWS2rMqtQN1DZpKqYvNZVjHpKGWLKG0Og0hAiK0InqMFmo3yhTrJjf0iimmlynl9lA5Xy+wlS8eg+ziv2g/IZ9hH5FPss/Mvp379++nMAgiD1OdciWCBfdVwtib85dsVGdisxjrcEStk9hgcHkXH6eCoXKa2TksSeJAyrSuzbqou67Swzi62upZgpdAswFgDlCzEltLa5oGkrpVye56ul3crhrSwarlhZvuAl/huLtb6Uw3HU1P8AmKLoIIluuD1JGhA7OsF6AoyziGcX0sANNURtlUcsXIyeakEYRVTdpVaMOIYi+YDZgVUeTMJ63GCV5MGoUiJaRlkPQmI6mt2CqwNMZLBeWtqzWKlMyMQoNaw0XCL/AAALxjzRqmgzFnJl+DOwlg27KJA0rWKuoscmQHQ8E4tMCqQg1jqQbe0YJUE4C8g08oFml1gUBe5TcIYBpHaxL5QlnXitKK467VEAmtN02BMwPUgmjjZR0Lh1PkaOVvM+fp379+/7vPwifccfiZWq3mr8B/23/9oACAECAwE/EOFS0qVKf+v1b1nOL4E7D2iuSI1ZBr9jgtanaJ2CW6EM2cKGOwTsEEdEtGHanYJ2iEqccBsrVTuI1xdQrW1Ut74JTLKlZ1MJANwGq8IORvhsTDsuXDJYbWyGYiWqYlzQmVqmJTwAU1O4lDN5lwgw9eF5M8jrHaXyveAN5vNlc9MDmvvMnw2PpynjubTb9FyoZ9hGBTEqolJKCdZ4vnKHRxGJcuCMCO1o+2yrJ7ypQeo4bHOr9WPL2v1g5dGZjhbHpI7Tv+Js8KfoOGtQrgTX6wiyiCoO4M/mM/iMqrIka6RVdp+3DYhN2TtEYa4aYCRnYJ2Cdgm2a5UqUFU1z7CLXbmDr7stfXg822czDupc+ZEljcJfz/MNelmZ6IhgcTy9K7qYUAuC0q4DFLOHyPxNngYLqvzO/wDEqu18CPD1io6Yio28YCLNkqPBrhsQb3wa2NyrmJmRlpbrFGnU3waneZ3GEIAE09EEgrDCKXE/BwfypSDvD/2eJ5z80zrX3QV5EC15zuPtBatIy27F0MysHLKjkEzoj3YiugxTeYpC2DCJc53GVZe+BF82OHyoP1oN4nf9kdKOdjbyIvYY6JsfRbZ1w3BwWng7v2ljUt1J3CINMeMt+qWN8LPqj4bhWW2WIlxyj6IWS6iazwrgWnNHlKyiMtsUhslF0QOhx3j2faXwzPK9o0GsygNTyvaYkVKhuXM6Mpp08J8RhWlc7y/sFhg8XLRGbEK18E6cCothO/O/F+fA1Wa/Pjvmv6wr7ljJSirOF7MVOCFNfKdCo9uKXXj1ydCrlP8AxWl6zHsjDtxUGu2nSAgKHSGLWpbo0+ZdxlKIwt/QFxnYZ2GdhjLbqBXDCzja4hx+vMqBCrSiNULg60QjNW4BduC8yy1WiLNvLRaNwW4wXEYFUSxXmRKf8XVjTCaX94suyck+rHMr/wCSLRqXQQQYalwBKPlXSWfO+sqQKhlFEpwjiqCU4zOwSqAjCsH+l/8Axj//2gAIAQMDAT8Q4XwXLl/9cwzL0nIK84vanfZoFAbzGK2ly5JOyeIJ4glPHxTlM5PWV0iXXOh+eEeIIodBM0Vc8QTxBwi81G+vBa0Xc7SYgVcWtFyv52OsFy8ekcqlVE2qBgsBV8NQKhEOfDANmarC1KGhZOwjoA2QbOCuDU7CXMcGLPgpRN8WzsQKhgPOE+WfQZuTJ6QzvWUvifYZ8v8ADFlesp1iWUyj9Xib+qODbmXCncsftPF8pS+pAZOZPhxEHKZluPvSyZ2F8MuXQ8NHlf2mj3jUHOPYaJ3kFeVNThddTwVKNyozd6RGtoJRiebPNgRM3ECnf8w3Plkt0mXU/tMMWJcaSVA7P3i9v+J/eZ/aZ/aZ4fkx156W6wJu2NfIXAe3X2m0BVRiEBlZ6TxfKYxsJnvTE+DCNGW7H4isveYT1QtiWzz1LWGZFYjwH+zuF+ohq4avKaHB1DdzsS5jFcGbpSudgBXU7078Clq4OTv+ZznyyFimJ4jKJoBzmAy8iUq2c+TAF7H5h0U7J7RIdDpzn3/2hiksn8qANntRUWZZuQLc39UUHOSKWGZ+bhfhTImngd2XU7Jl50ZA8p2ZV3hmpANhiA2kSpuLIjy4c9iCKxCI1ljuOU8iWVLjB8ZpnwoA8ABjaHHzhufLPoGy63Y4A1i6bnae0ALRPKGSYty/JAZ6ynjiHO+CAdiBR55jI8koK4VPRCy5QSDlK0ylpc9USypRU61cHx5IWDygENQGWmXPVGbYQtSefGBLxLA7nny2HB1MLqg5fTgtWEZ30iO3gInyyDWVe52nsQyoRWtsDHdGeEs8JY4Jp3miUY0/knynH4s+MfW55ESc4Je7hQbGWPAEy7nwrO5B9jDuTr/Utc4f4FBn2GYaNwWiKdxFRNxgl/jI2ynR3r6CagKdz+lP6U/pRotrmciGlaP/ACLEstz4laDXWKisx9ZhizBDbA7NZj1CQs2iBi1D7wUnkU5cCUiSwc5BCeTkpGJWf4MIU5IraoBqmdXAaFf8l63cEBjF6loFlxzvrKTlXSWgsM3llwMO3axK9TustCsM3v8A0r/4x//Z" alt="Institution Logo">
+    </div>
+    <div class="doc-title" id="outputTitle">EXAMINATION QUESTION BANK</div>
+    <div class="question-bank" id="questionBankContainer"></div>
+  </div>
+
+  <div class="answer-key-container" id="answerKeyContainer">
+    <div class="doc-title">OFFICIAL ANSWER KEY REPOSITORY</div>
+    <div class="ak-grid" id="answerKeyGridContainer"></div>
+  </div>
+
+  <div class="explanation-pdf-container" id="explanationPdfContainer">
+    <div class="doc-title">DETAILED SOLUTIONS &amp; EXPLANATIONS KEY</div>
+    <div class="explanation-bank" id="explanationBankContainer"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   STATE
+   - allQ / sel / filtered  → CURRENT file's questions + in-progress selection
+   - pickedPool             → ALL questions picked so far across every file,
+                               in the order they were confirmed (continuous numbering)
+   - sourceFiles            → list of {name, count} for the label
+═══════════════════════════════════════════════ */
+let allQ=[], sel=new Set(), filtered=[];
+let pickedPool=[];           // accumulated picked question objects across files
+let pickedIds=new Set();     // ids already committed into pickedPool (avoids duplicates)
+let sourceFiles=[];          // [{name, pickedCount}]
+let globalIdCounter=0;       // ensures unique ids across multiple files
+let docTitle='Question Bank';
+let runtimeAnswerKeyData=[], formattedCache=[];
+let fmtFontFamily='"Times New Roman",Times,serif';
+let fmtFontSize=11; // in pt
+let manualOrder=null;        // array of question ids in user-dragged order, or null = use smart-sort
+let activeCategory='';       // category auto-applied when user picks a question (optional)
+let shuffleEnabled=false;    // when true, randomise question order before formatting
+let dupGroups=[];            // groups of likely-duplicate question ids, computed on demand
+let dismissedDupPairs=new Set(); // "id1|id2" keys the user has dismissed
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+function stripHtml(h){if(!h)return'';const d=document.createElement('div');d.innerHTML=h;return(d.textContent||'').trim();}
+
+function wrapTables(html){
+  if(!html)return'';
+  const p=new DOMParser(),d=p.parseFromString(html,'text/html');
+  d.querySelectorAll('table').forEach(t=>{
+    t.style.cssText='border-collapse:collapse;width:100%;margin:6px 0;font-size:.82rem;text-align:left';
+    t.querySelectorAll('td,th').forEach(c=>{c.style.cssText='border:1px solid #ddd;padding:3px 7px;text-align:left';});
+    const fr=t.querySelector('tr');
+    if(fr)fr.querySelectorAll('td,th').forEach(c=>{c.style.background='#4f6ef7';c.style.color='#fff';c.style.fontWeight='600';c.style.textAlign='left';});
+  });
+  return d.body.innerHTML;
+}
+
+function updatePickedBadge(){
+  const badge=document.getElementById('picked-badge');
+  const countEl=document.getElementById('picked-count');
+  const currentFileNew=allQ.filter(q=>sel.has(q.id)&&!pickedIds.has(q.id)).length;
+  const total=pickedPool.length+currentFileNew;
+  countEl.textContent=total;
+  badge.style.display=total>0?'inline-flex':'none';
+}
+
+function syncTitleInputs(val){
+  const a=document.getElementById('exam-title-input');
+  const b=document.getElementById('exam-title-input-first');
+  if(a&&a.value!==val)a.value=val;
+  if(b&&b.value!==val)b.value=val;
+}
+function onTitleInput(){
+  docTitle=document.getElementById('exam-title-input').value.trim()||'Question Bank';
+  syncTitleInputs(document.getElementById('exam-title-input').value);
+}
+function onTitleInputFirst(){
+  docTitle=document.getElementById('exam-title-input-first').value.trim()||'Question Bank';
+  syncTitleInputs(document.getElementById('exam-title-input-first').value);
+}
+
+/* ═══════════════════════════════════════════════
+   UPLOAD & PARSE
+═══════════════════════════════════════════════ */
+document.getElementById('file-input').onchange=function(e){
+  const f=e.target.files[0];if(!f)return;
+  const titleVal=(document.getElementById('exam-title-input-first')?.value
+                ||document.getElementById('exam-title-input')?.value||'').trim();
+  if(titleVal){docTitle=titleVal;}
+  else if(sourceFiles.length===0){docTitle=f.name.replace(/\.docx$/i,'');}
+
+  document.getElementById('browse-btn').style.display='none';
+  document.getElementById('loader').style.display='block';
+  document.getElementById('status-msg').textContent='Reading '+f.name+'…';
+  const r=new FileReader();
+  r.onload=ev=>{
+    mammoth.convertToHtml({arrayBuffer:ev.target.result})
+      .then(res=>{parseDoc(res.value,f.name);})
+      .catch(()=>{
+        document.getElementById('status-msg').textContent='❌ Could not read file.';
+        document.getElementById('loader').style.display='none';
+        document.getElementById('browse-btn').style.display='';
+      });
+  };
+  r.readAsArrayBuffer(f);
+};
+
+function parseDoc(html,fileName){
+  /* Supports both:
+     FORMAT A — "Question:" keyword with Ans: / Explanation:
+     FORMAT B — plain paragraphs with (a)(b)(c)(d) only */
+  let questions=[];
+
+  if(/Question:/i.test(html)){
+    const blocks=html.split(/Question:/gi).slice(1);
+    questions=blocks.map((block)=>{
+      try{
+        const g=rx=>block.match(rx)?.[1]||'';
+        const rawOpts={
+          a:g(/\(a\)\s*([\s\S]*?)(?=\s*\(b\))/i),
+          b:g(/\(b\)\s*([\s\S]*?)(?=\s*\(c\))/i),
+          c:g(/\(c\)\s*([\s\S]*?)(?=\s*\(d\))/i),
+          d:g(/\(d\)\s*([\s\S]*?)(?=\s*Ans:)/i)
+        };
+        const plain=block.replace(/<[^>]*>/g,' ');
+        const ansM=plain.match(/Ans\s*:\s*([a-d*])/i);
+        const ansKey=(ansM?ansM[1]:'a').toLowerCase();
+        const cl=h=>h.replace(/<p>[\s\u00a0]*<\/p>/g,'').trim();
+        Object.keys(rawOpts).forEach(k=>rawOpts[k]=cl(rawOpts[k]));
+        const finalKey=(ansKey==='*'||!rawOpts[ansKey])?'a':ansKey;
+        const explanationHtml=(block.split(/Explanation:/i)[1]||'').trim();
+        const qHtml=block.split(/\(a\)/i)[0].trim();
+        return{
+          id:globalIdCounter++,
+          qHtml,
+          qText:stripHtml(qHtml),
+          optsHtml:rawOpts,
+          opts:{a:stripHtml(rawOpts.a),b:stripHtml(rawOpts.b),c:stripHtml(rawOpts.c),d:stripHtml(rawOpts.d)},
+          correctKey:finalKey,
+          explanationHtml,
+          sourceFile:fileName,
+          tag:''
+        };
+      }catch(e){return null;}
+    }).filter(q=>q&&q.qText);
+  } else {
+    /* Robust parser: each <ol><li> (auto-numbered "Question" style in Word)
+       marks the start of a new question. Everything after it up to the
+       first (a) option — including tables/images — belongs to that question. */
+    const parser=new DOMParser();
+    const doc=parser.parseFromString(html,'text/html');
+    const nodes=Array.from(doc.body.childNodes).filter(n=>n.nodeType===1);
+    const isOpt=t=>/^\s*\([a-d]\)\s*/i.test(t);
+    const getKey=t=>(t.trim().match(/^\(([a-d])\)/i)||[])[1]?.toLowerCase()||null;
+    const getVal=t=>t.trim().replace(/^\([a-d]\)\s*/i,'').trim();
+
+    const olIndices=nodes.map((n,i)=>n.tagName==='OL'?i:-1).filter(i=>i>=0);
+    olIndices.forEach(olIdx=>{
+      const olNode=nodes[olIdx];
+      const liEl=olNode.querySelector('li');
+      const liHtml=liEl?liEl.innerHTML:olNode.innerHTML;
+
+      let j=olIdx+1;
+      const extraParts=[];
+      while(j<nodes.length){
+        const t=(nodes[j].textContent||'').trim();
+        if(isOpt(t)||nodes[j].tagName==='OL')break;
+        extraParts.push(nodes[j].outerHTML);
+        j++;
+      }
+
+      const optMap={};
+      while(j<nodes.length){
+        const t=(nodes[j].textContent||'').trim();
+        if(!isOpt(t))break;
+        const key=getKey(t);
+        if(key&&!optMap[key])optMap[key]=nodes[j];
+        j++;
+      }
+      if(!optMap.a||!optMap.b||!optMap.c||!optMap.d)return;
+
+      const qHtml=liHtml+extraParts.join('');
+      const qText=stripHtml(qHtml);
+      const getOptHtml=k=>optMap[k]?optMap[k].innerHTML.trim().replace(/^\([a-d]\)\s*/i,''):'';
+      const getOptTxt=k=>getVal(optMap[k]?.textContent||'');
+
+      questions.push({
+        id:globalIdCounter++,qHtml,qText,
+        optsHtml:{a:getOptHtml('a'),b:getOptHtml('b'),c:getOptHtml('c'),d:getOptHtml('d')},
+        opts:{a:getOptTxt('a'),b:getOptTxt('b'),c:getOptTxt('c'),d:getOptTxt('d')},
+        correctKey:'a',explanationHtml:'',
+        sourceFile:fileName,
+        tag:''
+      });
+    });
+  }
+
+  allQ=questions;
+  filtered=[...allQ];
+  sel=new Set();
+  sourceFiles.push({name:fileName,pickedCount:0});
+
+  document.getElementById('upload-screen').style.display='none';
+  document.getElementById('picker-screen').style.display='block';
+  document.getElementById('title-bar').style.display='flex';
+  document.getElementById('reload-btn').style.display='';
+  document.getElementById('exam-title-input').value=docTitle;
+  document.getElementById('src-label').innerHTML=
+    `<span class="file-pill">📄 ${sourceFiles.length===1?'Current file':'File '+sourceFiles.length}</span>${fileName} — choose questions, then "Add Another File" to continue from a new source.`;
+
+  renderList();
+  updateCount();
+  updatePickedBadge();
+  updateReviewCount();
+  updateSelectAllLabel();
+  if(window.MathJax)MathJax.typesetPromise();
+}
+
+/* ═══════════════════════════════════════════════
+   MULTI-FILE FLOW
+═══════════════════════════════════════════════ */
+function commitCurrentSelectionToPool(){
+  // Remove any previously-committed ids from this file that are no longer selected
+  pickedPool=pickedPool.filter(q=>{
+    if(q.sourceFile!==allQ[0]?.sourceFile)return true; // not from current file, keep
+    const stillSelected=sel.has(q.id);
+    if(!stillSelected)pickedIds.delete(q.id);
+    return stillSelected;
+  });
+  // Add newly selected ones from current file that aren't pooled yet
+  const newOnes=allQ.filter(q=>sel.has(q.id)&&!pickedIds.has(q.id));
+  newOnes.forEach(q=>pickedIds.add(q.id));
+  pickedPool=pickedPool.concat(newOnes);
+  if(sourceFiles.length){
+    const chosenCount=allQ.filter(q=>sel.has(q.id)).length;
+    sourceFiles[sourceFiles.length-1].pickedCount=chosenCount;
+  }
+}
+
+function addAnotherFile(){
+  commitCurrentSelectionToPool();
+  allQ=[];sel=new Set();filtered=[];
+  document.getElementById('picker-screen').style.display='none';
+  document.getElementById('upload-screen').style.display='flex';
+  document.getElementById('upload-heading').textContent='Add another question bank';
+  document.getElementById('upload-sub').innerHTML=
+    `<strong>${pickedPool.length}</strong> question(s) picked so far from ${sourceFiles.length} file(s). Upload the next <strong>.docx</strong> to continue.`;
+  document.getElementById('exam-title-first-wrap').style.display='none'; // title already set
+  document.getElementById('browse-btn').style.display='';
+  document.getElementById('loader').style.display='none';
+  document.getElementById('status-msg').textContent='';
+  document.getElementById('active-category-select').value='';
+  document.getElementById('custom-category-input').style.display='none';
+  activeCategory='';
+  document.getElementById('file-input').value='';
+  updatePickedBadge();
+  updateReviewCount();
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER PICKER CARDS
+═══════════════════════════════════════════════ */
+function renderList(){
+  const list=document.getElementById('q-list');
+  if(!filtered.length){list.innerHTML='<div class="empty">No questions found.</div>';return;}
+  list.innerHTML=filtered.map(q=>{
+    const isSel=sel.has(q.id);
+    const labels=['a','b','c','d'];
+    const optsHtml=labels.map(k=>{
+      const html=q.optsHtml?.[k]||q.opts[k]||'';
+      if(!html)return'';
+      const isAns=k===q.correctKey;
+      const hasImg=/<img/i.test(html);
+      // Images get full-width display; text gets truncated preview
+      const content=hasImg
+        ? `<div class="opt-img-wrap">${html}</div>`
+        : (q.opts[k]||'').slice(0,90)+((q.opts[k]||'').length>90?'…':'');
+      return`<div class="q-opt${isAns?' ans':''}${hasImg?' has-img':''}">
+        <b>(${k.toUpperCase()})</b> ${content}${isAns?' ✓':''}
+      </div>`;
+    }).join('');
+    return`<div class="q-card${isSel?' selected':''}" data-id="${q.id}">
+      <div class="q-cb" onclick="toggleSel(${q.id})">${isSel?'✓':''}</div>
+      <div class="q-body" onclick="toggleSel(${q.id})">
+        <div class="q-card-top">
+          <div class="q-num">Q${filtered.indexOf(q)+1}</div>
+        </div>
+        <div class="q-text">${wrapTables(q.qHtml||q.qText)}</div>
+        <div class="q-opts">${optsHtml}</div>
+      </div>
+      <button class="q-del-btn" title="Remove this question" onclick="event.stopPropagation();deleteQuestion(${q.id})">🗑</button>
+    </div>`;
+  }).join('');
+  if(window.MathJax)MathJax.typesetPromise();
+}
+
+/* ═══════════════════════════════════════════════
+   REVIEW MODAL — view & delete across ALL picked
+   questions from every uploaded file so far
+═══════════════════════════════════════════════ */
+function getCombinedPicked(){
+  // pickedPool already-committed items + current file's in-progress selection (not yet committed)
+  const currentFileNew=allQ.filter(q=>sel.has(q.id)&&!pickedIds.has(q.id));
+  return pickedPool.concat(currentFileNew);
+}
+
+/* ═══════════════════════════════════════════════
+   DUPLICATE DETECTION
+   Normalized word-overlap (Jaccard) similarity on question
+   text. This is a heuristic, not a semantic check — short
+   technical MCQ stems can share a lot of vocabulary without
+   being true duplicates. We deliberately set the threshold
+   low enough to catch real near-duplicates, and present
+   matches as "possible duplicates for you to review" rather
+   than auto-removing anything. The user always has the final say.
+═══════════════════════════════════════════════ */
+function normalizeForCompare(text){
+  return (text||'')
+    .toLowerCase()
+    .replace(/[^\w\s]/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function wordSet(text){
+  return new Set(normalizeForCompare(text).split(' ').filter(w=>w.length>2));
+}
+function jaccardSimilarity(setA,setB){
+  if(!setA.size&&!setB.size)return 0;
+  let intersection=0;
+  setA.forEach(w=>{if(setB.has(w))intersection++;});
+  const union=setA.size+setB.size-intersection;
+  return union===0?0:intersection/union;
+}
+
+const DUP_THRESHOLD=0.45; // generous catch-all; flagged pairs are reviewed by the user, not auto-removed
+
+function computeDuplicates(questions){
+  const withSets=questions.map(q=>({id:q.id,qText:q.qText,set:wordSet(q.qText)}));
+  const pairs=[];
+  for(let i=0;i<withSets.length;i++){
+    for(let j=i+1;j<withSets.length;j++){
+      const a=withSets[i],b=withSets[j];
+      const key=a.id<b.id?`${a.id}|${b.id}`:`${b.id}|${a.id}`;
+      if(dismissedDupPairs.has(key))continue;
+      const sim=jaccardSimilarity(a.set,b.set);
+      if(sim>=DUP_THRESHOLD){
+        pairs.push({id1:a.id,id2:b.id,sim,text1:a.qText,text2:b.qText});
+      }
+    }
+  }
+  return pairs.sort((x,y)=>y.sim-x.sim);
+}
+
+function dismissDuplicatePair(id1,id2){
+  const key=id1<id2?`${id1}|${id2}`:`${id2}|${id1}`;
+  dismissedDupPairs.add(key);
+  renderDuplicatePanel();
+}
+
+/* ═══════════════════════════════════════════════
+   ARRANGE SCREEN — drag-reorder + section tagging
+   + duplicate review, sits between Picker and Formatter
+═══════════════════════════════════════════════ */
+const TAG_OPTIONS_BASE=['','General','Section A','Section B','Section C','Theory','Numerical','Conceptual'];
+function getTagOptions(){
+  // Collect any custom categories already in use by picked questions
+  const custom=new Set();
+  pickedPool.forEach(q=>{if(q.tag&&!TAG_OPTIONS_BASE.includes(q.tag))custom.add(q.tag);});
+  return[...TAG_OPTIONS_BASE,...custom];
+}
+
+function getOrderedPicked(){
+  const combined=getCombinedPicked();
+  if(!manualOrder){return combined;}
+  const byId=new Map(combined.map(q=>[q.id,q]));
+  const ordered=manualOrder.map(id=>byId.get(id)).filter(Boolean);
+  // Append any new questions not yet present in manualOrder (e.g. added after last arrange)
+  const orderedIds=new Set(ordered.map(q=>q.id));
+  combined.forEach(q=>{if(!orderedIds.has(q.id))ordered.push(q);});
+  return ordered;
+}
+
+/* ═══════════════════════════════════════════════
+   ACTIVE CATEGORY (picker-side auto-tagging)
+═══════════════════════════════════════════════ */
+function onActiveCategoryChange(){
+  const val=document.getElementById('active-category-select').value;
+  if(val==='__custom__'){
+    document.getElementById('custom-category-input').style.display='';
+    document.getElementById('custom-category-input').focus();
+    activeCategory='';
+  }else{
+    document.getElementById('custom-category-input').style.display='none';
+    activeCategory=val;
+    updateSelectAllLabel();
+    if(val) showToast(`🏷 New picks will be tagged "${val}"`);
+    else showToast('🏷 Category cleared — picks will be untagged');
+  }
+}
+function applyCustomCategory(){
+  const val=document.getElementById('custom-category-input').value.trim();
+  if(val){
+    activeCategory=val;
+    const dd=document.getElementById('active-category-select');
+    if(![...dd.options].some(o=>o.value===val)){
+      const opt=document.createElement('option');
+      opt.value=val;opt.text=val;
+      dd.insertBefore(opt,dd.querySelector('[value="__custom__"]'));
+    }
+    dd.value=val;
+    document.getElementById('custom-category-input').style.display='none';
+    updateSelectAllLabel();
+    showToast(`🏷 New picks will be tagged "${val}"`);
+  }
+}
+
+function updateSelectAllLabel(){
+  const btn=document.querySelector('[onclick="selectAll()"]');
+  if(!btn)return;
+  btn.textContent=activeCategory?`✅ All → "${activeCategory}"`: '✅ All in file';
+}
+
+/* ═══════════════════════════════════════════════
+   SHUFFLE TOGGLE
+═══════════════════════════════════════════════ */
+function onShuffleToggle(){
+  shuffleEnabled=document.getElementById('shuffle-chk').checked;
+  const hint=document.getElementById('arrange-hint');
+  if(shuffleEnabled){
+    hint.innerHTML='📐 <strong>Auto-arrange is ON</strong> — when you click "Format &amp; Print", questions within each category will be automatically sorted by size (large questions first, compact ones last) to fill pages as efficiently as possible. Your drag order is overridden. Uncheck to restore manual order.';
+    hint.style.color='#92400e';
+    hint.style.background='#fef3c7';
+    hint.style.border='1px solid #fcd34d';
+    // Visually dim drag handles to signal drag is overridden
+    document.querySelectorAll('#arrange-list .drag-handle').forEach(h=>{
+      h.style.opacity='.25';h.style.pointerEvents='none';h.title='Disabled while auto-arrange is ON';
+    });
+  }else{
+    hint.textContent='Drag the ⠿ handle to reorder questions. Use the category dropdown on each card to group questions by section — sections appear as headers in the printed paper.';
+    hint.style.color='';
+    hint.style.background='';
+    hint.style.border='';
+    document.querySelectorAll('#arrange-list .drag-handle').forEach(h=>{
+      h.style.opacity='';h.style.pointerEvents='';h.title='Drag to reorder';
+    });
+  }
+}
+
+function openArrange(){
+  commitCurrentSelectionToPool();
+  if(!pickedPool.length){showToast('⚠️ Select questions first');return;}
+  if(!manualOrder){manualOrder=pickedPool.map(q=>q.id);}
+
+  document.getElementById('picker-screen').style.display='none';
+  document.getElementById('picker-topbar').style.display='none';
+  document.getElementById('title-bar').style.display='none';
+  document.getElementById('arrange-screen').style.display='block';
+
+  // Sync shuffle checkbox to current state
+  document.getElementById('shuffle-chk').checked=shuffleEnabled;
+
+  renderArrangeList();
+  renderDuplicatePanel();
+}
+
+function backToPickerFromArrange(){
+  document.getElementById('arrange-screen').style.display='none';
+  document.getElementById('picker-topbar').style.display='flex';
+  document.getElementById('title-bar').style.display='flex';
+  document.getElementById('picker-screen').style.display='block';
+  renderList();
+  updateCount();
+  updatePickedBadge();
+  updateReviewCount();
+}
+
+function resetManualOrder(){
+  manualOrder=pickedPool.map(q=>q.id);
+  renderArrangeList();
+  showToast('↺ Order reset to smart-sort sequence');
+}
+
+function groupByTag(questions){
+  const groups=new Map();
+  questions.forEach(q=>{
+    const tag=q.tag||'General';
+    if(!groups.has(tag))groups.set(tag,[]);
+    groups.get(tag).push(q);
+  });
+  return groups;
+}
+
+function renderArrangeList(){
+  const ordered=getOrderedPicked();
+  const list=document.getElementById('arrange-list');
+  if(!ordered.length){list.innerHTML='<div class="empty">No questions picked yet.</div>';return;}
+
+  // Render as ONE continuous drag-sortable list (drag works across the whole pool,
+  // regardless of tag) but visually annotate each card with its tag selector.
+  // Grouping into separate <section> blocks would break native drag-and-drop across
+  // groups, so instead we show a section header inline whenever the tag changes
+  // AFTER the user's chosen order — but since order is what the user controls,
+  // we keep it as one flat reorderable list and let tags be independent metadata.
+  list.innerHTML=ordered.map((q,i)=>{
+    const optsPreview=Object.entries(q.opts).filter(([,v])=>v).map(([k,v])=>`(${k.toUpperCase()}) ${v.slice(0,40)}${v.length>40?'…':''}`).join(' &nbsp; ');
+    const tagOptsHtml=getTagOptions().map(t=>`<option value="${t}" ${q.tag===t?'selected':''}>${t||'— No tag —'}</option>`).join('');
+    return`<div class="arrange-card" data-id="${q.id}"
+        ondragover="onDragOver(event)"
+        ondragleave="onDragLeave(event)"
+        ondrop="onDrop(event,${q.id})">
+      <span class="drag-handle" title="Drag to reorder"
+        draggable="true"
+        ondragstart="onDragStart(event,${q.id})"
+        ondragend="onDragEnd(event)">⠿</span>
+      <div class="arrange-body">
+        <div class="arrange-top-row">
+          <span class="arrange-num">Q${i+1} · ${q.sourceFile||''}</span>
+          <div class="arrange-controls">
+            <select class="tag-select" onchange="setQuestionTag(${q.id},this.value)">${tagOptsHtml}</select>
+          </div>
+        </div>
+        <div class="arrange-text">${wrapTables(q.qHtml||q.qText)}</div>
+        <div style="font-size:.78rem;color:var(--text2)">${optsPreview}</div>
+      </div>
+    </div>`;
+  }).join('');
+  if(window.MathJax)MathJax.typesetPromise();
+}
+
+function setQuestionTag(id,tag){
+  const applyTag=arr=>{const q=arr.find(x=>x.id===id);if(q)q.tag=tag;};
+  applyTag(pickedPool);
+  applyTag(allQ);
+  showToast(tag?`🏷 Tagged "${tag}"`:'🏷 Tag cleared');
+}
+
+/* Drag & drop reordering (native HTML5 DnD)
+   The drag is initiated from the small ⠿ handle only (so clicking/selecting
+   question text or using the tag dropdown never accidentally starts a drag),
+   but the visual "lifted" / "drop target" styling is applied to the whole
+   parent .arrange-card so the feedback is clearly visible.
+   IMPORTANT: the picker screen's .q-card elements use the same data-id
+   attribute as .arrange-card (both keyed by question id), and both DOM
+   trees stay mounted simultaneously (the inactive one is just display:none).
+   Any unscoped document.querySelector('[data-id="X"]') can therefore grab
+   the wrong screen's element. All lookups below use closest()/native event
+   targets instead of re-querying by data-id from the document root. */
+let dragSrcId=null;
+function onDragStart(e,id){
+  dragSrcId=id;
+  const card=e.currentTarget.closest('.arrange-card');
+  if(card)card.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',String(id));
+}
+function onDragOver(e){
+  e.preventDefault();
+  const card=e.currentTarget;
+  card.classList.add('drag-over');
+  // Remember whether the pointer is in the top or bottom half of this card,
+  // so the drop lands above or below it accordingly — without this, dropping
+  // always inserts relative to array position regardless of drag direction,
+  // which feels wrong when dragging an item downward past its target.
+  const rect=card.getBoundingClientRect();
+  const isAfter=(e.clientY-rect.top)>rect.height/2;
+  card.dataset.dropAfter=isAfter?'1':'0';
+  card.classList.toggle('drop-before',!isAfter);
+  card.classList.toggle('drop-after',isAfter);
+}
+function onDragLeave(e){
+  e.currentTarget.classList.remove('drag-over','drop-before','drop-after');
+}
+function onDragEnd(e){
+  const card=e.currentTarget.closest('.arrange-card');
+  if(card)card.classList.remove('dragging');
+  document.querySelectorAll('#arrange-list .arrange-card.drag-over').forEach(el=>el.classList.remove('drag-over','drop-before','drop-after'));
+}
+function onDrop(e,targetId){
+  e.preventDefault();
+  const card=e.currentTarget;
+  const dropAfter=card.dataset.dropAfter==='1';
+  card.classList.remove('drag-over','drop-before','drop-after');
+  if(dragSrcId===null||dragSrcId===targetId)return;
+
+  const ordered=getOrderedPicked();
+  const ids=ordered.map(q=>q.id);
+  const fromIdx=ids.indexOf(dragSrcId);
+  if(fromIdx===-1)return;
+
+  ids.splice(fromIdx,1);
+  let targetIdx=ids.indexOf(targetId);
+  if(targetIdx===-1)return;
+  const insertAt=dropAfter?targetIdx+1:targetIdx;
+  ids.splice(insertAt,0,dragSrcId);
+
+  manualOrder=ids;
+  dragSrcId=null;
+  renderArrangeList();
+}
+
+/* Duplicate panel */
+function buildDupCard(q, qNum){
+  const labels=['a','b','c','d'];
+  const optsHtml=labels.map(k=>{
+    const html=q.optsHtml?.[k]||q.opts[k]||'';
+    if(!html)return'';
+    const isAns=k===q.correctKey;
+    const hasImg=/<img/i.test(html);
+    const content=hasImg
+      ?`<div class="opt-img-wrap">${html}</div>`
+      :(q.opts[k]||'');
+    return`<div class="dup-q-opt${isAns?' is-ans':''}${hasImg?' has-img':''}">
+      <b>(${k.toUpperCase()})</b> ${content}${isAns?' ✓':''}
+    </div>`;
+  }).join('');
+  const ansHtml=q.optsHtml?.[q.correctKey]||q.opts[q.correctKey]||'';
+  const hasAnsImg=/<img/i.test(ansHtml);
+  const ansDisplay=hasAnsImg?`<div class="opt-img-wrap">${ansHtml}</div>`:stripHtml(ansHtml);
+  const srcBadge=q.sourceFile?`<span class="review-src-tag">${q.sourceFile}</span>`:'';
+  const tagBadge=q.tag?`<span class="review-topic-tag">🏷 ${q.tag}</span>`:'';
+  return`<div class="dup-q">
+    <div class="dup-q-num">Q${qNum}${srcBadge}${tagBadge}</div>
+    <div class="dup-q-text">${wrapTables(q.qHtml||q.qText||'')}</div>
+    <div class="dup-q-opts">${optsHtml}</div>
+    ${ansHtml?`<div class="dup-q-ans">✅ Ans: (${(q.correctKey||'').toUpperCase()}) ${ansDisplay}</div>`:''}
+  </div>`;
+}
+
+function renderDuplicatePanel(){
+  const ordered=getOrderedPicked();
+  const pairs=computeDuplicates(ordered);
+  document.getElementById('dup-count').textContent=pairs.length;
+  const panel=document.getElementById('dup-panel');
+  if(!pairs.length){
+    panel.style.display='none';
+    panel.innerHTML='';
+    return;
+  }
+  panel.style.display='block';
+
+  // Build a map of id → question object and position number
+  const byId=new Map(ordered.map((q,i)=>[q.id,{q,num:i+1}]));
+
+  panel.innerHTML=pairs.map(p=>{
+    const e1=byId.get(p.id1)||{q:{opts:{},qText:p.text1},num:'?'};
+    const e2=byId.get(p.id2)||{q:{opts:{},qText:p.text2},num:'?'};
+    return`<div class="dup-pair">
+      <div class="dup-pair-head">
+        <span>⚠️ ${Math.round(p.sim*100)}% text similarity — Q${e1.num} and Q${e2.num} may be duplicates</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="dup-dismiss-btn" style="background:#6b7280" onclick="dismissDuplicatePair(${p.id1},${p.id2})">Ignore — keep both</button>
+          <button class="dup-dismiss-btn" onclick="removeDuplicate(${p.id1},${p.id2})">🗑 Remove Q${e1.num}</button>
+          <button class="dup-dismiss-btn" onclick="removeDuplicate(${p.id2},${p.id1})">🗑 Remove Q${e2.num}</button>
+        </div>
+      </div>
+      <div class="dup-pair-body">
+        ${buildDupCard(e1.q, e1.num)}
+        ${buildDupCard(e2.q, e2.num)}
+      </div>
+    </div>`;
+  }).join('');
+
+  if(window.MathJax)MathJax.typesetPromise();
+}
+
+function removeDuplicate(removeId, keepId){
+  // Delete the chosen question entirely from pool and manualOrder
+  dismissedDupPairs.delete([removeId,keepId].sort((a,b)=>a-b).join('|'));
+  deleteQuestion(removeId);
+  // deleteQuestion already re-renders arrange list; refresh dup panel too
+  renderDuplicatePanel();
+  showToast('🗑 Duplicate removed');
+}
+function toggleDupPanel(){
+  const panel=document.getElementById('dup-panel');
+  if(panel.style.display==='none'||!panel.innerHTML){
+    renderDuplicatePanel();
+    panel.style.display=panel.innerHTML?'block':'none';
+    if(!panel.innerHTML)showToast('✅ No likely duplicates found');
+  }else{
+    panel.style.display='none';
+  }
+}
+
+function proceedToFormatter(){
+  // When auto-arrange is ON: sort by layout size (large 4x1 first → hybrids → 2x2 → 1x4)
+  // within each section/category independently so category grouping is preserved.
+  // When OFF: use the exact order the user dragged into (manualOrder) — no changes at all.
+  if(shuffleEnabled){
+    const sizeOf=q=>{
+      const optsLen=Object.values(q.opts).reduce((s,o)=>s+(o?o.length:0),0);
+      return(q.qText||'').length+optsLen+(/<table/i.test(q.qHtml||'')?200:0);
+    };
+    const bySize=(a,b)=>sizeOf(b)-sizeOf(a);
+
+    const ordered=getOrderedPicked();
+    // Group by tag preserving section order, sort within each section by size
+    const sectionOrder=[];
+    const sectionMap=new Map();
+    ordered.forEach(q=>{
+      const t=q.tag||'General';
+      if(!sectionMap.has(t)){sectionMap.set(t,[]);sectionOrder.push(t);}
+      sectionMap.get(t).push(q);
+    });
+    const resorted=[];
+    sectionOrder.forEach(t=>{
+      const qs=sectionMap.get(t);
+      const withLayout=qs.map(q=>({...q,layout:computeLayout(q.opts,q.optsHtml)}));
+      resorted.push(
+        ...withLayout.filter(q=>q.layout==='layout-4x1').sort(bySize),
+        ...withLayout.filter(q=>q.layout.startsWith('layout-hybrid')).sort(bySize),
+        ...withLayout.filter(q=>q.layout==='layout-2x2').sort(bySize),
+        ...withLayout.filter(q=>q.layout==='layout-1x4').sort(bySize)
+      );
+    });
+    manualOrder=resorted.map(q=>q.id);
+  }
+  document.getElementById('arrange-screen').style.display='none';
+  openFormatter();
+}
+
+function backToArrange(){
+  document.getElementById('formatter-screen').style.display='none';
+  document.getElementById('arrange-screen').style.display='block';
+  renderArrangeList();
+  renderDuplicatePanel();
+}
+
+function updateReviewCount(){
+  const n=getCombinedPicked().length;
+  const rc=document.getElementById('review-count');
+  const rmc=document.getElementById('review-modal-count');
+  if(rc)rc.textContent=n;
+  if(rmc)rmc.textContent=n;
+}
+
+let reviewActiveTopic='__all__'; // current tab filter in review modal
+
+function openReview(){
+  commitCurrentSelectionToPool();
+  reviewActiveTopic='__all__';
+  renderReviewTabs();
+  renderReviewList();
+  document.getElementById('review-overlay').classList.add('show');
+}
+
+function closeReview(){
+  document.getElementById('review-overlay').classList.remove('show');
+  renderList();
+  updateCount();
+  updatePickedBadge();
+}
+
+function renderReviewTabs(){
+  const combined=getCombinedPicked();
+  // Build topic counts
+  const topicCounts=new Map();
+  combined.forEach(q=>{
+    const t=q.tag||'Untagged';
+    topicCounts.set(t,(topicCounts.get(t)||0)+1);
+  });
+
+  const tabsEl=document.getElementById('review-topic-tabs');
+  if(topicCounts.size<=1&&topicCounts.has('Untagged')){
+    // No categories set — hide the tab bar entirely
+    tabsEl.style.display='none';
+    return;
+  }
+  tabsEl.style.display='flex';
+
+  const tabs=[['__all__','All',combined.length],...[...topicCounts.entries()].map(([t,n])=>[t,t,n])];
+  tabsEl.innerHTML=tabs.map(([val,label,count])=>`
+    <button class="review-tab${reviewActiveTopic===val?' active':''}" onclick="setReviewTopic('${val.replace(/'/g,"\\'")}')">
+      ${label}<span class="tab-count">${count}</span>
+    </button>`).join('');
+}
+
+function setReviewTopic(topic){
+  reviewActiveTopic=topic;
+  renderReviewTabs();
+  renderReviewList();
+}
+
+function renderReviewList(){
+  const list=document.getElementById('review-list');
+  const combined=getCombinedPicked();
+  updateReviewCount();
+
+  // Filter by active topic tab
+  const filtered=reviewActiveTopic==='__all__'
+    ?combined
+    :combined.filter(q=>(q.tag||'Untagged')===reviewActiveTopic);
+
+  if(!filtered.length){
+    list.innerHTML='<div class="empty">No questions in this category.</div>';
+    return;
+  }
+
+  // Show continuous Q number from the full combined list (not filtered index)
+  const globalIdx=new Map(combined.map((q,i)=>[q.id,i+1]));
+
+  list.innerHTML=filtered.map(q=>{
+    const labels=['a','b','c','d'];
+    const optsHtml=labels.map(k=>{
+      const html=q.optsHtml?.[k]||q.opts[k]||'';
+      if(!html)return'';
+      const isAns=k===q.correctKey;
+      const hasImg=/<img/i.test(html);
+      const content=hasImg
+        ?`<div class="opt-img-wrap">${html}</div>`
+        :(q.opts[k]||'').slice(0,90)+((q.opts[k]||'').length>90?'…':'');
+      return`<div class="q-opt${isAns?' ans':''}${hasImg?' has-img':''}">
+        <b>(${k.toUpperCase()})</b> ${content}${isAns?' ✓':''}
+      </div>`;
+    }).join('');
+    const topicBadge=q.tag?`<span class="review-topic-tag">🏷 ${q.tag}</span>`:'';
+    return`<div class="q-card" data-review-id="${q.id}">
+      <div class="q-body">
+        <div class="q-card-top">
+          <div class="q-num">Q${globalIdx.get(q.id)}${topicBadge}<span class="review-src-tag">${q.sourceFile||''}</span></div>
+        </div>
+        <div class="q-text">${wrapTables(q.qHtml||q.qText)}</div>
+        <div class="q-opts">${optsHtml}</div>
+      </div>
+      <button class="q-del-btn" title="Remove this question" onclick="deleteFromReview(${q.id})">🗑</button>
+    </div>`;
+  }).join('');
+  if(window.MathJax)MathJax.typesetPromise();
+}
+
+function deleteFromReview(id){
+  sel.delete(id);
+  pickedIds.delete(id);
+  pickedPool=pickedPool.filter(q=>q.id!==id);
+  allQ=allQ.filter(q=>q.id!==id);
+  filtered=filtered.filter(q=>q.id!==id);
+  if(manualOrder)manualOrder=manualOrder.filter(x=>x!==id);
+  // If the active topic tab becomes empty after deletion, switch to All
+  const remaining=getCombinedPicked().filter(q=>(q.tag||'Untagged')===reviewActiveTopic);
+  if(!remaining.length)reviewActiveTopic='__all__';
+  renderReviewTabs();
+  renderReviewList();
+  updatePickedBadge();
+  updateReviewCount();
+  showToast('🗑 Question removed');
+}
+
+/* Permanently remove a question — from current file's list AND from the
+   picked pool if it had already been committed there. */
+function deleteQuestion(id){
+  sel.delete(id);
+  pickedIds.delete(id);
+  pickedPool=pickedPool.filter(q=>q.id!==id);
+  allQ=allQ.filter(q=>q.id!==id);
+  filtered=filtered.filter(q=>q.id!==id);
+  if(manualOrder)manualOrder=manualOrder.filter(x=>x!==id);
+  renderList();
+  updateCount();
+  updatePickedBadge();
+  updateReviewCount();
+  showToast('🗑 Question removed');
+}
+
+function toggleSel(id){
+  const wasSelected=sel.has(id);
+  wasSelected?sel.delete(id):sel.add(id);
+  // Auto-apply active category when picking; tag stays even if later deselected
+  if(!wasSelected&&activeCategory){
+    const q=allQ.find(x=>x.id===id);
+    if(q)q.tag=activeCategory;
+  }
+  // Scope selector to q-list to avoid matching arrange-card with same data-id
+  const card=document.querySelector(`#q-list [data-id="${id}"]`);
+  if(card){card.classList.toggle('selected',sel.has(id));card.querySelector('.q-cb').textContent=sel.has(id)?'✓':'';}
+  updateCount();
+  updatePickedBadge();
+  updateReviewCount();
+}
+function updateCount(){
+  const n=sel.size;
+  document.getElementById('sel-count').innerHTML=`<strong>${n}</strong> selected here`;
+  const currentFileNew=allQ.filter(q=>sel.has(q.id)&&!pickedIds.has(q.id)).length;
+  const totalPicked=pickedPool.length+currentFileNew;
+  ['format-btn','dl-ans-btn'].forEach(id=>document.getElementById(id).disabled=totalPicked===0);
+}
+function selectAll(){
+  // Select all currently visible (search-filtered) questions
+  // and auto-tag them with the active category if one is set
+  filtered.forEach(q=>{
+    sel.add(q.id);
+    if(activeCategory && !q.tag) q.tag=activeCategory;
+  });
+  renderList();
+  updateCount();
+  updatePickedBadge();
+  updateReviewCount();
+}
+function deselectAll(){
+  filtered.forEach(q=>sel.delete(q.id));
+  renderList();
+  updateCount();
+  updatePickedBadge();
+  updateReviewCount();
+}
+function filterQuestions(){
+  // Only the search box narrows the visible list.
+  // The active category NEVER hides questions — it only auto-tags new picks.
+  const q=document.getElementById('search-box').value.toLowerCase().trim();
+  filtered=q
+    ?allQ.filter(x=>(x.qText||'').toLowerCase().includes(q)||Object.values(x.opts).some(o=>o.toLowerCase().includes(q)))
+    :[...allQ];
+  renderList();
+}
+
+/* ═══════════════════════════════════════════════
+   SMART-SORT FORMATTER ENGINE
+   Decides 1x4 / 2x2 / hybrid / 4x1 per question based on the ACTUAL
+   rendered pixel width of each option's text at the currently selected
+   font family + size — not character counts. Character counts are a poor
+   proxy: the same 30 characters take very different horizontal space at
+   8pt Courier vs 16pt Georgia, so a purely character-based threshold
+   silently misjudges layouts the moment font/size changes. Here we
+   measure real text width with a canvas (fast, no DOM reflow) and compare
+   it against the real available width of an option box in each layout,
+   derived from the actual page/column CSS geometry below.
+═══════════════════════════════════════════════ */
+
+// Single offscreen canvas reused for all measurements (cheap to keep around)
+const __measureCanvas=document.createElement('canvas');
+const __measureCtx=__measureCanvas.getContext('2d');
+
+function measureTextWidthPx(text,fontSizePt,fontFamily){
+  // Canvas font sizing is in CSS px; convert pt -> px (1pt = 4/3 px) to match
+  // how the same font-size value actually renders in the printed/screen output.
+  const px=fontSizePt*(4/3);
+
+  // IMPORTANT: ctx.font must be a valid CSS `font` SHORTHAND value, which is
+  // stricter than `font-family`. Our font dropdown stores values like
+  // '"Times New Roman",Times,serif' (a full font-family fallback list) — handing
+  // that whole string to ctx.font is not reliably parsed the same way across
+  // browsers, and can silently fall back to the canvas default font (often a
+  // generic serif with different glyph widths than true Times New Roman),
+  // which throws off every width comparison against the real printed output.
+  // Fix: take only the FIRST font name in the list, strip its quotes, and
+  // re-quote it ourselves so multi-word names (e.g. Times New Roman, Book
+  // Antiqua, Courier New) are always passed correctly.
+  const primaryFont=(fontFamily||'Times New Roman').split(',')[0].trim().replace(/^["']|["']$/g,'');
+  __measureCtx.font=`${px}px "${primaryFont}"`;
+  return __measureCtx.measureText(text).width;
+}
+
+// Real page/column geometry, matching the CSS in #formatter-screen exactly:
+//   .output-container: max-width 900px, 30px padding each side -> content 840px
+//   .question-bank: column-count 2, column-gap 30px -> each column ≈ (840-30)/2 = 405px
+//   .print-opt-box padding-right: 10px (0 for the last column in a row)
+//   .opt-lbl (the "(a)" prefix) is calc(2em + 4px) wide, so it scales with
+//   font size — at 11pt that's roughly 2*14.67px + 4px ≈ 33.3px. We mirror
+//   that exact formula here so the layout decision always matches what the
+//   CSS actually renders, at any font size the user picks.
+// Real PRINT page/column geometry — matches @page and CSS exactly:
+//   @page: A4 (210mm ≈ 794px @96dpi), margin 8mm each side → usable ≈ 733px
+//   .output-container: padding 8px each side → content ≈ 717px
+//   .question-bank: column-count 2, column-gap 14px → each column ≈ (717-14)/2 ≈ 351px
+//   .print-opt-box: padding-right 6px
+//   .opt-lbl: calc(2em + 4px) wide (scales with font size)
+const COLUMN_CONTENT_WIDTH_PX=351;
+const OPT_BOX_PADDING_PX=6;
+const SAFETY_MARGIN_PX=4; // small buffer so text isn't measured flush against the wrap edge
+
+function optLabelWidthPx(fontSizePt){
+  const emPx=fontSizePt*(4/3); // 1em == the font-size in px, same pt->px conversion used elsewhere
+  return emPx*2+4;
+}
+
+function availableTextWidthPx(layoutFraction,fontSizePt){
+  // layoutFraction: 1 = full column width (4x1/hybrid full-width rows),
+  // 0.5 = half column width (2x2 / hybrid paired rows), 0.25 = quarter (1x4)
+  const boxWidth=COLUMN_CONTENT_WIDTH_PX*layoutFraction;
+  return boxWidth-optLabelWidthPx(fontSizePt)-OPT_BOX_PADDING_PX-SAFETY_MARGIN_PX;
+}
+
+function computeLayout(opts, optsHtml){
+  // If any option contains an image, always use 4x1 (one per line) so
+  // the image is fully visible and not crammed into a half-column box
+  if(optsHtml){
+    const hasImg=Object.values(optsHtml).some(v=>/<img/i.test(v||''));
+    if(hasImg) return 'layout-4x1';
+  }
+
+  const hasLatex=Object.values(opts).some(v=>(v||'').includes('$'));
+  if(hasLatex) return 'layout-4x1';
+
+  const family=fmtFontFamily||'"Times New Roman",Times,serif';
+  const size=fmtFontSize||11;
+
+  const widths={};
+  ['a','b','c','d'].forEach(k=>{
+    widths[k]=measureTextWidthPx(stripHtml(opts[k]||''),size,family);
+  });
+
+  const maxW=Math.max(widths.a,widths.b,widths.c,widths.d);
+  const w1x4=availableTextWidthPx(0.25,size);
+  const w2x2=availableTextWidthPx(0.5,size);
+  const w4x1=availableTextWidthPx(1,size);
+
+  // 1x4: every option must fit comfortably in a quarter-column box
+  if(maxW<=w1x4) return 'layout-1x4';
+  // 2x2: every option must fit in a half-column box
+  if(maxW<=w2x2) return 'layout-2x2';
+
+  // Hybrid: check whether any adjacent PAIR both fit side-by-side at half width,
+  // while the option(s) outside that pair would need full width on their own.
+  const pairAB=widths.a<=w2x2&&widths.b<=w2x2;
+  const pairBC=widths.b<=w2x2&&widths.c<=w2x2;
+  const pairCD=widths.c<=w2x2&&widths.d<=w2x2;
+
+  if(pairAB&&!pairBC&&!pairCD) return 'layout-hybrid-ab';
+  if(pairBC&&!pairAB&&!pairCD) return 'layout-hybrid-bc';
+  if(pairCD&&!pairAB&&!pairBC) return 'layout-hybrid-cd';
+
+  // Nothing fits side-by-side without wrapping awkwardly — give every option
+  // the full column width.
+  return 'layout-4x1';
+}
+
+/* ═══════════════════════════════════════════════
+   FONT CONTROLS (font family + size for formatted output)
+═══════════════════════════════════════════════ */
+/* ─── Watermark ─── */
+function setWatermark(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const overlay=document.getElementById('watermark-overlay');
+    const img=document.getElementById('watermark-img');
+    img.src=e.target.result;
+    overlay.style.display='block';
+    // Enable controls
+    const opSlider=document.getElementById('wm-opacity');
+    const rotSlider=document.getElementById('wm-rotation');
+    opSlider.disabled=false;
+    rotSlider.disabled=false;
+    setWatermarkOpacity(opSlider.value);
+    setWatermarkRotation(rotSlider.value);
+    document.getElementById('wm-clear-btn').style.display='flex';
+    showToast('💧 Watermark set');
+  };
+  reader.readAsDataURL(file);
+  input.value='';
+}
+function clearWatermark(){
+  document.getElementById('watermark-overlay').style.display='none';
+  document.getElementById('watermark-img').src='';
+  const op=document.getElementById('wm-opacity');
+  const rot=document.getElementById('wm-rotation');
+  op.disabled=true; op.value=12;
+  rot.disabled=true; rot.value=0;
+  document.getElementById('wm-opacity-val').textContent='12%';
+  document.getElementById('wm-rotation-val').textContent='0°';
+  document.getElementById('wm-clear-btn').style.display='none';
+  showToast('💧 Watermark removed');
+}
+function setWatermarkOpacity(val){
+  const pct=parseInt(val);
+  const img=document.getElementById('watermark-img');
+  if(img)img.style.opacity=(pct/100).toFixed(2);
+  document.getElementById('wm-opacity-val').textContent=pct+'%';
+}
+function setWatermarkRotation(val){
+  const deg=parseInt(val);
+  const overlay=document.getElementById('watermark-overlay');
+  // Set CSS variable so the transform in CSS picks it up cleanly
+  overlay.style.setProperty('--wm-rotation', deg+'deg');
+  document.getElementById('wm-rotation-val').textContent=deg+'°';
+}
+
+/* ─── Logo ─── */
+function changeLogo(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=document.getElementById('logoImg');
+    if(img){img.src=e.target.result;}
+    const header=document.getElementById('logoHeader');
+    if(header)header.style.display='block';
+    document.getElementById('logo-toggle-btn').textContent='👁 Hide Logo';
+    showToast('🖼 Logo updated');
+  };
+  reader.readAsDataURL(file);
+  input.value=''; // reset so same file can be re-selected
+}
+
+let logoVisible=true;
+function toggleLogo(){
+  logoVisible=!logoVisible;
+  const header=document.getElementById('logoHeader');
+  if(header)header.style.display=logoVisible?'block':'none';
+  document.getElementById('logo-toggle-btn').textContent=logoVisible?'👁 Hide Logo':'👁 Show Logo';
+}
+
+function applyFontFamily(){
+  fmtFontFamily=document.getElementById('font-family-select').value;
+  document.getElementById('formatter-screen').style.setProperty('--fmt-font-family',fmtFontFamily);
+}
+function adjustFontSize(delta){
+  fmtFontSize=Math.min(18,Math.max(8,fmtFontSize+delta));
+  document.getElementById('font-size-val').textContent=fmtFontSize+'pt';
+  document.getElementById('formatter-screen').style.setProperty('--fmt-font-size',fmtFontSize+'pt');
+}
+function syncFontControlsUI(){
+  document.getElementById('font-family-select').value=fmtFontFamily;
+  document.getElementById('font-size-val').textContent=fmtFontSize+'pt';
+  document.getElementById('formatter-screen').style.setProperty('--fmt-font-family',fmtFontFamily);
+  document.getElementById('formatter-screen').style.setProperty('--fmt-font-size',fmtFontSize+'pt');
+}
+
+function openFormatter(){
+  commitCurrentSelectionToPool();
+  const basePicked=pickedPool;
+  if(!basePicked.length)return;
+
+  const titleVal=(document.getElementById('exam-title-input')?.value||'').trim();
+  if(titleVal)docTitle=titleVal;
+
+  // If the user has been through the Arrange screen, manualOrder reflects their
+  // explicit drag-reorder choice — respect it exactly, don't re-sort by size.
+  // Otherwise (Arrange was skipped entirely) fall back to the original smart-sort
+  // by content size, so the tool still works well with zero extra steps.
+  let sorted;
+  if(manualOrder){
+    sorted=getOrderedPicked().map(q=>({...q,layout:computeLayout(q.opts,q.optsHtml)}));
+  }else{
+    const sizeOf=q=>{
+      const optsLen=Object.values(q.opts).reduce((s,o)=>s+(o?o.length:0),0);
+      const qLen=(q.qText||'').length;
+      const hasTable=/<table/i.test(q.qHtml||'');
+      return qLen+optsLen+(hasTable?200:0);
+    };
+    const byLargestFirst=(a,b)=>sizeOf(b)-sizeOf(a);
+    const withLayout=basePicked.map(q=>({...q,layout:computeLayout(q.opts,q.optsHtml)}));
+    sorted=[
+      ...withLayout.filter(q=>q.layout==='layout-4x1').sort(byLargestFirst),
+      ...withLayout.filter(q=>q.layout.startsWith('layout-hybrid')).sort(byLargestFirst),
+      ...withLayout.filter(q=>q.layout==='layout-2x2').sort(byLargestFirst),
+      ...withLayout.filter(q=>q.layout==='layout-1x4').sort(byLargestFirst),
+    ];
+  }
+
+  formattedCache=sorted;
+  runtimeAnswerKeyData=[];
+  renderTopicWordBtns(); // Build per-topic Word download buttons
+
+  const qBank=document.getElementById('questionBankContainer');
+  const akGrid=document.getElementById('answerKeyGridContainer');
+  const expBank=document.getElementById('explanationBankContainer');
+  qBank.innerHTML=''; akGrid.innerHTML=''; expBank.innerHTML='';
+
+  document.getElementById('outputTitle').textContent=docTitle.toUpperCase();
+
+  // Group into sections by tag, preserving the relative order questions
+  // already have within `sorted`. Untagged questions go in "General".
+  // If NOBODY tagged anything, sectionOrder will just be ['General'] and
+  // no section header is printed at all (avoids visual clutter by default).
+  const sectionMap=new Map();
+  sorted.forEach(q=>{
+    const tag=q.tag||'General';
+    if(!sectionMap.has(tag))sectionMap.set(tag,[]);
+    sectionMap.get(tag).push(q);
+  });
+  const onlyGeneral=sectionMap.size===1&&sectionMap.has('General');
+
+  let displayNum=0;
+  sectionMap.forEach((qs,sectionName)=>{
+    if(!onlyGeneral){
+      const secHead=document.createElement('div');
+      secHead.className='question-item section-header-item';
+      secHead.innerHTML=`<div class="section-header">${sectionName.toUpperCase()}</div>`;
+      qBank.appendChild(secHead);
+      const secHeadExp=document.createElement('div');
+      secHeadExp.className='explanation-item section-header-item';
+      secHeadExp.innerHTML=`<div class="section-header">${sectionName.toUpperCase()}</div>`;
+      expBank.appendChild(secHeadExp);
+    }
+
+    qs.forEach(q=>{
+      displayNum++;
+
+      /* — Question item — */
+      const qItem=document.createElement('div');
+      qItem.className='question-item';
+
+      const qTextDiv=document.createElement('div');
+      qTextDiv.className='question-text';
+      const qSpan=document.createElement('span');
+      qSpan.className='question-content';
+      qSpan.innerHTML=q.qHtml||q.qText;
+      qTextDiv.appendChild(qSpan);
+      qItem.appendChild(qTextDiv);
+
+      const optBlock=document.createElement('div');
+      optBlock.className=`options-block ${q.layout}`;
+      ['a','b','c','d'].forEach(k=>{
+        const optHtml=q.optsHtml[k]||'';
+        const hasImg=/<img/i.test(optHtml);
+        const box=document.createElement('div');
+        box.className='print-opt-box';
+        box.innerHTML=`<div class="opt-flex-container"><div class="opt-lbl">(${k})</div><div class="opt-val${hasImg?' has-img':''}">${optHtml}</div></div>`;
+        optBlock.appendChild(box);
+      });
+      qItem.appendChild(optBlock);
+      qBank.appendChild(qItem);
+
+      /* — Answer key cell — */
+      const akCell=document.createElement('div');
+      akCell.className='ak-cell';
+      akCell.innerHTML=`<div class="ak-num">${displayNum}</div><div>${q.correctKey.toUpperCase()}</div>`;
+      akGrid.appendChild(akCell);
+
+      /* — Explanation item — */
+      const expItem=document.createElement('div');
+      expItem.className='explanation-item';
+      const metaBox=document.createElement('div');
+      metaBox.className='solution-meta-box';
+      metaBox.innerHTML=`<span class="meta-prefix-inline">Q.${displayNum} (${q.correctKey.toUpperCase()})</span>`+
+        `<div class="meta-exp-content">${q.explanationHtml||'<em>No explanation provided.</em>'}</div>`;
+      expItem.appendChild(metaBox);
+      expBank.appendChild(expItem);
+
+      runtimeAnswerKeyData.push({'Question Number':displayNum,'Section':onlyGeneral?'':sectionName,'Correct Option':q.correctKey.toUpperCase()});
+    });
+  });
+
+  // Show formatter screen, hide arrange/picker
+  document.getElementById('arrange-screen').style.display='none';
+  document.getElementById('picker-screen').style.display='none';
+  document.getElementById('picker-topbar').style.display='none';
+  document.getElementById('formatter-screen').style.display='block';
+  syncFontControlsUI();
+
+  if(window.MathJax)MathJax.typesetPromise();
+}
+
+/* ═══════════════════════════════════════════════
+   PRINT
+═══════════════════════════════════════════════ */
+function doPrint(mode){
+  if(mode==='q'){document.body.classList.add('print-q');}
+  else if(mode==='exp'){document.body.classList.add('print-exp');}
+  else{document.body.classList.add('print-all');}
+  window.print();
+  document.body.classList.remove('print-q','print-exp','print-all');
+}
+
+/* ═══════════════════════════════════════════════
+   EXCEL ANSWER KEY
+═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   WORD EXPORT
+   Format:
+     Question: {n}. {text}
+     (a) {text}
+     (b) {text}
+     (c) {text}
+     (d) {text}
+     Ans: {single lowercase letter}
+     Explanation: {text}
+   Preserves: LaTeX $...$, images (embedded), tables,
+              bullets/numbering (with correct Word indent so
+              markers never bleed into the page margin)
+═══════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────
+   Render per-topic Word download buttons in formatter toolbar
+   Called once after openFormatter builds formattedCache
+───────────────────────────────────────────── */
+function renderTopicWordBtns(){
+  const container=document.getElementById('topic-word-btns');
+  if(!container)return;
+
+  // Build topic → questions map from formattedCache
+  const topicMap=new Map();
+  formattedCache.forEach(q=>{
+    const t=q.tag||'';
+    if(!t)return; // skip untagged — covered by "All"
+    if(!topicMap.has(t))topicMap.set(t,[]);
+    topicMap.get(t).push(q);
+  });
+
+  if(!topicMap.size){container.innerHTML='';return;}
+
+  const colors=['#0e7490','#047857','#7c3aed','#b45309','#9d174d','#1d4ed8'];
+  let i=0;
+  container.innerHTML=[...topicMap.entries()].map(([topic])=>{
+    const col=colors[i++%colors.length];
+    const safe=topic.replace(/'/g,"\\'");
+    return`<button class="fmt-btn" style="background:${col};color:#fff" 
+      onclick="exportWordDoc('${safe}','topic')"
+      title="Download source-format Word for topic: ${topic}">
+      📥 Word — ${topic}
+    </button>`;
+  }).join('');
+}
+
+/* ─────────────────────────────────────────────
+   exportWordDoc(topicFilter, mode)
+   topicFilter: null/'all' = all questions
+                'TopicName' = only that topic's questions
+   mode:        'all' | 'topic'
+───────────────────────────────────────────── */
+function exportWordDoc(topicFilter, mode){
+  if(typeof JSZip==='undefined'){showToast('⏳ JSZip loading, try again');return;}
+
+  // Determine which questions to export
+  let selQ;
+  let filename;
+  if(!topicFilter||topicFilter==='all'){
+    selQ=formattedCache.length?formattedCache:getOrderedPicked();
+    filename=(docTitle||'questions').replace(/[^\w\s\-]/g,'_');
+  }else{
+    selQ=(formattedCache.length?formattedCache:getOrderedPicked())
+      .filter(q=>(q.tag||'')===(topicFilter||''));
+    filename=`${(docTitle||'questions').replace(/[^\w\s\-]/g,'_')}_${topicFilter.replace(/[^\w\s\-]/g,'_')}`;
+  }
+
+  if(!selQ.length){showToast('⚠️ No questions for this topic');return;}
+
+  const xe=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  /* ── image registry ── */
+  let imgCounter=0;
+  const imgs=[];
+
+  /* ── run builder ── */
+  function mkRun(text,bold,italic,underline){
+    if(!text)return'';
+    const rpr=[
+      bold?'<w:b/><w:bCs/>':'',
+      italic?'<w:i/><w:iCs/>':'',
+      underline?'<w:u w:val="single"/>':''
+    ].join('');
+    const xtext=xe(text);
+    const sp=(xtext.startsWith(' ')||xtext.endsWith(' '))?'xml:space="preserve" ':'';
+    return`<w:r>${rpr?`<w:rPr>${rpr}</w:rPr>`:''}<w:t ${sp}>${xtext}</w:t></w:r>`;
+  }
+
+  function mkBrRun(){return'<w:r><w:br/></w:r>';}
+
+  /* ── inline content collector (handles bold/italic/latex/text nodes) ── */
+  function collectRuns(node,bold=false,italic=false,underline=false){
+    if(node.nodeType===3){
+      return node.textContent?mkRun(node.textContent,bold,italic,underline):'';
+    }
+    if(node.nodeType!==1)return'';
+    const t=node.tagName.toLowerCase();
+    if(t==='br')return mkBrRun();
+    if(t==='strong'||t==='b')return[...node.childNodes].map(c=>collectRuns(c,true,italic,underline)).join('');
+    if(t==='em'||t==='i')return[...node.childNodes].map(c=>collectRuns(c,bold,true,underline)).join('');
+    if(t==='u')return[...node.childNodes].map(c=>collectRuns(c,bold,italic,true)).join('');
+    if(t==='sup')return mkRun('^',bold,italic,underline)+[...node.childNodes].map(c=>collectRuns(c,bold,italic,underline)).join('');
+    if(t==='sub')return mkRun('_',bold,italic,underline)+[...node.childNodes].map(c=>collectRuns(c,bold,italic,underline)).join('');
+    return[...node.childNodes].map(c=>collectRuns(c,bold,italic,underline)).join('');
+  }
+
+  /* ── paragraph builder ── */
+  function mkPara(runsXml, indLeft=0, hanging=0, numId=0, ilvl=0, spaceBefore=0, spaceAfter=0){
+    const indStr=indLeft?`<w:ind w:left="${indLeft}"${hanging?` w:hanging="${hanging}"`:''}/>`:'';
+    const numStr=numId?`<w:numPr><w:ilvl w:val="${ilvl}"/><w:numId w:val="${numId}"/></w:numPr>`:'';
+    const spcStr=(spaceBefore||spaceAfter)?`<w:spacing w:before="${spaceBefore}" w:after="${spaceAfter}"/>`:'';
+    const pPr=(indStr||numStr||spcStr)?`<w:pPr>${numStr}${spcStr}${indStr}</w:pPr>`:'';
+    return`<w:p>${pPr}${runsXml}</w:p>`;
+  }
+
+  function emptyPara(){return'<w:p/>';}
+
+  /* ── image para ── */
+  function mkImagePara(src){
+    if(!src||!src.startsWith('data:'))return'';
+    const m=src.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
+    if(!m)return'';
+    imgCounter++;
+    const ext=m[1]==='jpeg'?'jpg':m[1]==='svg+xml'?'svg':m[1];
+    const b64=m[2];
+    const rId=`rImg${imgCounter}`;
+    imgs.push({rId,ext,b64,n:imgCounter});
+    const cx=3000000,cy=2000000; // ~8cm x ~5.3cm in EMU
+    return`<w:p><w:r><w:drawing>
+<wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">
+<wp:extent cx="${cx}" cy="${cy}"/>
+<wp:docPr id="${imgCounter}" name="img${imgCounter}"/>
+<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+<pic:nvPicPr><pic:cNvPr id="${imgCounter}" name="img${imgCounter}"/><pic:cNvPicPr/></pic:nvPicPr>
+<pic:blipFill><a:blip r:embed="${rId}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>
+<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>
+</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+  }
+
+  /* ── table builder ── */
+  function mkTableXml(tableNode){
+    const borders=['top','left','bottom','right','insideH','insideV']
+      .map(s=>`<w:${s} w:val="single" w:sz="4" w:space="0" w:color="000000"/>`)
+      .join('');
+    let xml=`<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/><w:tblBorders>${borders}</w:tblBorders></w:tblPr>`;
+    tableNode.querySelectorAll('tr').forEach(tr=>{
+      xml+='<w:tr>';
+      tr.querySelectorAll('td,th').forEach(cell=>{
+        const isHdr=cell.tagName.toLowerCase()==='th';
+        const cellParas=htmlToWordParas(cell.innerHTML||'',0);
+        const cellContent=cellParas.length
+          ?cellParas.map(p=>isHdr?p.replace(/<w:r>/g,'<w:r><w:rPr><w:b/><w:bCs/></w:rPr>'):p).join('')
+          :'<w:p/>';
+        xml+=`<w:tc><w:tcPr><w:tcW w:w="0" w:type="auto"/></w:tcPr>${cellContent}</w:tc>`;
+      });
+      xml+='</w:tr>';
+    });
+    return xml+'</w:tbl>';
+  }
+
+  /* ── MAIN CONVERTER: HTML fragment → array of Word paragraphs/tables ── */
+  function htmlToWordParas(html, baseIndent=0, listDepth=0){
+    if(!html||!html.trim())return[];
+    const div=document.createElement('div');
+    div.innerHTML=html;
+    return processNodes(div.childNodes, baseIndent, listDepth);
+  }
+
+  function processNodes(nodes, baseIndent, listDepth){
+    const out=[];
+    let inlineRuns=[];
+
+    function flushInline(){
+      if(!inlineRuns.length)return;
+      const content=inlineRuns.join('');
+      if(content.trim()||content.includes('<w:br/>')){
+        out.push(mkPara(content, baseIndent));
+      }
+      inlineRuns=[];
+    }
+
+    for(const node of nodes){
+      if(node.nodeType===3){
+        const t=node.textContent;
+        if(t) inlineRuns.push(mkRun(t));
+        continue;
+      }
+      if(node.nodeType!==1)continue;
+      const tag=node.tagName.toLowerCase();
+
+      /* inline */
+      if(['strong','b','em','i','u','s','del','strike','span','a','code','sup','sub','mark'].includes(tag)){
+        inlineRuns.push(collectRuns(node));
+        continue;
+      }
+      if(tag==='br'){
+        inlineRuns.push(mkBrRun());
+        continue;
+      }
+
+      /* block — flush inline buffer first */
+      flushInline();
+
+      if(tag==='p'||tag==='div'){
+        /* Check if this <p> has block children */
+        const blockChildren=[...node.childNodes].some(c=>
+          c.nodeType===1&&['ul','ol','table','img','figure','blockquote','pre'].includes(c.tagName.toLowerCase()));
+        if(blockChildren){
+          out.push(...processNodes(node.childNodes,baseIndent,listDepth));
+        } else {
+          const runs=[...node.childNodes].map(c=>collectRuns(c)).join('');
+          if(runs.trim()||runs.includes('<w:br/>')){
+            out.push(mkPara(runs,baseIndent));
+          } else {
+            out.push(emptyPara());
+          }
+        }
+        continue;
+      }
+
+      if(tag==='ul'||tag==='ol'){
+        /* Numbered lists use numId=2, bullets use numId=3
+           Base indent = 720 twips (0.5 inch) RELATIVE to where parent content sits.
+           If this list is inside the explanation block (baseIndent=360) the list
+           items sit at 360+720=1080 twips from the page margin, so the marker never
+           bleeds left of the surrounding text.
+           Each nesting level adds another 360 twips. */
+        const numId=tag==='ol'?2:3;
+        const ilvl=listDepth;
+        const indLeft=baseIndent+720+(listDepth*360); // relative to parent base
+        const hanging=360;
+        [...node.children].filter(c=>c.tagName==='LI').forEach(li=>{
+          const directRuns=[...li.childNodes]
+            .filter(c=>!(c.nodeType===1&&(c.tagName==='UL'||c.tagName==='OL')))
+            .map(c=>collectRuns(c)).join('');
+          out.push(mkPara(directRuns, indLeft, hanging, numId, ilvl));
+          /* Nested lists — pass same baseIndent so they stack additively */
+          [...li.children].filter(c=>c.tagName==='UL'||c.tagName==='OL')
+            .forEach(nested=>out.push(...processNodes([nested],baseIndent,listDepth+1)));
+        });
+        continue;
+      }
+
+      if(tag==='table'){
+        out.push(mkTableXml(node));
+        continue;
+      }
+
+      if(tag==='img'){
+        const imgPara=mkImagePara(node.getAttribute('src')||'');
+        if(imgPara) out.push(imgPara);
+        continue;
+      }
+
+      if(tag==='figure'){
+        out.push(...processNodes(node.childNodes,baseIndent,listDepth));
+        continue;
+      }
+
+      if(tag==='hr'){
+        out.push(`<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="1" w:color="AAAAAA"/></w:pBdr></w:pPr></w:p>`);
+        continue;
+      }
+
+      if(/^h[1-6]$/.test(tag)){
+        const runs=collectRuns(node,true);
+        out.push(mkPara(runs,baseIndent,0,0,0,60,40));
+        continue;
+      }
+
+      if(tag==='blockquote'||tag==='pre'){
+        out.push(...processNodes(node.childNodes,baseIndent+360,listDepth));
+        continue;
+      }
+
+      /* fallback */
+      inlineRuns.push(collectRuns(node));
+    }
+
+    flushInline();
+    return out;
+  }
+
+  /* ─────────────────────────────────────────────
+     BUILD DOCUMENT BODY
+  ───────────────────────────────────────────── */
+  const IND=360; // 360 twips = 0.25 inch indent for options / ans / explanation
+
+  let body=[];
+
+  /* Title */
+  body.push(mkPara(
+    mkRun(docTitle||'Selected Questions',true,false,true),
+    0,0,0,0,0,160
+  ));
+
+  selQ.forEach((q,idx)=>{
+
+    /* Question: {text}  — no number, just the keyword prefix */
+    const qParas=htmlToWordParas(q.qHtml||q.qText||'');
+    if(qParas.length){
+      /* Inject bold "Question: " prefix (no number) into first paragraph */
+      body.push(qParas[0].replace(
+        /(<w:p>)(<w:pPr>[^]*?<\/w:pPr>)?/,
+        (_,po,pp)=>`${po}${pp||''}<w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t xml:space="preserve">Question: </w:t></w:r>`
+      ));
+      body.push(...qParas.slice(1));
+    } else {
+      body.push(mkPara(mkRun('Question: ',true)+mkRun(q.qText||'')));
+    }
+
+    /* (a) – (d) */
+    ['a','b','c','d'].forEach(k=>{
+      const html=q.optsHtml?.[k]||q.opts?.[k]||'';
+      if(!html)return;
+      const optParas=htmlToWordParas(html, IND);
+      if(optParas.length){
+        body.push(optParas[0].replace(
+          /(<w:p>)(<w:pPr>[^]*?<\/w:pPr>)?/,
+          (_,po,pp)=>`${po}${pp||''}<w:r><w:t xml:space="preserve">(${k}) </w:t></w:r>`
+        ));
+        body.push(...optParas.slice(1));
+      } else {
+        body.push(mkPara(mkRun(`(${k}) `)+mkRun(q.opts?.[k]||''),IND));
+      }
+    });
+
+    /* Ans: {single lowercase letter} */
+    const letter=(q.correctKey||'a').toString().trim().toLowerCase().replace(/[^a-d]/,'a');
+    body.push(mkPara(mkRun(`Ans: ${letter}`,true),IND));
+
+    /* Explanation: {text} */
+    const expHtml=(q.explanationHtml||'').trim();
+    if(expHtml){
+      const expParas=htmlToWordParas(expHtml,IND);
+      if(expParas.length){
+        body.push(expParas[0].replace(
+          /(<w:p>)(<w:pPr>[^]*?<\/w:pPr>)?/,
+          (_,po,pp)=>`${po}${pp||''}<w:r><w:rPr><w:b/><w:bCs/></w:rPr><w:t xml:space="preserve">Explanation: </w:t></w:r>`
+        ));
+        body.push(...expParas.slice(1));
+      }
+    } else {
+      body.push(mkPara(mkRun('Explanation: ',true)+mkRun('—'),IND));
+    }
+
+    body.push(emptyPara());
+  });
+
+  /* ─────────────────────────────────────────────
+     ZIP ASSEMBLY
+  ───────────────────────────────────────────── */
+  const imgRelXml=imgs.map(i=>`<Relationship Id="${i.rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/img${i.n}.${i.ext}"/>`).join('');
+  const imgCtXml=imgs.map(i=>`<Override PartName="/word/media/img${i.n}.${i.ext}" ContentType="${i.ext==='png'?'image/png':i.ext==='svg'?'image/svg+xml':'image/jpeg'}"/>`).join('');
+
+  const DOC=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+  xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+  xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+  xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+<w:body>
+${body.join('\n')}
+<w:sectPr>
+  <w:pgSz w:w="11906" w:h="16838"/>
+  <w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1440" w:header="0" w:footer="0" w:gutter="0"/>
+</w:sectPr>
+</w:body></w:document>`;
+
+  const NUMBERING=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:abstractNum w:abstractNumId="0">
+    <w:multiLevelType w:val="hybridMultilevel"/>
+    ${[0,1,2].map(i=>`<w:lvl w:ilvl="${i}">
+      <w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%${i+1}."/>
+      <w:lvlJc w:val="left"/><w:pPr><w:ind w:left="${720+i*360}" w:hanging="360"/></w:pPr>
+      <w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr>
+    </w:lvl>`).join('')}
+  </w:abstractNum>
+  <w:abstractNum w:abstractNumId="1">
+    <w:multiLevelType w:val="hybridMultilevel"/>
+    ${[0,1,2].map(i=>`<w:lvl w:ilvl="${i}">
+      <w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/>
+      <w:lvlJc w:val="left"/><w:pPr><w:ind w:left="${720+i*360}" w:hanging="360"/></w:pPr>
+      <w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol" w:cs="Symbol"/></w:rPr>
+    </w:lvl>`).join('')}
+  </w:abstractNum>
+  <w:num w:numId="2"><w:abstractNumId w:val="0"/></w:num>
+  <w:num w:numId="3"><w:abstractNumId w:val="1"/></w:num>
+</w:numbering>`;
+
+  const STYLES=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:docDefaults><w:rPrDefault><w:rPr>
+    <w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>
+    <w:sz w:val="24"/><w:szCs w:val="24"/>
+  </w:rPr></w:rPrDefault></w:docDefaults>
+  <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/>
+    <w:pPr><w:spacing w:after="0"/></w:pPr></w:style>
+  <w:style w:type="numbering" w:styleId="ListNumber"><w:name w:val="List Number"/>
+    <w:pPr><w:numPr><w:numId w:val="2"/></w:numPr></w:pPr></w:style>
+  <w:style w:type="numbering" w:styleId="ListBullet"><w:name w:val="List Bullet"/>
+    <w:pPr><w:numPr><w:numId w:val="3"/></w:numPr></w:pPr></w:style>
+</w:styles>`;
+
+  const CT=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>
+  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+  ${imgCtXml}
+</Types>`;
+
+  const RELS=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+
+  const DOCRELS=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>
+  ${imgRelXml}
+</Relationships>`;
+
+  try{
+    const zip=new JSZip();
+    zip.file('[Content_Types].xml',CT);
+    zip.file('_rels/.rels',RELS);
+    zip.file('word/document.xml',DOC);
+    zip.file('word/_rels/document.xml.rels',DOCRELS);
+    zip.file('word/styles.xml',STYLES);
+    zip.file('word/numbering.xml',NUMBERING);
+    imgs.forEach(i=>zip.file(`word/media/img${i.n}.${i.ext}`,i.b64,{base64:true}));
+    zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}})
+      .then(blob=>{
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url;a.download=`${filename}.docx`;
+        document.body.appendChild(a);a.click();
+        setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},300);
+        showToast(`📥 Downloaded ${selQ.length} question(s) — ${filename}.docx`);
+      });
+  }catch(e){
+    console.error(e);
+    showToast('❌ Word export failed: '+e.message);
+  }
+}
+
+function exportExcel(){
+  // Build data from current selection if not yet formatted
+  let data=runtimeAnswerKeyData;
+  if(!data.length){
+    commitCurrentSelectionToPool();
+    const selQ=pickedPool;
+    if(!selQ.length){showToast('⚠️ Select questions first');return;}
+    data=selQ.map((q,i)=>({'Question Number':i+1,'Correct Option':q.correctKey.toUpperCase()}));
+  }
+  if(typeof XLSX==='undefined'){showToast('⏳ XLSX library loading…');return;}
+  const ws=XLSX.utils.json_to_sheet(data);
+  ws['!cols']=[{wch:18},{wch:15}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Answer Key');
+  XLSX.writeFile(wb,`${docTitle}_Answer_Key.xlsx`);
+  showToast('📊 Answer Key Excel downloaded!');
+}
+
+/* ═══════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════ */
+function backToPicker(){
+  document.getElementById('formatter-screen').style.display='none';
+  document.getElementById('picker-topbar').style.display='flex';
+  document.getElementById('title-bar').style.display='flex';
+  document.getElementById('picker-screen').style.display='block';
+  renderList();
+  updateCount();
+  updatePickedBadge();
+  updateReviewCount();
+}
+
+/* ═══════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════ */
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);
+}
+function resetApp(){if(confirm('Start over? All picked questions across all files will be cleared.'))location.reload();}
+function toggleTheme(){
+  const dk=document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme',dk?'light':'dark');
+  document.getElementById('theme-btn').textContent=dk?'🌙':'☀️';
+}
+</script>
+</body>
+</html>
