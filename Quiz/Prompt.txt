@@ -1,0 +1,79 @@
+Role: You are a precise data extraction specialist. Your task is to convert raw text into a specific structured format optimized for direct pasting into Microsoft Word.
+Task: Extract every question, option, and explanation from the provided text. Do not skip any entries and do not include question numbers. Then split the final output topic-wise into separate Word documents, one file per topic/subtopic (see Topic-wise Splitting section below).
+Formatting Rules:
+Absolute New Line Rule: EVERY component must start on a fresh line. There should be NO empty lines between the Question, the Options, the Ans, and the Explanation.
+The `Question:` label and text start on a new line.
+`(a)` starts on a new line.
+`(b)` starts on a new line.
+`(c)` starts on a new line.
+`(d)` starts on a new line.
+`Ans:` starts on a new line.
+`Explanation:` starts on a new line.
+Structure: Follow this template exactly (no bullet points or asterisks):
+```
+Question: {Question text}
+(a) {Text}
+(b) {Text}
+(c) {Text}
+(d) {Text}
+Ans: {Letter only — extract only the single lowercase letter (a, b, c, or d)}
+Explanation: {Full text}
+```
+Label Substitution (Critical): The labels (a), (b), (c), and (d) are reserved ONLY for the four main answer options. If the source text uses these labels inside a question or an explanation, you MUST change them to (i), (ii), (iii), (iv).
+Actual Table Protocol: If a question or explanation contains a table, represent it using standard Markdown Table format (`|` and `-`). Ensure there is an empty line before and after the table so Microsoft Word converts it into a real table upon pasting. Give match questions in tables.
+Minor Corrections: If you notice minimal typos or obvious spelling errors in the source text, fix them. However, do not change the core meaning, the technical terminology, or the structure of the explanation (e.g., fix "dicalcalcium" to "dicalcium" but do not change technical terms).
+LaTeX Preservation: Keep all LaTeX code exactly as it appears in the source. Ensure `$inline$` delimiters are preserved precisely. Do not reformat or "clean up" the LaTeX syntax. Don't use `$$display$$`.
+Use `\frac{numerator}{denominator}` for all mathematical fractions or division expressions. Do not use the `/` symbol or "by" for mathematical ratios inside LaTeX. Check with the units also.
+Data Integrity: Do not summarize, truncate, or paraphrase. The explanation must be captured in full. Use bolding, bullets, and tables wherever possible in the explanation.
+Ensure superscripts in units.
+For Assertion and Reason questions, don't use (A) and (R) — just use only "Assertion" and "Reason".
+Use multiline wherever necessary. In Statement questions, Statement II must start on a new line (each statement/sub-part gets its own line/paragraph, not merged into the previous line).
+Preserve the Images. Any diagram, figure, or graph embedded in a question, option, or explanation must be carried over into the output document as an actual embedded image (not a placeholder or description). If a source image is in a non-Word-native format (e.g. EMF/WMF/ChemDraw OLE), convert it to PNG, crop to its actual content bounding box (remove excess whitespace canvas), and preserve its original aspect ratio and approximate intended display size. This includes diagrams built from native Word drawing shapes rather than embedded pictures — see Rule 15 for how to detect and faithfully reproduce these.
+Match the Following should be in tabular form, e.g.:
+```
+Question: Match Column-I with Column-II.
+Column-I	Column-II
+(I) Common Logarithms	(1) $\log_{10}20$
+(II) Natural Logarithms	(2) $\log_e 5$
+(III) Brigg's Logarithms	(3) $\log10$ (base 10)
+(IV) Napier Logarithms	(4) $\ln(25)$
+(a)  I-1, II-2, III-3, IV-4
+(b)  I-2, II-3, III-4, IV-1
+(c)  I-3, II-4, III-1, IV-2
+(d)  I-4, II-1, III-2, IV-3
+Ans: a
+Explanation:
+```
+Variable Option-Table Layouts (Critical): Source Word tables do not use one consistent layout for the four options. Across a single document, options may appear as:
+one table row containing all four options side by side: `a) ... b) ... c) ... d) ...`
+two rows of two options each: `a) ... b) ...` then `c) ... d) ...`
+four separate rows, one option per row: `a) ...`, `b) ...`, `c) ...`, `d) ...`
+When extracting from a table, do not assume the row immediately following the question row contains all four options. Instead, keep reading subsequent rows — as long as a row's first cell is blank (i.e. it is not a new question-number row) — and collect every `a)/b)/c)/d)` labeled cell found, until all four letters have been collected or a new question-number row is reached. Verify after extraction that every question has exactly four options (a, b, c, d); if any question has fewer than four, re-check the surrounding rows for a layout variant before concluding the source itself is missing that option, and flag only genuine source gaps (see Data Integrity Checks) rather than parser artifacts.
+Native Vector-Shape Diagrams (Critical): Not every diagram in the source is an embedded picture. Word documents can build diagrams (especially energy-level diagrams, ray diagrams, graphs) out of native drawing objects — a `<w:drawing>` canvas containing many `Line`/`Freeform`/`TextBox` shapes — instead of a single embedded image. Standard extraction tools (e.g. pandoc's docx reader) only detect picture-style images (`<a:blip r:embed="rId..">`) and will silently miss these entirely, making a question look like it has no diagram when it actually does.
+After extracting via the normal picture-based method, separately scan every question, option, and solution cell's raw XML for `<w:drawing>` elements that do not contain an `r:embed` attribute. Each one is a native-shape diagram that needs separate handling.
+Do not rely on screenshotting/rendering the page (e.g. via LibreOffice) and cropping — complex native canvases often render with imperfect fidelity (misplaced arrows, dropped lines, garbled text) in non-Word renderers, which can silently produce an inaccurate diagram.
+Instead, parse the shape geometry directly from the XML: each shape's `a:xfrm` (`a:off`/`a:ext`) for position and size, and — for arrows drawn as `Freeform`/`custGeom` shapes — the actual `a:pathLst` point data to determine true arrow direction (compare the arrowhead sub-path's apex position against the shaft, don't assume direction from position alone). Extract all `w:t`/`a:t` text runs within each shape for labels. Rebuild the diagram as a clean SVG from this geometry rather than a screenshot.
+Before finalizing any reconstructed diagram, cross-check it against the accompanying solution text and answer key (e.g. do the labeled energy gaps/values in the solution match the arrows' endpoints and directions in the diagram; does the option marked correct in the answer key match what the diagram actually shows). If the reconstruction cannot be reconciled with the solution/answer key — e.g. labels are missing or inconsistently attached in the source XML — do not silently guess. Flag the specific inconsistency and ask before proceeding, rather than presenting a diagram that may not support its own question.
+Cross-Referencing & Data Integrity Checks:
+Before merging, scan every table cell's raw XML for `<w:drawing>` elements without an `r:embed` attribute (native vector-shape diagrams — see Rule 15). Picture-based extraction alone will not surface these; treat a question with no picture-based image as "no diagram" only after this scan confirms it.
+Before merging, verify that every question has exactly four options (a, b, c, d) extracted. If any question has fewer than four, this is very likely a parser/layout issue (see Rule 14) rather than a real gap — re-check the source table rows for that question before flagging it as missing.
+Before merging, verify that every question number in the Question file has a matching entry in the Solutions file and in the Answer Key file. Report any gaps rather than silently skipping them.
+Cross-check the Answer Key against the letter stated at the start of each Solutions entry. Flag any mismatches for review — do not silently overwrite one with the other.
+If a question has no matching solution/explanation in the source, do NOT fabricate one. Insert `Explanation: [Solution not available in source]` and add that question number to a flagged list reported back at the end.
+Report final counts (total questions processed, total missing solutions, total answer-key mismatches) after generation.
+Topic-wise Splitting:
+After building the single merged document, split it into multiple separate Word files, organized topic-wise and then sub-topic-wise, so that each file contains only the questions belonging to that specific concept. Do not lump an entire chapter into one file — break it down to the same level of granularity as a student's topic-wise practice sheet. For example, for a Ray Optics-style chapter:
+Mirrors → split further into: Plane Mirror / Concave Mirror / Convex Mirror / Mirrors – General & Multiple Mirror Systems
+Lenses → split further into: Convex Lens / Concave Lens / Combination of Lenses / Lenses – General (Lens Formula) / Lenses – General & Combination
+Refraction → Laws of Refraction and Refractive Index / Refraction through Plane Surfaces (Apparent Depth)
+Prism/Dispersion → Prism / Dispersion of Light / Prism and Dispersion (Combined, for questions that genuinely test both together)
+Total Internal Reflection → Total Internal Reflection and Critical Angle / Optical Fibre / Applications of TIR
+Optical Instruments & Eye → Telescope / Compound Microscope / Simple Microscope / Human Eye and Defects of Vision
+Any remaining topics that don't fit a specific bucket (Photometry, Scattering of Light, etc.) get their own file each; anything that is genuinely cross-cutting or unclassifiable goes into a Miscellaneous file rather than being forced into the wrong bucket.
+General rules for splitting:
+Classify each question by its actual physics content (keywords in the question stem and options), not by its position in the source file.
+Keep the same per-question formatting (Question/(a-d)/Ans/Explanation, LaTeX, images, tables) identical across every split file — splitting must never alter content or formatting, only grouping.
+Every question must end up in exactly one file. After splitting, the sum of questions across all topic files must equal the original total — verify and report this count.
+Use clear, human-readable file names that describe the subtopic (e.g. "Convex Lens.docx", "Plane Mirror.docx"), not generic labels like "Topic1.docx".
+If a subtopic bucket ends up very small (single digits), keep it as its own file anyway unless told otherwise — don't merge it back in without asking.
+Report a per-file breakdown (topic name → question count → missing-solution count) at the end, and confirm the totals reconcile with the original merged document.
