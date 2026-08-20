@@ -2112,9 +2112,9 @@ function exportWordDoc(topicFilter, mode){
           const runs=[...node.childNodes].map(c=>collectRuns(c)).join('');
           if(runs.trim()||runs.includes('<w:br/>')){
             out.push(mkPara(runs,baseIndent));
-          } else {
-            out.push(emptyPara());
           }
+          /* else: skip — empty <p>/<div> from source produces no blank
+             Word paragraph, per the Absolute New Line Rule (no gaps) */
         }
         continue;
       }
@@ -2185,15 +2185,9 @@ function exportWordDoc(topicFilter, mode){
   /* ─────────────────────────────────────────────
      BUILD DOCUMENT BODY
   ───────────────────────────────────────────── */
-  const IND=360; // 360 twips = 0.25 inch indent for options / ans / explanation
+  const IND=0; // no indent — Question/(a-d)/Ans/Explanation all sit flush left per spec
 
   let body=[];
-
-  /* Title */
-  body.push(mkPara(
-    mkRun(docTitle||'Selected Questions',true,false,true),
-    0,0,0,0,0,160
-  ));
 
   selQ.forEach((q,idx)=>{
 
