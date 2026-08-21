@@ -2329,7 +2329,12 @@ ${body.join('\n')}
     zip.file('word/styles.xml',STYLES);
     zip.file('word/numbering.xml',NUMBERING);
     imgs.forEach(i=>zip.file(`word/media/img${i.n}.${i.ext}`,i.b64,{base64:true}));
-    zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}})
+    zip.generateAsync({
+      type:'blob',
+      mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      compression:'DEFLATE',
+      compressionOptions:{level:6}
+    })
       .then(blob=>{
         const url=URL.createObjectURL(blob);
         const a=document.createElement('a');
