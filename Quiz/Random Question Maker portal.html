@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>DOCX Pro Extractor - Plain Text</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/evidenceprime/html-docx-js@master/dist/html-docx.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 30px; background-color: #f1f5f9; }
+        .container { max-width: 950px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .upload-section { border: 2px dashed #3b82f6; padding: 25px; text-align: center; border-radius: 8px; margin-bottom: 20px; background: #eff6ff; }
+        
+        .distro-bar { background: #f8fafc; padding: 15px; border-radius: 8px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; font-weight: normal; }
+        .qty-input { width: 60px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; }
+        .qty-input:disabled { background-color: #e2e8f0; color: #64748b; }
+        
+        .lock-cell { text-align: center; width: 50px; }
+        
+        #preview { margin-top: 20px; border: 1px solid #e2e8f0; padding: 20px; max-height: 400px; overflow-y: auto; background: #fff; border-radius: 8px; }
+        .actions { margin-top: 20px; display: flex; gap: 10px; }
+        
+        button { padding: 12px 20px; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; font-weight: normal; }
+        .btn-blue { background: #3b82f6; color: white; }
+        .btn-green { background: #10b981; color: white; }
+        .btn-dl { background: #6366f1; color: white; display: none; }
+        button:hover { opacity: 0.9; }
+
+        h2 { font-weight: normal; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>DOCX Pro Extractor</h2>
+    
+    <div class="upload-section">
+        <input type="file" id="fileInput" multiple accept=".docx">
+        <p style="color: #64748b; font-size: 0.9em;">Upload your question banks to begin.</p>
+    </div>
+    
+    <div id="fileSettings" style="display:none;">
+        <div class="distro-bar">
+            <span>Total Target:</span>
+            <input type="number" id="totalTarget" value="20" style="width: 70px; padding: 8px; border: 1px solid #cbd5e1;">
+            <button class="btn-blue" onclick="distributeEqually()">Distribute to Unlocked</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="lock-cell">Lock</th>
+                    <th>File Name</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody id="fileListBody"></tbody>
+        </table>
+        
+        <div class="actions">
+            <button class="btn-green" onclick="processFiles()">Generate Preview</button>
+            <button id="downloadBtn" class="btn-dl" onclick="downloadDocx()">Download .docx</button>
+        </div>
+    </div>
+
+    <div id="preview"><em>Preview will appear here...</em></div>
+</div>
+
+<script>
+    let uploadedFiles = [];
+    let finalHtmlContent = "";
+
+    const docxStyles = `<style>
+        body { font-family: "Calibri", sans-serif; font-size: 11pt; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+        table, th, td { border: 1px solid black; padding: 5px; font-weight: normal; }
+        img { max-width: 100%; height: auto; display: inline-block; }
+        p, span, div { font-weight: normal !important; }
+    </style>`;
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        uploadedFiles = Array.from(e.target.files);
+        if (uploadedFiles.length === 0) return;
+
+        const tbody = document.getElementById('fileListBody');
+        tbody.innerHTML = "";
+        uploadedFiles.forEach((file, i) => {
+            tbody.innerHTML += `<tr>
+                <td class="lock-cell"><input type="checkbox" class="lock-check" onchange="toggleLock(${i})"></td>
+                <td>${file.name}</td>
+                <td><input type="number" id="qty-${i}" class="qty-input" value="0" min="0"></td>
+            </tr>`;
+        });
+        document.getElementById('fileSettings').style.display = 'block';
+    });
+
+    function toggleLock(index) {
+        const input = document.getElementById(`qty-${index}`);
+        const isChecked = document.querySelectorAll('.lock-check')[index].checked;
+        input.disabled = isChecked;
+    }
+
+    function distributeEqually() {
+        const targetTotal = parseInt(document.getElementById('totalTarget').value) || 0;
+        const rows = document.querySelectorAll('#fileListBody tr');
+        
+        let unlockedInputs = [];
+        let currentlyAllocated = 0;
+
+        rows.forEach((row, i) => {
+            const checkbox = row.querySelector('.lock-check');
+            const input = row.querySelector('.qty-input');
+            if (checkbox.checked) {
+                currentlyAllocated += parseInt(input.value) || 0;
+            } else {
+                unlockedInputs.push(input);
+            }
+        });
+
+        const remainingNeeded = targetTotal - currentlyAllocated;
+        if (unlockedInputs.length === 0) return;
+        
+        const baseShare = Math.floor(Math.max(0, remainingNeeded) / unlockedInputs.length);
+        let remainder = Math.max(0, remainingNeeded) % unlockedInputs.length;
+
+        unlockedInputs.forEach(input => {
+            let count = baseShare;
+            if (remainder > 0) {
+                count += 1;
+                remainder--;
+            }
+            input.value = count;
+        });
+    }
+
+    async function processFiles() {
+        const preview = document.getElementById('preview');
+        const inputs = document.querySelectorAll('.qty-input');
+        preview.innerHTML = "Processing...";
+        finalHtmlContent = "";
+
+        for (let i = 0; i < inputs.length; i++) {
+            const qty = parseInt(inputs[i].value);
+            if (qty > 0) {
+                const file = uploadedFiles[i];
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const result = await mammoth.convertToHtml({arrayBuffer: arrayBuffer});
+                    
+                    const rawQuestions = result.value.split(/Question\s*:?\s*/i).slice(1);
+                    const selected = rawQuestions.sort(() => 0.5 - Math.random()).slice(0, qty);
+                    
+                    finalHtmlContent += selected.map(q => {
+                        let content = q.trim();
+                        if (content.startsWith("</p>")) content = content.substring(4);
+                        if (content.startsWith("<p>")) content = content.substring(3);
+                        // Using plain span instead of strong
+                        return `<p><span>Question: </span>${content}</p>`;
+                    }).join("");
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+
+        preview.innerHTML = finalHtmlContent || "No questions selected.";
+        if (finalHtmlContent) document.getElementById('downloadBtn').style.display = 'block';
+    }
+
+    function downloadDocx() {
+        const fullContent = `<!DOCTYPE html><html><head><meta charset="utf-8">${docxStyles}</head><body>${finalHtmlContent}</body></html>`;
+        const converted = htmlDocx.asBlob(fullContent);
+        saveAs(converted, "Extracted_Exam.docx");
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Telegram Multi-Group Quiz Loader Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 32px;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 32px;
+            animation: fadeInUp 0.6s ease-out 0.1s both;
+        }
+
+        .section {
+            margin-bottom: 28px;
+        }
+
+        .section-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.875rem;
+        }
+
+        .groups-container {
+            background: #f8f9ff;
+            border: 2px solid #e8ebf7;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .group-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #667eea;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            margin: 4px;
+        }
+
+        .group-tag button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .group-tag button:hover {
+            opacity: 0.7;
+        }
+
+        .add-group-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .add-group-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+        }
+
+        .setting-item label {
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .setting-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .setting-item input[type="number"] {
+            width: 80px;
+            padding: 8px 12px;
+        }
+
+        .file-box {
+            border: 2px dashed #667eea;
+            padding: 32px 20px;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            transition: all 0.2s ease;
+        }
+
+        .file-box:hover {
+            border-color: #764ba2;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+
+        .file-box input[type="file"] {
+            display: none;
+        }
+
+        .file-box-label {
+            cursor: pointer;
+            display: block;
+            padding: 20px;
+        }
+
+        .file-box-label strong {
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .file-box-label p {
+            color: #999;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #startBtn, #previewBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        #startBtn:hover:not(:disabled), #previewBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        #startBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #pauseBtn,
+        #resumeBtn {
+            background: #ff9800;
+            color: white;
+            display: none;
+        }
+
+        #pauseBtn:hover,
+        #resumeBtn:hover {
+            background: #f57c00;
+            transform: translateY(-2px);
+        }
+
+        #pauseBtn.active {
+            display: flex;
+        }
+
+        #resumeBtn.active {
+            display: flex;
+        }
+
+        .progress-section {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 0.875rem;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .progress-text span {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        #log {
+            background: #1a1a2e;
+            color: #00ff88;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.8rem;
+            max-height: 350px;
+            overflow-y: auto;
+            line-height: 1.5;
+            border: 1px solid #0f3460;
+        }
+
+        .log-entry {
+            margin-bottom: 6px;
+        }
+
+        .log-entry.success { color: #00ff88; }
+        .log-entry.error { color: #ff6b6b; }
+        .log-entry.info { color: #4dabf7; }
+        .log-entry.warn { 
+            color: #ffd93d;
+            padding: 4px 8px;
+            border-left: 3px solid #ffd93d;
+            margin-left: -4px;
+            padding-left: 11px;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulse {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f3460;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+
+        .file-name {
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>📮 Quiz Broadcaster</h1>
+        <p>Send multi-line quizzes to multiple Telegram groups simultaneously</p>
+    </div>
+
+    <div class="card">
+        <!-- Bot Token & Chat ID Section -->
+        <div class="section">
+            <div class="section-title">🔑 Bot Configuration</div>
+            <div class="input-row">
+                <input type="text" id="token" placeholder="Telegram Bot Token">
+            </div>
+        </div>
+
+        <!-- Multiple Groups Section -->
+        <div class="section">
+            <div class="section-title">👥 Target Groups</div>
+            <div class="groups-container" id="groupsContainer">
+                <div style="color: #999; font-size: 0.9rem; margin-bottom: 12px;">Add one or more group IDs to broadcast quizzes</div>
+                <div id="groupsTags"></div>
+            </div>
+            <div class="input-row">
+                <input type="text" id="chatIdInput" placeholder="Chat ID (paste and click Add)">
+                <button class="add-group-btn" onclick="addGroup()">+ Add Group</button>
+            </div>
+        </div>
+
+        <!-- Explanation Section -->
+        <div class="section">
+            <div class="section-title">💡 Common Explanation</div>
+            <textarea id="commonExpl" placeholder="Explanation shown on wrong answer (max 200 chars)"></textarea>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="section">
+            <div class="section-title">⚙️ Quiz Settings</div>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <input type="checkbox" id="isAnonymous">
+                    <label for="isAnonymous">Anonymous Voting</label>
+                </div>
+                <div class="setting-item">
+                    <label for="openPeriod">Auto-close (sec):</label>
+                    <input type="number" id="openPeriod" placeholder="30" value="30">
+                </div>
+                <div class="setting-item">
+                    <label for="delay">Delay (sec):</label>
+                    <input type="number" id="delay" value="2">
+                </div>
+                <div class="setting-item">
+                    <input type="checkbox" id="allowMultiline" checked>
+                    <label for="allowMultiline">Preserve Line Breaks</label>
+                </div>
+            </div>
+            <div style="background: #f0f4ff; padding: 12px; border-radius: 8px; margin-top: 16px; font-size: 0.875rem; color: #444; line-height: 1.5;">
+                <strong>💡 Multiline Questions:</strong> 
+                <br>✓ In your .docx file, press <strong>Enter</strong> within a question to create line breaks
+                <br>✓ Check "Preserve Line Breaks" to keep them in Telegram polls
+                <br>✓ Telegram displays multi-line questions naturally without needing Shift+Enter
+                <br>✓ Example:
+                <br><span style="font-style: italic; margin-left: 12px; display: block; margin-top: 6px;">Question: What is the capital of France?<br>It is located in the north-central part<br>of the country.</span>
+            </div>
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="section">
+            <div class="section-title">📄 Upload Quiz Document</div>
+            <div class="file-box">
+                <label class="file-box-label">
+                    <input type="file" id="wordFile" accept=".docx">
+                    <strong>Click to upload or drag your .docx file</strong>
+                    <p>Supports Word documents with quiz questions</p>
+                    <div class="file-name" id="fileName"></div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="button-group">
+            <button id="previewBtn" onclick="showPreview()">👁️ Preview Questions</button>
+            <button id="startBtn" onclick="handleFile()">🚀 Send Quizzes</button>
+            <button id="pauseBtn" class="active" onclick="togglePause()">⏸ Pause</button>
+            <button id="resumeBtn" onclick="toggleResume()">▶ Resume</button>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="progress-section" id="progressSection">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text">
+                Question: <span id="progressCurrent">0</span> / <span id="progressTotal">0</span>
+                | Groups: <span id="progressGroups">0</span>
+            </div>
+        </div>
+
+        <!-- Log Section -->
+        <div class="section">
+            <div class="section-title">📋 Activity Log</div>
+            <div id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- STATE MANAGEMENT ---
+    let groups = [];
+    let isPaused = false;
+    let currentState = null;
+
+    // --- PERSISTENCE ---
+    const fields = ['token', 'commonExpl', 'isAnonymous', 'openPeriod', 'delay', 'allowMultiline'];
+    
+    window.onload = () => {
+        loadSettings();
+        loadGroups();
+        updateGroupsUI();
+        document.getElementById('wordFile').addEventListener('change', () => {
+            const fileName = document.getElementById('wordFile').files[0]?.name || '';
+            document.getElementById('fileName').textContent = fileName ? `📎 ${fileName}` : '';
+        });
+    };
+
+    function loadSettings() {
+        fields.forEach(id => {
+            const saved = localStorage.getItem(id);
+            if (saved !== null) {
+                const el = document.getElementById(id);
+                if (el.type === 'checkbox') el.checked = saved === 'true';
+                else el.value = saved;
+            }
+        });
+        const savedToken = localStorage.getItem('token');
+        if (savedToken) document.getElementById('token').value = savedToken;
+    }
+
+    function saveSettings() {
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            const val = el.type === 'checkbox' ? el.checked : el.value;
+            localStorage.setItem(id, val);
+        });
+        localStorage.setItem('token', document.getElementById('token').value);
+    }
+
+    function loadGroups() {
+        const saved = localStorage.getItem('groups');
+        groups = saved ? JSON.parse(saved) : [];
+    }
+
+    function saveGroups() {
+        localStorage.setItem('groups', JSON.stringify(groups));
+    }
+
+    function updateGroupsUI() {
+        const container = document.getElementById('groupsTags');
+        container.innerHTML = groups.map((g, i) => `
+            <div class="group-tag">
+                <span>${g}</span>
+                <button onclick="removeGroup(${i})">×</button>
+            </div>
+        `).join('');
+    }
+
+    function addGroup() {
+        const input = document.getElementById('chatIdInput');
+        const id = input.value.trim();
+        if (!id) return alert('Enter a Chat ID');
+        if (groups.includes(id)) return alert('Group already added');
+        groups.push(id);
+        saveGroups();
+        updateGroupsUI();
+        input.value = '';
+    }
+
+    function removeGroup(index) {
+        groups.splice(index, 1);
+        saveGroups();
+        updateGroupsUI();
+    }
+
+    // --- UTILITY FUNCTIONS ---
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const logDiv = document.getElementById('log');
+
+    function updateLog(msg, type = 'info') {
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${type}`;
+        entry.textContent = `> ${msg}`;
+        logDiv.appendChild(entry);
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function updateProgress(current, total, groupCount) {
+        const percent = total > 0 ? (current / total) * 100 : 0;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressCurrent').textContent = current;
+        document.getElementById('progressTotal').textContent = total;
+        document.getElementById('progressGroups').textContent = groupCount;
+    }
+
+    // --- FILE HANDLING ---
+    async function handleFile() {
+        const fileInput = document.getElementById('wordFile');
+        if (!fileInput.files[0]) return alert("Select a file!");
+        
+        if (groups.length === 0) return alert("Add at least one group!");
+
+        saveSettings();
+
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('pauseBtn').classList.add('active');
+        document.getElementById('resumeBtn').classList.remove('active');
+        document.getElementById('progressSection').classList.add('active');
+        
+        logDiv.innerHTML = '';
+        isPaused = false;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            // Extract with better formatting to preserve soft line breaks
+            const result = await mammoth.convertToHtml({arrayBuffer: e.target.result});
+            
+            // Convert HTML to text while preserving line breaks
+            let text = result.value;
+            
+            // Replace HTML line breaks with actual line breaks
+            text = text.replace(/<br\s*\/?>/gi, '\n');
+            text = text.replace(/<\/p>/gi, '\n');
+            text = text.replace(/<p[^>]*>/gi, '');
+            text = text.replace(/<[^>]+>/g, '');
+            text = text.replace(/&nbsp;/g, ' ');
+            text = text.replace(/&lt;/g, '<');
+            text = text.replace(/&gt;/g, '>');
+            text = text.replace(/&amp;/g, '&');
+            
+            // Clean up multiple consecutive line breaks
+            text = text.replace(/\n\n+/g, '\n\n');
+            
+            await process(text);
+        };
+        reader.readAsArrayBuffer(fileInput.files[0]);
+    }
+
+    // --- PARSING & SENDING ---
+    async function process(text) {
+        const token = document.getElementById('token').value;
+        const delay = parseInt(document.getElementById('delay').value) * 1000;
+        const explanation = document.getElementById('commonExpl').value;
+        const isAnonymous = document.getElementById('isAnonymous').checked;
+        const openPeriod = parseInt(document.getElementById('openPeriod').value);
+        const allowMultiline = document.getElementById('allowMultiline').checked;
+
+        // Split by "Question:" keyword
+        const blocks = text.split(/Question:/i).filter(b => b.trim() !== "");
+
+        updateLog(`📥 Found ${blocks.length} questions`, 'info');
+        updateLog(`📮 Broadcasting to ${groups.length} group(s)`, 'info');
+        updateLog(`⏱️ Delay: ${delay / 1000}s per quiz`, 'info');
+        updateLog(`📝 Multiline: ${allowMultiline ? 'Enabled' : 'Disabled'}`, 'info');
+        updateLog('─'.repeat(50), 'info');
+
+        let sentCount = 0;
+        let skippedCount = 0;
+
+        for (let i = 0; i < blocks.length; i++) {
+            // Check pause state
+            while (isPaused) {
+                await sleep(100);
+            }
+
+            let block = blocks[i];
+            let skipReason = null;
+            
+            // Remove everything after "Ans:" to ignore explanations
+            let cleanBlock = block.split(/Ans:/i)[0];
+
+            // More flexible question extraction - allows multiline
+            const questionMatch = cleanBlock.match(/([\s\S]*?)(?=\([a-d]\))/i);
+            let question = questionMatch ? questionMatch[1].trim() : "";
+            
+            let opts = [];
+            let correctIdx = -1;
+
+            // Extract options (case-insensitive) - from cleanBlock to avoid explanation interference
+            const optMatches = cleanBlock.matchAll(/\([a-d]\)\s*([\s\S]*?)(?=\([a-d]\)|$)/gi);
+            for (const match of optMatches) {
+                const opt = match[1].trim();
+                if (opt) opts.push(opt);
+            }
+
+            // Extract answer (case-insensitive) - from original block
+            const ansMatch = block.match(/Ans:\s*([a-d])/i);
+            if (ansMatch) {
+                correctIdx = ansMatch[1].toLowerCase().charCodeAt(0) - 97;
+            }
+
+            // Handle line breaks in question (both regular enter and shift+enter from Word)
+            if (!allowMultiline) {
+                // Convert all line breaks to spaces
+                question = question.replace(/\r?\n/g, " ");
+            } else {
+                // Preserve all types of line breaks from Word document
+                // Word creates line breaks as \n or \r\n (both regular enter and shift+enter become \n)
+                question = question.split(/\r?\n/).map(line => line.trim()).filter(line => line).join('\n');
+            }
+
+            // NOW check for LaTeX/images/tables - ONLY in question and options, NOT in explanation
+            // Combine question + options for validation
+            const contentToValidate = question + '\n' + opts.join('\n');
+
+            // Check for LaTeX code ($ or backslash patterns)
+            if (/\$[\s\S]*?\$|\\[\w\{\}]+/.test(contentToValidate)) {
+                skipReason = 'LaTeX code in question/options';
+                updateLog(`⏭️  Q${i+1}: Skipped - ${skipReason}`, 'warn');
+                skippedCount++;
+                continue;
+            }
+
+            // Check for tables (| pattern used in markdown tables)
+            if (/^\s*\|[\s\S]*\|/m.test(contentToValidate)) {
+                skipReason = 'Table format in question/options';
+                updateLog(`⏭️  Q${i+1}: Skipped - ${skipReason}`, 'warn');
+                skippedCount++;
+                continue;
+            }
+
+            // Check for image markers/paths
+            if (/\[img\]|<img|\.jpg|\.png|\.gif|\.bmp|image:/i.test(contentToValidate)) {
+                skipReason = 'Image reference in question/options';
+                updateLog(`⏭️  Q${i+1}: Skipped - ${skipReason}`, 'warn');
+                skippedCount++;
+                continue;
+            }
+
+            // Preserve line breaks for multiline display (use \n for line breaks)
+            if (!allowMultiline) {
+                question = question.replace(/\n/g, " ");
+            } else {
+                // Keep intentional line breaks, clean up excessive whitespace
+                question = question.split('\n').map(line => line.trim()).filter(line => line).join('\n');
+            }
+
+            // Validation - only strict checks for real issues
+            const questionLen = question.split('\n').join(' ').length;
+            
+            // Check if missing answer
+            if (correctIdx < 0) {
+                skipReason = 'No answer found (Ans: a/b/c/d required)';
+                updateLog(`⏭️  Q${i+1}: Skipped - ${skipReason}`, 'warn');
+                skippedCount++;
+                continue;
+            }
+
+            // Check if not enough options
+            if (opts.length < 2) {
+                skipReason = `Only ${opts.length} option(s) found (minimum 2 required)`;
+                updateLog(`⏭️  Q${i+1}: Skipped - ${skipReason}`, 'warn');
+                skippedCount++;
+                continue;
+            }
+
+            // Check if too many options
+            if (opts.length > 10) {
+                skipReason = `${opts.length} options found (maximum 10 allowed)`;
+                updateLog(`⏭️  Q${i+1}: Skipped - ${skipReason}`, 'warn');
+                skippedCount++;
+                continue;
+            }
+
+            // Check question length (Telegram limit ~300 characters)
+            if (questionLen > 300) {
+                skipReason = `Question too long (${questionLen} chars, max 300)`;
+                updateLog(`⏭️  Q${i+1}: Skipped - ${skipReason}`, 'warn');
+                skippedCount++;
+                continue;
+            }
+
+            // Check if answer index is valid (must be within options)
+            if (correctIdx >= opts.length) {
+                skipReason = `Answer ${String.fromCharCode(97 + correctIdx).toUpperCase()} not available (only ${opts.length} options)`;
+                updateLog(`⏭️  Q${i+1}: Skipped - ${skipReason}`, 'warn');
+                skippedCount++;
+                continue;
+            }
+
+            // Check each option length (Telegram limit per option)
+            const badOptions = opts.filter((opt, idx) => opt.length > 100);
+            if (badOptions.length > 0) {
+                skipReason = `Option(s) too long (max 100 chars per option)`;
+                updateLog(`⏭️  Q${i+1}: Skipped - ${skipReason}`, 'warn');
+                skippedCount++;
+                continue;
+            }
+
+            // Send to all groups
+            let successCount = 0;
+            for (const groupId of groups) {
+                try {
+                    // Prepare question with proper line breaks for Telegram
+                    const telegramQuestion = question; // Telegram handles \n properly
+                    
+                    const res = await fetch(`https://api.telegram.org/bot${token}/sendPoll`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: groupId,
+                            question: telegramQuestion,
+                            options: opts,
+                            type: "quiz",
+                            correct_option_id: correctIdx,
+                            is_anonymous: isAnonymous,
+                            explanation: explanation.substring(0, 200),
+                            open_period: openPeriod >= 5 ? openPeriod : undefined
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (data.ok) {
+                        successCount++;
+                    } else {
+                        updateLog(`❌ Q${i+1} → ${groupId}: ${data.description}`, 'error');
+                    }
+                } catch (e) {
+                    updateLog(`❌ Q${i+1} → ${groupId}: Connection Error`, 'error');
+                }
+            }
+
+            if (successCount > 0) {
+                updateLog(`✅ Q${i+1}: Sent to ${successCount}/${groups.length} group(s) [${opts.length} options]`, 'success');
+                sentCount++;
+            }
+
+            updateProgress(i + 1, blocks.length, groups.length);
+
+            if (i < blocks.length - 1) await sleep(delay);
+        }
+
+        updateLog('─'.repeat(50), 'info');
+        updateLog(`🏁 Complete! Sent: ${sentCount}, Skipped: ${skippedCount}`, sentCount > 0 ? 'success' : 'warn');
+        
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('pauseBtn').classList.remove('active');
+        document.getElementById('resumeBtn').classList.remove('active');
+    }
+
+    // --- PAUSE/RESUME CONTROL ---
+    function togglePause() {
+        isPaused = true;
+        document.getElementById('pauseBtn').classList.remove('active');
+        document.getElementById('resumeBtn').classList.add('active');
+        updateLog('⏸  Paused by user', 'warn');
+    }
+
+    function toggleResume() {
+        isPaused = false;
+        document.getElementById('pauseBtn').classList.add('active');
+        document.getElementById('resumeBtn').classList.remove('active');
+        updateLog('▶  Resumed by user', 'info');
+    }
+
+    // --- PREVIEW FUNCTION ---
+    function showPreview() {
+        const fileInput = document.getElementById('wordFile');
+        if (!fileInput.files[0]) return alert("Select a file first!");
+
+        logDiv.innerHTML = '';
+        updateLog('📂 Extracting questions for preview...', 'info');
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            // Extract with better formatting to preserve soft line breaks
+            const result = await mammoth.convertToHtml({arrayBuffer: e.target.result});
+            
+            // Convert HTML to text while preserving line breaks
+            let text = result.value;
+            
+            // Replace HTML line breaks with actual line breaks
+            text = text.replace(/<br\s*\/?>/gi, '\n');
+            text = text.replace(/<\/p>/gi, '\n');
+            text = text.replace(/<p[^>]*>/gi, '');
+            text = text.replace(/<[^>]+>/g, '');
+            text = text.replace(/&nbsp;/g, ' ');
+            text = text.replace(/&lt;/g, '<');
+            text = text.replace(/&gt;/g, '>');
+            text = text.replace(/&amp;/g, '&');
+            
+            // Clean up multiple consecutive line breaks
+            text = text.replace(/\n\n+/g, '\n\n');
+            
+            previewQuestions(text);
+        };
+        reader.readAsArrayBuffer(fileInput.files[0]);
+    }
+
+    function previewQuestions(text) {
+        const blocks = text.split(/Question:/i).filter(b => b.trim() !== "");
+        
+        updateLog(`📥 Found ${blocks.length} total questions`, 'info');
+        updateLog('─'.repeat(50), 'info');
+
+        blocks.forEach((block, idx) => {
+            let cleanBlock = block.split(/Ans:/i)[0];
+            const questionMatch = cleanBlock.match(/([\s\S]*?)(?=\([a-d]\))/i);
+            let question = questionMatch ? questionMatch[1].trim() : "";
+            
+            // Show with line breaks visible
+            const displayQuestion = question.replace(/\n/g, ' ↵ ');
+            
+            const optMatches = cleanBlock.matchAll(/\([a-d]\)\s*([\s\S]*?)(?=\([a-d]\)|$)/gi);
+            let opts = [];
+            for (const match of optMatches) {
+                const opt = match[1].trim();
+                if (opt) opts.push(opt);
+            }
+
+            const ansMatch = block.match(/Ans:\s*([a-d])/i);
+            const ans = ansMatch ? ansMatch[1].toUpperCase() : 'NONE';
+
+            updateLog(`Q${idx+1}: "${displayQuestion}"`, 'info');
+            updateLog(`      Options: ${opts.length} | Answer: ${ans}`, 'info');
+        });
+
+        updateLog('─'.repeat(50), 'info');
+        updateLog('✅ Preview complete! Check line breaks (↵) in questions above', 'success');
+    }
+
+    // Prevent accidental loss of data
+    window.addEventListener('beforeunload', (e) => {
+        if (document.getElementById('startBtn').disabled && !isPaused) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+</script>
+
+</body>
+</html>
