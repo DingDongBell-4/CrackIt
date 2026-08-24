@@ -471,6 +471,10 @@
                     <input type="checkbox" id="allowMultiline" checked>
                     <label for="allowMultiline">Preserve Line Breaks</label>
                 </div>
+                <div class="setting-item">
+                    <input type="checkbox" id="shuffleQuestions">
+                    <label for="shuffleQuestions">Shuffle Question Order</label>
+                </div>
             </div>
             <div style="background: #f0f4ff; padding: 12px; border-radius: 8px; margin-top: 16px; font-size: 0.875rem; color: #444; line-height: 1.5;">
                 <strong>💡 Multiline Questions:</strong> 
@@ -529,7 +533,17 @@
     let currentState = null;
 
     // --- PERSISTENCE ---
-    const fields = ['token', 'commonExpl', 'isAnonymous', 'openPeriod', 'delay', 'allowMultiline'];
+    const fields = ['token', 'commonExpl', 'isAnonymous', 'openPeriod', 'delay', 'allowMultiline', 'shuffleQuestions'];
+
+    // Fisher-Yates shuffle
+    function shuffleArray(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
     
     window.onload = () => {
         loadSettings();
@@ -670,14 +684,20 @@
         const isAnonymous = document.getElementById('isAnonymous').checked;
         const openPeriod = parseInt(document.getElementById('openPeriod').value);
         const allowMultiline = document.getElementById('allowMultiline').checked;
+        const shuffleQuestions = document.getElementById('shuffleQuestions').checked;
 
         // Split by "Question:" keyword
-        const blocks = text.split(/Question:/i).filter(b => b.trim() !== "");
+        let blocks = text.split(/Question:/i).filter(b => b.trim() !== "");
+
+        if (shuffleQuestions) {
+            blocks = shuffleArray(blocks);
+        }
 
         updateLog(`📥 Found ${blocks.length} questions`, 'info');
         updateLog(`📮 Broadcasting to ${groups.length} group(s)`, 'info');
         updateLog(`⏱️ Delay: ${delay / 1000}s per quiz`, 'info');
         updateLog(`📝 Multiline: ${allowMultiline ? 'Enabled' : 'Disabled'}`, 'info');
+        updateLog(`🔀 Shuffle: ${shuffleQuestions ? 'Enabled' : 'Disabled'}`, 'info');
         updateLog('─'.repeat(50), 'info');
 
         let sentCount = 0;
